@@ -1,0 +1,166 @@
+--------- beginning of main
+07-07 22:49:12.621  4278  4294 D EGL_emulation: app_time_stats: avg=3511.26ms min=18.26ms max=27901.93ms count=8
+07-07 22:49:12.937  4278  4317 I ReactNativeJS: 'PLAY INFO:', { title: 'counting',
+07-07 22:49:12.937  4278  4317 I ReactNativeJS:   stream_url: 'https://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8',
+07-07 22:49:12.937  4278  4317 I ReactNativeJS:   poster: 'https://my-ott-app.b-cdn.net/assets/thumbnails/video_123_1783178759_2.png' }
+07-07 22:49:13.058  4278  4278 D NativeVideoPlayer: createViewInstance called
+07-07 22:49:13.118  4278  4278 I ExoPlayerImpl: Init 7e240c0 [AndroidXMedia3/1.4.1] [emu64xa, sdk_gphone64_x86_64, Google, 35]
+07-07 22:49:13.191  4278  4278 W m.cleanvideoapp: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (unsupported, reflection, allowed)
+07-07 22:49:13.429  4278  4278 D NativeVideoPlayer: setSource called with uri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:49:13.429  4278  4278 D NativeVideoPlayer: View setUri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:49:13.453  4278  4278 D NativeVideoPlayer: setPaused called with paused: false
+07-07 22:49:13.453  4278  4278 D NativeVideoPlayer: View setPaused: false
+07-07 22:49:13.471  4278  4278 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+07-07 22:49:13.471  4278  4278 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+07-07 22:49:13.712  4278  4374 D TrafficStats: tagSocket(124) with statsTag=0xffffffff, statsUid=-1
+07-07 22:49:14.003  4278  4294 D EGL_emulation: app_time_stats: avg=32.31ms min=3.04ms max=336.07ms count=16
+07-07 22:49:14.037  4278  4291 I HWUI    : Davey! duration=851ms; Flags=1, FrameTimelineVsyncId=148362, IntendedVsync=488912919656, Vsync=488912919656, InputEventId=0, HandleInputStart=488913243767, AnimationStart=488913244842, PerformTraversalsStart=489427059654, DrawStart=489536383261, FrameDeadline=488929586322, FrameInterval=488913239760, FrameStartTime=16666666, SyncQueued=489546173106, SyncStart=489546642118, IssueDrawCommandsStart=489547122454, SwapBuffers=489594622993, FrameCompleted=489764430094, DequeueBufferDuration=4204, QueueBufferDuration=223049, GpuCompleted=489764430094, SwapBuffersCompleted=489758231115, DisplayPresentTime=8589934593, CommandSubmissionCompleted=489594622993, 
+07-07 22:49:15.020  4278  4384 E EGL_emulation: eglQueryContext 32c0  EGL_BAD_ATTRIBUTE
+07-07 22:49:15.020  4278  4384 E EGL_emulation: tid 4384: eglQueryContext(2161): error 0x3004 (EGL_BAD_ATTRIBUTE)
+07-07 22:49:15.022  4278  4373 I DMCodecAdapterFactory: Creating an asynchronous MediaCodec adapter for track type video
+07-07 22:49:15.027  4278  4386 D CCodec  : allocate(c2.goldfish.h264.decoder)
+07-07 22:49:15.028  4278  4386 I Codec2Client: Available Codec2 services: "default" "software"
+07-07 22:49:15.030  4278  4386 I CCodec  : setting up 'default' as default (vendor) store
+07-07 22:49:15.036  4278  4386 I CCodec  : Created component [c2.goldfish.h264.decoder]
+07-07 22:49:15.037  4278  4386 D CCodecConfig: read media type: video/avc
+07-07 22:49:15.039  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.max-count.values
+07-07 22:49:15.039  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: output.subscribed-indices.values
+07-07 22:49:15.039  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: input.buffers.allocator-ids.values
+07-07 22:49:15.039  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.allocator-ids.values
+07-07 22:49:15.039  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.allocator-ids.values
+07-07 22:49:15.040  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.pool-ids.values
+07-07 22:49:15.040  4278  4386 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.pool-ids.values
+07-07 22:49:15.041  4278  4386 D ReflectedParamUpdater: ignored struct field coded.color-format.locations
+07-07 22:49:15.041  4278  4386 D CCodecConfig: ignoring local param raw.size (0xd2001800) as it is already supported
+07-07 22:49:15.042  4278  4386 D CCodecConfig: ignoring local param default.color (0x5200180b) as it is already supported
+07-07 22:49:15.042  4278  4386 D ReflectedParamUpdater: ignored struct field raw.hdr-static-info.mastering
+07-07 22:49:15.042  4278  4386 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:49:15.043  4278  4386 D CCodecConfig: c2 config diff is Dict {
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.pl.level = 20496
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.pl.profile = 20481
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.vui.color.matrix = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.vui.color.primaries = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.vui.color.range = 2
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 coded.vui.color.transfer = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 default.color.matrix = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 default.color.primaries = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 default.color.range = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 default.color.transfer = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 input.buffers.max-size.value = 6291456
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 input.delay.value = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   string input.media-type.value = "video/avc"
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 output.delay.value = 8
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   string output.media-type.value = "video/raw"
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.color.matrix = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.color.primaries = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.color.range = 2
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.color.transfer = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.max-size.height = 240
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.max-size.width = 320
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.pixel-format.value = 35
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::i32 raw.rotation.flip = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::i32 raw.rotation.value = 0
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.sar.height = 1
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.sar.width = 1
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.size.height = 240
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2::u32 raw.size.width = 320
+07-07 22:49:15.043  4278  4386 D CCodecConfig:   c2:
+07-07 22:49:15.043  4278  4386 W ColorUtils: expected specified color aspects (2:0:0:0)
+07-07 22:49:15.050  4278  4385 I MediaCodec: MediaCodec will operate in async mode
+07-07 22:49:15.051  4278  4385 D SurfaceUtils: connecting to surface 0x7cb6c5150c40, reason connectToSurface
+07-07 22:49:15.051  4278  4385 I MediaCodec: [c2.goldfish.h264.decoder] setting surface generation to 4380673
+07-07 22:49:15.051  4278  4385 D SurfaceUtils: disconnecting from surface 0x7cb6c5150c40, reason connectToSurface(reconnect)
+07-07 22:49:15.051  4278  4385 D SurfaceUtils: connecting to surface 0x7cb6c5150c30, reason connectToSurface(reconnect-with-listener)
+07-07 22:49:15.052  4278  4386 D CCodec  : [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for log-session-id
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for importance
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for color-standard
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for csd-1
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for native-window
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for native-window-generation
+07-07 22:49:15.052  4278  4386 D CCodecConfig: no c2 equivalents for flags
+07-07 22:49:15.053  4278  4386 D CCodecConfig: config failed => CORRUPTED
+07-07 22:49:15.054  4278  4386 D CCodecConfig: c2 config diff is   c2::u32 default.color.matrix = 3
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 default.color.primaries = 3
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 default.color.range = 2
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 raw.max-size.height = 480
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 raw.max-size.width = 854
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 raw.size.height = 480
+07-07 22:49:15.054  4278  4386 D CCodecConfig:   c2::u32 raw.size.width = 854
+07-07 22:49:15.055  4278  4386 W Codec2Client: query -- param skipped: index = 1107298332.
+07-07 22:49:15.055  4278  4386 D CCodec  : client requested max input size 311040, which is smaller than what component recommended (6291456); overriding with component recommendation.
+07-07 22:49:15.055  4278  4386 W CCodec  : This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+07-07 22:49:15.055  4278  4386 D CCodec  : encoding statistics level = 0
+07-07 22:49:15.055  4278  4386 D CCodec  : setup formats input: AMessage(what = 0x00000000) = {
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t height = 480
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t level = 65536
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t max-input-size = 6291456
+07-07 22:49:15.055  4278  4386 D CCodec  :   string mime = "video/avc"
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t profile = 65536
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t width = 854
+07-07 22:49:15.055  4278  4386 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:49:15.055  4278  4386 D CCodec  : }
+07-07 22:49:15.055  4278  4386 D CCodec  : setup formats output: AMessage(what = 0x00000000) = {
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t android._color-format = 2135033992
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t android._video-scaling = 1
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t rotation-degrees = 0
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t color-standard = 1
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t color-range = 2
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t color-transfer = 3
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t sar-height = 1
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t sar-width = 1
+07-07 22:49:15.055  4278  4386 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t width = 854
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t height = 480
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t max-height = 480
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t max-width = 854
+07-07 22:49:15.055  4278  4386 D CCodec  :   string mime = "video/raw"
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t android._dataspace = 260
+07-07 22:49:15.055  4278  4386 D CCodec  :   int32_t color-format = 2130708361
+07-07 22:49:15.055  4278  4386 D CCodec  : }
+07-07 22:49:15.055  4278  4386 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:49:15.055  4278  4386 D CCodecConfig: c2 config diff is   c2::u32 raw.color.matrix = 3
+07-07 22:49:15.055  4278  4386 D CCodecConfig:   c2::u32 raw.color.primaries = 3
+07-07 22:49:15.056  4278  4373 D MediaCodec: keep callback message for reclaim
+07-07 22:49:15.056  4278  4386 W Codec2Client: query -- param skipped: index = 1342179345.
+07-07 22:49:15.056  4278  4386 W Codec2Client: query -- param skipped: index = 2415921170.
+07-07 22:49:15.056  4278  4386 W Codec2Client: query -- param skipped: index = 1610614798.
+07-07 22:49:15.057  4278  4386 W Codec2Client: query -- param skipped: index = 2684356609.
+07-07 22:49:15.057  4278  4386 D C2Store : Using DMABUF Heaps
+07-07 22:49:15.058  4278  4386 D CCodecBufferChannel: [c2.goldfish.h264.decoder#615] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+07-07 22:49:15.060  4278  4386 D CCodecBufferChannel: [c2.goldfish.h264.decoder#615] Query output surface allocator returned 0 params => BAD_INDEX (6)
+07-07 22:49:15.062  4278  4386 I CCodecBufferChannel: [c2.goldfish.h264.decoder#615] Created output block pool with allocatorID 18 => poolID 18 - OK
+07-07 22:49:15.062  4278  4386 D CCodecBufferChannel: [c2.goldfish.h264.decoder#615] Configured output block pool ids 18 => OK
+07-07 22:49:15.062  4278  4386 D Codec2-OutputBufferQueue: remote graphic buffer migration 0/0
+07-07 22:49:15.064  4278  4386 D Codec2Client: setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+07-07 22:49:15.064  4278  4386 D Codec2Client: setOutputSurface -- generation=4380673 consumer usage=0x900
+07-07 22:49:15.066  4278  4294 D EGL_emulation: app_time_stats: avg=29.12ms min=5.12ms max=83.98ms count=14
+07-07 22:49:15.090  4278  4386 D Codec2Client: Surface configure completed
+07-07 22:49:15.091  4278  4386 I DMABUFHEAPS: Using DMA-BUF heap named: system
+07-07 22:49:15.108  4278  4390 D CCodecBufferChannel: [c2.goldfish.h264.decoder#615] Ignoring stale input buffer done callback: last flush index = 0, frameIndex = 0
+07-07 22:49:15.240  4278  4386 D CCodecConfig: c2 config diff is   c2::u32 raw.color.primaries = 4
+07-07 22:49:15.240  4278  4386 D CCodecConfig:   c2::u32 raw.color.transfer = 5
+07-07 22:49:15.240  4278  4386 D CCodecConfig:   c2::u32 raw.crop.height = 480
+07-07 22:49:15.240  4278  4386 D CCodecConfig:   c2::u32 raw.crop.left = 0
+07-07 22:49:15.240  4278  4386 D CCodecConfig:   c2::u32 raw.crop.top = 0
+07-07 22:49:15.240  4278  4386 D CCodecConfig:   c2::u32 raw.crop.width = 854
+07-07 22:49:15.241  4278  4386 D CCodecBuffers: [c2.goldfish.h264.decoder#615:2D-Output] popFromStashAndRegister: at 1000000080000us, output format changed to AMessage(what = 0x00000000) = {
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t android._color-format = 2135033992
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t android._video-scaling = 1
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t rotation-degrees = 0
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t color-standard = 4
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t color-range = 2
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t color-transfer = 5
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t sar-height = 1
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t sar-width = 1
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   Rect crop(0, 0, 853, 479)
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t width = 854
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t height = 480
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t max-height = 480
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t max-width = 854
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   string mime = "video/raw"
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t android._dataspace = 293863424
+07-07 22:49:15.241  4278  4386 D CCodecBuffers:   int32_t color-format = 2130708361
+07-07 22:49:15.241  4278  4386 D CCodecBuffers: }
+07-07 22:49:16.211  4278  4294 D EGL_emulation: app_time_stats: avg=118.42ms min=11.19ms max=320.45ms count=5
+07-07 22:49:20.278  4278  4390 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d35a0ed8 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 129/134 (recycle/alloc) - 5/133 (fetch/transfer)

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -10,20 +10,11 @@ import {
   StyleSheet,
   Text,
   View,
-  requireNativeComponent,
-  ViewStyle,
 } from 'react-native';
-
-type NativeVideoPlayerProps = {
-  uri: string;
-  paused?: boolean;
-  style?: ViewStyle;
-};
-const NativeVideoPlayer =
-  requireNativeComponent<NativeVideoPlayerProps>('NativeVideoPlayer');
+import NativeVideoPlayer from './NativeVideoPlayer';
 
 
-const BASE_URL = 'http://10.0.2.2:8000';
+const BASE_URL = 'http://138.68.140.83:8000';
 
 type ApiVideo = {
   id: number;
@@ -168,34 +159,9 @@ export default function App() {
 
             {playingVideo ? (
               <NativeVideoPlayer
-                source={{
-                  uri: playingVideo.stream_url,
-                  type: 'm3u8',
-                }}
-                poster={playingVideo.poster}
-                posterResizeMode="cover"
+                uri={playingVideo.stream_url}
                 style={styles.videoPlayer}
-                controls
-                resizeMode="contain"
-                paused={false}
-                playInBackground={false}
-                playWhenInactive={false}
-                onLoadStart={() => {
-                  console.log('VIDEO LOAD START:', playingVideo.stream_url);
-                }}
-                onLoad={data => {
-                  console.log('VIDEO LOADED:', data);
-                }}
-                onBuffer={data => {
-                  console.log('VIDEO BUFFER:', data);
-                }}
-                onProgress={data => {
-                  console.log('VIDEO PROGRESS:', data.currentTime);
-                }}
-                onError={videoError => {
-                  console.log('VIDEO ERROR FULL:', JSON.stringify(videoError, null, 2));
-                  setError('Video playback failed. Check Metro logs.');
-                }}
+                onClose={() => setPlayingVideo(null)}
               />
             ) : null}
           </View>
@@ -238,7 +204,7 @@ function VideoSection({
           keyExtractor={item => String(item.id)}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.row}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <VideoCard video={item} onPress={() => onPressVideo(item)} />
           )}
         />

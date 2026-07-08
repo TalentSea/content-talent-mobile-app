@@ -1,0 +1,100 @@
+07-07 22:42:25.443  1067  1442 W GLSUser : Caused by: dbio: Parsing Exception
+07-07 22:42:25.458  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.kids_auth#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:26.375  3093  3165 E DocsApplication: java.lang.IllegalStateException
+07-07 22:42:26.383  1067  2716 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth.easyunlock(new configuration available), resolution=null}]
+07-07 22:42:26.685  1067  2716 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.adid#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:26.709  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.appsearch#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:27.179  1067  1175 E hmnm    : RuntimeException while executing runnable hmob{apvb@340404e} with executor MoreExecutors.directExecutor()
+07-07 22:42:27.179  1067  1175 E hmnm    : java.lang.NullPointerException: Attempt to get length of null array
+07-07 22:42:27.448  3093  3214 E GoogleApiManager: java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
+07-07 22:42:27.448  3093  3214 E GoogleApiManager: 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3242)
+07-07 22:42:27.448  3093  3214 E GoogleApiManager: 	at android.os.Parcel.createException(Parcel.java:3226)
+07-07 22:42:27.448  3093  3214 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3209)
+07-07 22:42:27.448  3093  3214 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3151)
+07-07 22:42:27.451  3093  3213 W FlagStore: java.util.concurrent.ExecutionException: gmma: 17: 17: API: Phenotype.API is not available on this device. Connection failed with: ConnectionResult{statusCode=DEVELOPER_ERROR, resolution=null, message=null, clientMethodKey=null}
+07-07 22:42:27.464  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth.proximity(new configuration available), resolution=null}]
+07-07 22:42:27.474  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth_authzen(new configuration available), resolution=null}]
+07-07 22:42:27.806   568   661 E RecoverySnapshotStorage: java.io.FileNotFoundException: /data/system/recoverablekeystore/snapshots/10144.xml: open failed: ENOENT (No such file or directory)
+07-07 22:42:27.806   568   661 E RecoverySnapshotStorage: Caused by: android.system.ErrnoException: open failed: ENOENT (No such file or directory)
+07-07 22:42:28.154  1067  2716 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth_cryptauth(new configuration available), resolution=null}]
+07-07 22:42:28.300  1067  2716 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.droidguardclient#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:28.381  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.appinvite(new configuration available), resolution=null}]
+07-07 22:42:28.392  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.enterprise(new configuration available), resolution=null}]
+07-07 22:42:28.394  2348  2577 I BugleRcsJibe: RcsServiceConnectionException was raised while waiting to connect to RcsEngineLifecycleServiceV2
+07-07 22:42:28.608  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.gestureexchange#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:28.700  2232  2258 W WellbeingSettingsProvid: java.util.concurrent.TimeoutException: Waited 5000 milliseconds (plus 1 milliseconds, 861787 nanoseconds delay) for opn@9fc80e6[status=PENDING, info=[inputFuture=[opm@7ad2627[status=PENDING, setFuture=[oot@f8350d4[status=PENDING, info=[inputFuture=[opn@582327d[status=PENDING, info=[inputFuture=[opn@d7fc572[status=PENDING, info=[inputFuture=[oqj@5bbfdc3[status=PENDING, info=[futures=[opn@2ea640[status=PENDING, info=[inputFuture=[opn@47979[status=PENDING, info=[inputFuture=[orj@b80c6be[status=PENDING, info=[delegate=[osq@756b31f[status=PENDING, info=[task=[running=[NOT STARTED YET], propagating=[ecu@377e66c]]]]]]]], function=[propagating=[ece@5ca3435]]]]], function=[propagating=[fjj@8fe90ca]]]]]]]], function=[propagating=[few@abd623b]]]]], function=[propagating=[dzs@b32fd58]]]]], exceptionType=[class java.lang.Throwable], fallback=[propagating=[ect@7f6deb1]]]]]]], function=[propagating=[dzs@9dcef96]]]]
+07-07 22:42:28.741  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.growth(new configuration available), resolution=null}]
+07-07 22:42:28.785  1231  1249 W PackageManager: android.content.res.Resources$NotFoundException: String resource ID #0x7f130786
+07-07 22:42:28.824  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.filamentsupportchecker#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:29.012  1067  2890 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.instantapps(new configuration available), resolution=null}]
+07-07 22:42:29.019  1067  2890 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.kidssettings#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:29.199  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.mdisync(new configuration available), resolution=null}]
+07-07 22:42:29.587  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.mobile_data_plan(new configuration available), resolution=null}]
+07-07 22:42:29.792  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.notifications(new configuration available), resolution=null}]
+07-07 22:42:29.865  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.notificationsregistration#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:30.084  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.remotegestures#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:30.352  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.phonesky_recovery(new configuration available), resolution=null}]
+07-07 22:42:30.353  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.pwm#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:30.381  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.vision(new configuration available), resolution=null}]
+07-07 22:42:30.383  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.reminders(new configuration available), resolution=null}]
+07-07 22:42:30.386  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.remotegestures#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:30.510  2801  2916 E RkpdPeriodicProvisioner: com.android.rkpdapp.RkpdException: Error getting data from server.
+07-07 22:42:30.545  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.romanesco(new configuration available), resolution=null}]
+07-07 22:42:31.184  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.metrics(new configuration available), resolution=null}]
+07-07 22:42:31.352  1067  2716 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.trustagent.activeunlock.common#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:31.364  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.trustagent.activeunlock.primary#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:31.401  1067  2889 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.vision.sdk(new configuration available), resolution=null}]
+07-07 22:42:31.638  1067  2888 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.libraries.consentverifier#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:31.784  1457  3017 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+07-07 22:42:32.247  1457  3017 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+07-07 22:42:33.352   970   991 W BaseSearchIndex: Error initializing controller in fragment: com.android.settings.network.NetworkDashboardFragment$1@731e057, e: java.lang.IllegalArgumentException: Lifecycle must be set
+07-07 22:42:33.435   970   993 E Settings: android.content.pm.PackageManager$NameNotFoundException: com.google.android.apps.accessibility.magnifier
+07-07 22:42:33.436   970   993 E Settings: android.content.pm.PackageManager$NameNotFoundException: com.google.android.apps.tips
+07-07 22:42:33.446   970   991 W BaseSearchIndex: Error initializing controller in fragment: com.android.settings.deviceinfo.aboutphone.MyDeviceInfoFragment$1@c8a681f, e: java.lang.IllegalStateException: Cannot invoke setValue on a background thread
+07-07 22:42:33.599   970   991 E HardwareInfoFeatureProviderImpl: java.lang.NumberFormatException: For input string: "E"
+07-07 22:42:34.110   970   993 W BaseSearchIndex: Error initializing controller in fragment: com.android.settings.network.NetworkDashboardFragment$1@731e057, e: java.lang.IllegalArgumentException: Lifecycle must be set
+07-07 22:42:34.173   970   993 W BaseSearchIndex: Error initializing controller in fragment: com.android.settings.deviceinfo.aboutphone.MyDeviceInfoFragment$1@c8a681f, e: java.lang.IllegalStateException: Cannot invoke setValue on a background thread
+07-07 22:42:34.329   970   993 E SystemServiceRegistry: android.os.ServiceManager$ServiceNotFoundException: No service published for: ethernet
+07-07 22:42:34.474   970   993 E HardwareInfoFeatureProviderImpl: java.lang.NumberFormatException: For input string: "E"
+07-07 22:42:35.796  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.gmsplatform#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:35.841  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.googlesettings#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:35.892  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth.proximity(new configuration available), resolution=null}]
+07-07 22:42:35.981  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.icing(new configuration available), resolution=null}]
+07-07 22:42:35.989  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.kidssettings#com.google.android.gms(new configuration available), resolution=null}]
+07-07 22:42:35.998  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.mobile_data_plan(new configuration available), resolution=null}]
+07-07 22:42:36.013  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.permissions(new configuration available), resolution=null}]
+07-07 22:42:36.045  1067  1174 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.auth.blockstore(new configuration available), resolution=null}]
+07-07 22:42:36.432  1457  2967 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+07-07 22:42:36.506  1457  2967 W Conscrypt: Could not set socket write timeout: java.net.SocketException: Socket closed
+07-07 22:42:36.763  1067  1075 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:42:37.275  3093  3214 E GoogleApiManager: java.lang.SecurityException: Unknown calling package name 'com.google.android.gms'.
+07-07 22:42:37.275  3093  3214 E GoogleApiManager: 	at android.os.Parcel.createExceptionOrNull(Parcel.java:3242)
+07-07 22:42:37.275  3093  3214 E GoogleApiManager: 	at android.os.Parcel.createException(Parcel.java:3226)
+07-07 22:42:37.275  3093  3214 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3209)
+07-07 22:42:37.275  3093  3214 E GoogleApiManager: 	at android.os.Parcel.readException(Parcel.java:3151)
+07-07 22:42:39.699  1067  1502 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:43:12.025  1067  1488 W AsyncOperation: OperationException[Status{statusCode=Stale snapshot for com.google.android.gms.presencemanager(new configuration available), resolution=null}]
+07-07 22:43:21.462   568  1912 E SystemServiceRegistry: android.os.ServiceManager$ServiceNotFoundException: No service published for: persistent_data_block
+07-07 22:43:26.016  3823  3823 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+07-07 22:43:26.030  3823  3823 E unknown:ReactHost: Unhandled SoftException
+07-07 22:43:26.030  3823  3823 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+07-07 22:43:26.030  3823  3823 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.kt:919)
+07-07 22:43:26.030  3823  3823 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException$default(ReactHostImpl.kt:910)
+07-07 22:43:28.727  3823  3902 I ReactNativeJS: Running "CleanVideoApp" with {"rootTag":1,"initialProps":{},"fabric":true}
+07-07 22:43:28.757  3823  3902 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.cleanvideoapp.NativeVideoPlayerManager
+07-07 22:43:29.236  3823  3902 W ReactNativeJS: SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context
+07-07 22:43:36.821  1067  2027 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:43:39.812  1067  2027 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:43:48.835  1067  1077 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:43:57.869  1067  1502 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:44:03.884  1067  2027 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:44:06.880  1067  2017 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:44:09.888  3823  3902 I ReactNativeJS: 'PLAY INFO:', { title: 'counting',
+07-07 22:44:09.888  3823  3902 I ReactNativeJS:   stream_url: 'https://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8',
+07-07 22:44:09.888  3823  3902 I ReactNativeJS:   poster: 'https://my-ott-app.b-cdn.net/assets/thumbnails/video_123_1783178759_2.png' }
+07-07 22:44:09.895  1067  1502 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:44:10.062  3823  3823 I ExoPlayerImpl: Init da6ad80 [AndroidXMedia3/1.4.1] [emu64xa, sdk_gphone64_x86_64, Google, 35]
+07-07 22:44:22.002  1067  1077 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:44:25.005  1067  1502 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:45:10.098  1067  2027 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
+07-07 22:45:13.103  1067  2017 I NullBinder: NullBinder for android.net.action.RECOMMEND_NETWORKS triggering remote TransactionTooLargeException due to Service without Chimera impl, calling uid: 1000, calling pid: 0
