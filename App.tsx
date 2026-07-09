@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   View,
@@ -14,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import NativeVideoPlayer from './NativeVideoPlayer';
 
 
-const BASE_URL = 'http://138.68.140.83:8000';
+const BASE_URL = 'http://10.0.2.2:8000';
 
 type ApiVideo = {
   id: number;
@@ -31,9 +32,12 @@ type ApiVideo = {
 
 type PlayInfo = {
   title: string;
+  description?: string;
   stream_url: string;
   poster?: string;
 };
+
+type SectionKey = 'popular' | 'processing';
 
 export default function App() {
   const [videos, setVideos] = useState<ApiVideo[]>([]);
@@ -41,6 +45,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [playingVideo, setPlayingVideo] = useState<PlayInfo | null>(null);
   const [playerLoading, setPlayerLoading] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<SectionKey | null>(null);
 
   useEffect(() => {
     loadVideos();
@@ -91,7 +96,7 @@ export default function App() {
 
       const data: PlayInfo = await response.json();
       console.log('PLAY INFO:', data);
-      setPlayingVideo(data);
+      setPlayingVideo({ ...data, title: data.title || video.title });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to play video');
     } finally {
@@ -107,8 +112,72 @@ export default function App() {
     video => String(video.status).trim().toLowerCase() !== 'ready',
   );
 
+  const sectionData: Record<
+    SectionKey,
+    { title: string; videos: ApiVideo[]; emptyText?: string }
+  > = {
+    popular: { title: 'Popular Videos', videos: popularVideos },
+    processing: {
+      title: 'Processing',
+      videos: processingVideos,
+      emptyText: 'No processing videos.',
+    },
+  };
+
+  // Full-screen "See all" grid for a section
+  if (expandedSection) {
+    const section = sectionData[expandedSection];
+
+    return (
+      <SafeAreaView style={styles.screen}>
+        <StatusBar barStyle="light-content" />
+        <View style={styles.expandedHeader}>
+          <Pressable
+            style={styles.backButton}
+            onPress={() => setExpandedSection(null)}
+            hitSlop={10}>
+            <Text style={styles.backIcon}>‹</Text>
+          </Pressable>
+          <Text style={styles.expandedTitle}>{section.title}</Text>
+          <View style={styles.backButtonSpacer} />
+        </View>
+
+        {section.videos.length === 0 ? (
+          <Text style={styles.emptyText}>{section.emptyText || 'No videos found.'}</Text>
+        ) : (
+          <FlatList
+            data={section.videos}
+            keyExtractor={item => String(item.id)}
+            numColumns={2}
+            columnWrapperStyle={styles.gridRow}
+            contentContainerStyle={styles.gridContent}
+            renderItem={({ item }) => (
+              <VideoCard
+                video={item}
+                onPress={() => playVideo(item)}
+                fullWidth
+              />
+            )}
+          />
+        )}
+
+        <PlayerModal
+          playingVideo={playingVideo}
+          onClose={() => setPlayingVideo(null)}
+        />
+
+        {playerLoading ? (
+          <View style={styles.playerLoading}>
+            <ActivityIndicator color="#FFFFFF" />
+          </View>
+        ) : null}
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.screen}>
+      <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.appTitle}>Streamr</Text>
@@ -119,7 +188,7 @@ export default function App() {
 
         {loading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator />
+            <ActivityIndicator color="#FFFFFF" />
             <Text style={styles.loadingText}>Loading videos...</Text>
           </View>
         ) : null}
@@ -130,40 +199,76 @@ export default function App() {
           title="Popular Videos"
           videos={popularVideos}
           onPressVideo={playVideo}
+          onSeeAll={() => setExpandedSection('popular')}
         />
 
         <VideoSection
           title="Processing"
           videos={processingVideos}
           onPressVideo={playVideo}
+          onSeeAll={() => setExpandedSection('processing')}
           emptyText="No processing videos."
         />
       </ScrollView>
 
-      <Modal
-        visible={!!playingVideo}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setPlayingVideo(null)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.playerCard}>
-            {playingVideo ? (
-              <NativeVideoPlayer
-                uri={playingVideo.stream_url}
-                style={styles.videoPlayer}
-                onClose={() => setPlayingVideo(null)}
-              />
-            ) : null}
-          </View>
-        </View>
-      </Modal>
+      <PlayerModal
+        playingVideo={playingVideo}
+        onClose={() => setPlayingVideo(null)}
+      />
 
       {playerLoading ? (
         <View style={styles.playerLoading}>
-          <ActivityIndicator />
+          <ActivityIndicator color="#FFFFFF" />
         </View>
       ) : null}
     </SafeAreaView>
+  );
+}
+
+function PlayerModal({
+  playingVideo,
+  onClose,
+}: {
+  playingVideo: PlayInfo | null;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      visible={!!playingVideo}
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent>
+      <View style={styles.playerScreen}>
+        <StatusBar barStyle="light-content" hidden />
+
+        <View style={styles.playerVideoArea}>
+          {playingVideo ? (
+            <NativeVideoPlayer
+              uri={playingVideo.stream_url}
+              style={styles.videoPlayer}
+              onClose={onClose}
+            />
+          ) : null}
+
+          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={12}>
+            <Text style={styles.closeIcon}>✕</Text>
+          </Pressable>
+        </View>
+
+        {playingVideo ? (
+          <View style={styles.playerInfo}>
+            <Text style={styles.playerTitle} numberOfLines={2}>
+              {playingVideo.title}
+            </Text>
+            {playingVideo.description ? (
+              <Text style={styles.playerDescription} numberOfLines={4}>
+                {playingVideo.description}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+      </View>
+    </Modal>
   );
 }
 
@@ -171,18 +276,24 @@ function VideoSection({
   title,
   videos,
   onPressVideo,
+  onSeeAll,
   emptyText = 'No videos found.',
 }: {
   title: string;
   videos: ApiVideo[];
   onPressVideo: (video: ApiVideo) => void;
+  onSeeAll: () => void;
   emptyText?: string;
 }) {
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.seeAll}>See all</Text>
+        {videos.length > 0 ? (
+          <Pressable onPress={onSeeAll} hitSlop={8}>
+            <Text style={styles.seeAll}>See all</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {videos.length === 0 ? (
@@ -206,17 +317,25 @@ function VideoSection({
 function VideoCard({
   video,
   onPress,
+  fullWidth = false,
 }: {
   video: ApiVideo;
   onPress: () => void;
+  fullWidth?: boolean;
 }) {
   const category = video.category || 'Video';
   const tags = video.tags?.length ? video.tags.slice(0, 2).join(', ') : 'Streamr';
   const isReady = video.status === 'ready';
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.thumbnailWrap}>
+    <Pressable
+      style={[styles.card, fullWidth ? styles.cardFullWidth : null]}
+      onPress={onPress}>
+      <View
+        style={[
+          styles.thumbnailWrap,
+          fullWidth ? styles.thumbnailWrapFullWidth : null,
+        ]}>
         <Image
           source={{
             uri:
@@ -329,9 +448,60 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
 
+  // ---- Expanded "See all" grid screen ----
+  expandedHeader: {
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#15151F',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  backButtonSpacer: {
+    width: 36,
+  },
+
+  backIcon: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+    marginTop: -2,
+  },
+
+  expandedTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+
+  gridContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 24,
+  },
+
+  gridRow: {
+    justifyContent: 'space-between',
+  },
+
   card: {
     width: 132,
     marginRight: 12,
+  },
+
+  cardFullWidth: {
+    width: '48%',
+    marginRight: 0,
+    marginBottom: 18,
   },
 
   thumbnailWrap: {
@@ -340,6 +510,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     backgroundColor: '#15151F',
+  },
+
+  thumbnailWrapFullWidth: {
+    height: 110,
   },
 
   thumbnail: {
@@ -423,24 +597,59 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 
-  modalBackdrop: {
+  // ---- Full-screen player ----
+  playerScreen: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.86)',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+    backgroundColor: '#000000',
   },
 
-  playerCard: {
-    backgroundColor: '#101018',
-    borderRadius: 16,
-    overflow: 'hidden',
+  playerVideoArea: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
   },
 
   videoPlayer: {
     width: '100%',
-    height: 220,
-    backgroundColor: '#000000',
-    borderRadius: 12,
+    height: '100%',
+  },
+
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+
+  closeIcon: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  playerInfo: {
+    padding: 16,
+  },
+
+  playerTitle: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '900',
+  },
+
+  playerDescription: {
+    color: '#9A9AA3',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
+    lineHeight: 18,
   },
 
   playerLoading: {
@@ -451,6 +660,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
 });
