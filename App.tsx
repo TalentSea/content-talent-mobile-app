@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import NativeVideoPlayer from './NativeVideoPlayer';
 
 
-const BASE_URL = 'http://10.0.2.2:8000';
+const BASE_URL = 'http://138.68.140.83:8000';
 
 type ApiVideo = {
   id: number;
@@ -249,10 +249,6 @@ function PlayerModal({
               onClose={onClose}
             />
           ) : null}
-
-          <Pressable style={styles.closeButton} onPress={onClose} hitSlop={12}>
-            <Text style={styles.closeIcon}>✕</Text>
-          </Pressable>
         </View>
 
         {playingVideo ? (
@@ -613,25 +609,7 @@ const styles = StyleSheet.create({
   videoPlayer: {
     width: '100%',
     height: '100%',
-  },
-
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-
-  closeIcon: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    borderRadius: 0,
   },
 
   playerInfo: {
