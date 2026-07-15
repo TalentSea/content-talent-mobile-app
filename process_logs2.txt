@@ -1,0 +1,311 @@
+--------- beginning of main
+07-07 22:51:24.769  4532  4582 D TrafficStats: tagSocket(157) with statsTag=0xffffffff, statsUid=-1
+07-07 22:51:24.855  4532  4547 D EGL_emulation: app_time_stats: avg=1588.51ms min=12.96ms max=12560.26ms count=8
+07-07 22:51:25.891  4532  4547 D EGL_emulation: app_time_stats: avg=8.59ms min=2.83ms max=24.13ms count=18
+07-07 22:51:26.910  4532  4547 D EGL_emulation: app_time_stats: avg=6.71ms min=2.83ms max=16.88ms count=18
+07-07 22:51:27.914  4532  4547 D EGL_emulation: app_time_stats: avg=5.57ms min=2.81ms max=11.74ms count=18
+07-07 22:51:28.972  4532  4547 D EGL_emulation: app_time_stats: avg=7.13ms min=2.60ms max=19.99ms count=19
+07-07 22:51:29.005  4532  4568 I ReactNativeJS: 'PLAY INFO:', { title: 'counting',
+07-07 22:51:29.005  4532  4568 I ReactNativeJS:   stream_url: 'https://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8',
+07-07 22:51:29.005  4532  4568 I ReactNativeJS:   poster: 'https://my-ott-app.b-cdn.net/assets/thumbnails/video_123_1783178759_2.png' }
+07-07 22:51:29.108  4532  4532 D NativeVideoPlayer: createViewInstance called
+07-07 22:51:29.207  4532  4538 I m.cleanvideoapp: Background concurrent mark compact GC freed 5592KB AllocSpace bytes, 2(92KB) LOS objects, 49% free, 5729KB/11MB, paused 798us,5.056ms total 65.514ms
+07-07 22:51:29.212  4532  4532 I ExoPlayerImpl: Init f2f8045 [AndroidXMedia3/1.4.1] [emu64xa, sdk_gphone64_x86_64, Google, 35]
+07-07 22:51:29.292  4532  4532 W m.cleanvideoapp: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (unsupported, reflection, allowed)
+07-07 22:51:29.527  4532  4532 D NativeVideoPlayer: setSource called with uri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:51:29.527  4532  4532 D NativeVideoPlayer: View setUri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:51:29.547  4532  4532 D NativeVideoPlayer: setPaused called with paused: false
+07-07 22:51:29.547  4532  4532 D NativeVideoPlayer: View setPaused: false
+07-07 22:51:29.566  4532  4532 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+07-07 22:51:29.566  4532  4532 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+07-07 22:51:29.638  4532  4532 D NativeVideoPlayer: onLayout: left=0, top=0, right=933, bottom=0, width=933, height=0
+07-07 22:51:30.104  4532  4532 I Choreographer: Skipped 32 frames!  The application may be doing too much work on its main thread.
+07-07 22:51:30.118  4532  4568 I ReactNativeJS: JS: onLoadStart
+07-07 22:51:30.119  4532  4568 I ReactNativeJS: 'JS: onBuffer', { isBuffering: true, target: 252, timeStamp: 625402 }
+07-07 22:51:30.189  4532  4565 I HWUI    : Davey! duration=968ms; Flags=1, FrameTimelineVsyncId=201892, IntendedVsync=624962914214, Vsync=624962914214, InputEventId=0, HandleInputStart=624963197207, AnimationStart=624963198655, PerformTraversalsStart=625498182288, DrawStart=625628870282, FrameDeadline=624979580880, FrameInterval=624963192596, FrameStartTime=16666666, SyncQueued=625637035368, SyncStart=625669114548, IssueDrawCommandsStart=625669241927, SwapBuffers=625742608540, FrameCompleted=625963057638, DequeueBufferDuration=5718, QueueBufferDuration=405135, GpuCompleted=625963057638, SwapBuffersCompleted=625948642304, DisplayPresentTime=8589934592, CommandSubmissionCompleted=625742608540, 
+07-07 22:51:30.230  4532  4547 D EGL_emulation: app_time_stats: avg=52.14ms min=3.34ms max=474.03ms count=12
+07-07 22:51:31.251  4532  4547 D EGL_emulation: app_time_stats: avg=26.70ms min=3.74ms max=101.15ms count=14
+07-07 22:51:31.764  4532  4619 D TrafficStats: tagSocket(117) with statsTag=0xffffffff, statsUid=-1
+07-07 22:51:32.287  4532  4547 D EGL_emulation: app_time_stats: avg=9.79ms min=4.56ms max=18.56ms count=13
+07-07 22:51:33.338  4532  4547 D EGL_emulation: app_time_stats: avg=11.98ms min=4.34ms max=36.04ms count=13
+07-07 22:51:34.367  4532  4547 D EGL_emulation: app_time_stats: avg=9.52ms min=3.61ms max=19.52ms count=13
+07-07 22:51:35.378  4532  4547 D EGL_emulation: app_time_stats: avg=9.95ms min=3.59ms max=22.26ms count=13
+07-07 22:51:35.679  4532  4637 E EGL_emulation: eglQueryContext 32c0  EGL_BAD_ATTRIBUTE
+07-07 22:51:35.679  4532  4637 E EGL_emulation: tid 4637: eglQueryContext(2161): error 0x3004 (EGL_BAD_ATTRIBUTE)
+07-07 22:51:35.683  4532  4617 I DMCodecAdapterFactory: Creating an asynchronous MediaCodec adapter for track type video
+07-07 22:51:35.687  4532  4639 D CCodec  : allocate(c2.goldfish.h264.decoder)
+07-07 22:51:35.689  4532  4639 I Codec2Client: Available Codec2 services: "default" "software"
+07-07 22:51:35.690  4532  4639 I CCodec  : setting up 'default' as default (vendor) store
+07-07 22:51:35.694  4532  4639 I CCodec  : Created component [c2.goldfish.h264.decoder]
+07-07 22:51:35.694  4532  4639 D CCodecConfig: read media type: video/avc
+07-07 22:51:35.696  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.max-count.values
+07-07 22:51:35.696  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: output.subscribed-indices.values
+07-07 22:51:35.696  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: input.buffers.allocator-ids.values
+07-07 22:51:35.696  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.allocator-ids.values
+07-07 22:51:35.696  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.allocator-ids.values
+07-07 22:51:35.697  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.pool-ids.values
+07-07 22:51:35.697  4532  4639 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.pool-ids.values
+07-07 22:51:35.698  4532  4639 D ReflectedParamUpdater: ignored struct field coded.color-format.locations
+07-07 22:51:35.698  4532  4639 D CCodecConfig: ignoring local param raw.size (0xd2001800) as it is already supported
+07-07 22:51:35.698  4532  4639 D CCodecConfig: ignoring local param default.color (0x5200180b) as it is already supported
+07-07 22:51:35.698  4532  4639 D ReflectedParamUpdater: ignored struct field raw.hdr-static-info.mastering
+07-07 22:51:35.699  4532  4639 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:51:35.700  4532  4639 D CCodecConfig: c2 config diff is Dict {
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.pl.level = 20496
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.pl.profile = 20481
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.vui.color.matrix = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.vui.color.primaries = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.vui.color.range = 2
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 coded.vui.color.transfer = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 default.color.matrix = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 default.color.primaries = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 default.color.range = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 default.color.transfer = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 input.buffers.max-size.value = 6291456
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 input.delay.value = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   string input.media-type.value = "video/avc"
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 output.delay.value = 8
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   string output.media-type.value = "video/raw"
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.color.matrix = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.color.primaries = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.color.range = 2
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.color.transfer = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.max-size.height = 240
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.max-size.width = 320
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.pixel-format.value = 35
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::i32 raw.rotation.flip = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::i32 raw.rotation.value = 0
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.sar.height = 1
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.sar.width = 1
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.size.height = 240
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2::u32 raw.size.width = 320
+07-07 22:51:35.700  4532  4639 D CCodecConfig:   c2:
+07-07 22:51:35.700  4532  4639 W ColorUtils: expected specified color aspects (2:0:0:0)
+07-07 22:51:35.706  4532  4638 I MediaCodec: MediaCodec will operate in async mode
+07-07 22:51:35.707  4532  4638 D SurfaceUtils: connecting to surface 0x7cb6c50f3180, reason connectToSurface
+07-07 22:51:35.707  4532  4638 I MediaCodec: [c2.goldfish.h264.decoder] setting surface generation to 4640769
+07-07 22:51:35.707  4532  4638 D SurfaceUtils: disconnecting from surface 0x7cb6c50f3180, reason connectToSurface(reconnect)
+07-07 22:51:35.707  4532  4638 D SurfaceUtils: connecting to surface 0x7cb6c50f3170, reason connectToSurface(reconnect-with-listener)
+07-07 22:51:35.707  4532  4639 D CCodec  : [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+07-07 22:51:35.707  4532  4639 D CCodecConfig: no c2 equivalents for log-session-id
+07-07 22:51:35.707  4532  4639 D CCodecConfig: no c2 equivalents for importance
+07-07 22:51:35.707  4532  4639 D CCodecConfig: no c2 equivalents for color-standard
+07-07 22:51:35.707  4532  4639 D CCodecConfig: no c2 equivalents for csd-1
+07-07 22:51:35.707  4532  4639 D CCodecConfig: no c2 equivalents for native-window
+07-07 22:51:35.708  4532  4639 D CCodecConfig: no c2 equivalents for native-window-generation
+07-07 22:51:35.708  4532  4639 D CCodecConfig: no c2 equivalents for flags
+07-07 22:51:35.708  4532  4639 D CCodecConfig: config failed => CORRUPTED
+07-07 22:51:35.709  4532  4639 D CCodecConfig: c2 config diff is   c2::u32 default.color.matrix = 3
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 default.color.primaries = 3
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 default.color.range = 2
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 raw.max-size.height = 480
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 raw.max-size.width = 854
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 raw.size.height = 480
+07-07 22:51:35.709  4532  4639 D CCodecConfig:   c2::u32 raw.size.width = 854
+07-07 22:51:35.709  4532  4639 W Codec2Client: query -- param skipped: index = 1107298332.
+07-07 22:51:35.709  4532  4639 D CCodec  : client requested max input size 311040, which is smaller than what component recommended (6291456); overriding with component recommendation.
+07-07 22:51:35.709  4532  4639 W CCodec  : This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+07-07 22:51:35.709  4532  4639 D CCodec  : encoding statistics level = 0
+07-07 22:51:35.709  4532  4639 D CCodec  : setup formats input: AMessage(what = 0x00000000) = {
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t height = 480
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t level = 65536
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t max-input-size = 6291456
+07-07 22:51:35.709  4532  4639 D CCodec  :   string mime = "video/avc"
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t profile = 65536
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t width = 854
+07-07 22:51:35.709  4532  4639 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:51:35.709  4532  4639 D CCodec  : }
+07-07 22:51:35.709  4532  4639 D CCodec  : setup formats output: AMessage(what = 0x00000000) = {
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t android._color-format = 2135033992
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t android._video-scaling = 1
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t rotation-degrees = 0
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t color-standard = 1
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t color-range = 2
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t color-transfer = 3
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t sar-height = 1
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t sar-width = 1
+07-07 22:51:35.709  4532  4639 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t width = 854
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t height = 480
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t max-height = 480
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t max-width = 854
+07-07 22:51:35.709  4532  4639 D CCodec  :   string mime = "video/raw"
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t android._dataspace = 260
+07-07 22:51:35.709  4532  4639 D CCodec  :   int32_t color-format = 2130708361
+07-07 22:51:35.709  4532  4639 D CCodec  : }
+07-07 22:51:35.710  4532  4639 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:51:35.710  4532  4639 D CCodecConfig: c2 config diff is   c2::u32 raw.color.matrix = 3
+07-07 22:51:35.710  4532  4639 D CCodecConfig:   c2::u32 raw.color.primaries = 3
+07-07 22:51:35.710  4532  4617 D MediaCodec: keep callback message for reclaim
+07-07 22:51:35.711  4532  4639 W Codec2Client: query -- param skipped: index = 1342179345.
+07-07 22:51:35.711  4532  4639 W Codec2Client: query -- param skipped: index = 2415921170.
+07-07 22:51:35.711  4532  4639 W Codec2Client: query -- param skipped: index = 1610614798.
+07-07 22:51:35.711  4532  4639 W Codec2Client: query -- param skipped: index = 2684356609.
+07-07 22:51:35.712  4532  4639 D C2Store : Using DMABUF Heaps
+07-07 22:51:35.713  4532  4639 D CCodecBufferChannel: [c2.goldfish.h264.decoder#606] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+07-07 22:51:35.714  4532  4639 D CCodecBufferChannel: [c2.goldfish.h264.decoder#606] Query output surface allocator returned 0 params => BAD_INDEX (6)
+07-07 22:51:35.715  4532  4639 I CCodecBufferChannel: [c2.goldfish.h264.decoder#606] Created output block pool with allocatorID 18 => poolID 19 - OK
+07-07 22:51:35.715  4532  4639 D CCodecBufferChannel: [c2.goldfish.h264.decoder#606] Configured output block pool ids 19 => OK
+07-07 22:51:35.715  4532  4639 D Codec2-OutputBufferQueue: remote graphic buffer migration 0/0
+07-07 22:51:35.715  4532  4639 D Codec2Client: setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+07-07 22:51:35.715  4532  4639 D Codec2Client: setOutputSurface -- generation=4640769 consumer usage=0x900
+07-07 22:51:35.719  4532  4639 D Codec2Client: Surface configure completed
+07-07 22:51:35.719  4532  4639 I DMABUFHEAPS: Using DMA-BUF heap named: system
+07-07 22:51:36.464  4532  4639 D CCodecConfig: c2 config diff is   c2::u32 raw.color.primaries = 4
+07-07 22:51:36.464  4532  4639 D CCodecConfig:   c2::u32 raw.color.transfer = 5
+07-07 22:51:36.464  4532  4639 D CCodecConfig:   c2::u32 raw.crop.height = 480
+07-07 22:51:36.464  4532  4639 D CCodecConfig:   c2::u32 raw.crop.left = 0
+07-07 22:51:36.464  4532  4639 D CCodecConfig:   c2::u32 raw.crop.top = 0
+07-07 22:51:36.464  4532  4639 D CCodecConfig:   c2::u32 raw.crop.width = 854
+07-07 22:51:36.465  4532  4639 D CCodecBuffers: [c2.goldfish.h264.decoder#606:2D-Output] popFromStashAndRegister: at 1000000080000us, output format changed to AMessage(what = 0x00000000) = {
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t android._color-format = 2135033992
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t android._video-scaling = 1
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t rotation-degrees = 0
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t color-standard = 4
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t color-range = 2
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t color-transfer = 5
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t sar-height = 1
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t sar-width = 1
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   Rect crop(0, 0, 853, 479)
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t width = 854
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t height = 480
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t max-height = 480
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t max-width = 854
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   string mime = "video/raw"
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t android._dataspace = 293863424
+07-07 22:51:36.465  4532  4639 D CCodecBuffers:   int32_t color-format = 2130708361
+07-07 22:51:36.465  4532  4639 D CCodecBuffers: }
+07-07 22:51:36.581  4532  4547 D EGL_emulation: app_time_stats: avg=21.89ms min=5.34ms max=115.84ms count=12
+07-07 22:51:37.699  4532  4547 D EGL_emulation: app_time_stats: avg=176.66ms min=88.23ms max=323.61ms count=5
+07-07 22:51:38.748  4532  4547 D EGL_emulation: app_time_stats: avg=20.12ms min=5.52ms max=127.85ms count=11
+07-07 22:51:39.841  4532  4547 D EGL_emulation: app_time_stats: avg=18.44ms min=4.07ms max=46.39ms count=10
+07-07 22:51:40.914  4532  4547 D EGL_emulation: app_time_stats: avg=9.94ms min=4.81ms max=17.86ms count=12
+07-07 22:51:41.212  4532  4568 I ReactNativeJS: 'JS: onLoad', { duration: 7.64, target: 252, timeStamp: 637062 }
+07-07 22:51:41.226  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:41.226  4532  4568 I ReactNativeJS:   currentTime: 0.015,
+07-07 22:51:41.226  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:41.226  4532  4568 I ReactNativeJS:   timeStamp: 637066 }
+07-07 22:51:41.275  4532  4643 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d3572198 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 20/25 (recycle/alloc) - 5/24 (fetch/transfer)
+07-07 22:51:41.476  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:41.476  4532  4568 I ReactNativeJS:   currentTime: 0.261,
+07-07 22:51:41.476  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:41.476  4532  4568 I ReactNativeJS:   timeStamp: 637319 }
+07-07 22:51:41.728  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:41.728  4532  4568 I ReactNativeJS:   currentTime: 0.516,
+07-07 22:51:41.728  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:41.728  4532  4568 I ReactNativeJS:   timeStamp: 637570 }
+07-07 22:51:41.978  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:41.978  4532  4568 I ReactNativeJS:   currentTime: 0.773,
+07-07 22:51:41.978  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:41.978  4532  4568 I ReactNativeJS:   timeStamp: 637822 }
+07-07 22:51:42.228  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:42.228  4532  4568 I ReactNativeJS:   currentTime: 1.023,
+07-07 22:51:42.228  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:42.228  4532  4568 I ReactNativeJS:   timeStamp: 638074 }
+07-07 22:51:42.478  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:42.478  4532  4568 I ReactNativeJS:   currentTime: 1.27,
+07-07 22:51:42.478  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:42.478  4532  4568 I ReactNativeJS:   timeStamp: 638326 }
+07-07 22:51:42.728  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:42.728  4532  4568 I ReactNativeJS:   currentTime: 1.524,
+07-07 22:51:42.728  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:42.728  4532  4568 I ReactNativeJS:   timeStamp: 638577 }
+07-07 22:51:42.977  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:42.977  4532  4568 I ReactNativeJS:   currentTime: 1.774,
+07-07 22:51:42.977  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:42.977  4532  4568 I ReactNativeJS:   timeStamp: 638828 }
+07-07 22:51:43.234  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:43.234  4532  4568 I ReactNativeJS:   currentTime: 2.031,
+07-07 22:51:43.234  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:43.234  4532  4568 I ReactNativeJS:   timeStamp: 639085 }
+07-07 22:51:43.492  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:43.492  4532  4568 I ReactNativeJS:   currentTime: 2.283,
+07-07 22:51:43.492  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:43.492  4532  4568 I ReactNativeJS:   timeStamp: 639336 }
+07-07 22:51:43.746  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:43.746  4532  4568 I ReactNativeJS:   currentTime: 2.541,
+07-07 22:51:43.746  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:43.746  4532  4568 I ReactNativeJS:   timeStamp: 639587 }
+07-07 22:51:43.992  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:43.992  4532  4568 I ReactNativeJS:   currentTime: 2.789,
+07-07 22:51:43.992  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:43.992  4532  4568 I ReactNativeJS:   timeStamp: 639839 }
+07-07 22:51:44.244  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:44.244  4532  4568 I ReactNativeJS:   currentTime: 3.049,
+07-07 22:51:44.244  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:44.244  4532  4568 I ReactNativeJS:   timeStamp: 640096 }
+07-07 22:51:44.493  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:44.493  4532  4568 I ReactNativeJS:   currentTime: 3.295,
+07-07 22:51:44.493  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:44.493  4532  4568 I ReactNativeJS:   timeStamp: 640346 }
+07-07 22:51:44.778  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:44.778  4532  4568 I ReactNativeJS:   currentTime: 3.542,
+07-07 22:51:44.778  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:44.778  4532  4568 I ReactNativeJS:   timeStamp: 640597 }
+07-07 22:51:45.028  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:45.028  4532  4568 I ReactNativeJS:   currentTime: 3.801,
+07-07 22:51:45.028  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:45.028  4532  4568 I ReactNativeJS:   timeStamp: 640847 }
+07-07 22:51:45.284  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:45.284  4532  4568 I ReactNativeJS:   currentTime: 4.05,
+07-07 22:51:45.284  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:45.284  4532  4568 I ReactNativeJS:   timeStamp: 641097 }
+07-07 22:51:45.569  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:45.569  4532  4568 I ReactNativeJS:   currentTime: 4.293,
+07-07 22:51:45.569  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:45.569  4532  4568 I ReactNativeJS:   timeStamp: 641347 }
+07-07 22:51:45.759  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:45.759  4532  4568 I ReactNativeJS:   currentTime: 4.547,
+07-07 22:51:45.759  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:45.759  4532  4568 I ReactNativeJS:   timeStamp: 641598 }
+07-07 22:51:46.064  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:46.064  4532  4568 I ReactNativeJS:   currentTime: 4.798,
+07-07 22:51:46.064  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:46.064  4532  4568 I ReactNativeJS:   timeStamp: 641848 }
+07-07 22:51:46.259  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:46.259  4532  4568 I ReactNativeJS:   currentTime: 5.045,
+07-07 22:51:46.259  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:46.259  4532  4568 I ReactNativeJS:   timeStamp: 642098 }
+07-07 22:51:46.510  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:46.510  4532  4568 I ReactNativeJS:   currentTime: 5.291,
+07-07 22:51:46.510  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:46.510  4532  4568 I ReactNativeJS:   timeStamp: 642349 }
+07-07 22:51:46.569  4532  4643 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d3572198 : 5(31457280 size) total buffers - 5(31457280 size) used buffers - 153/158 (recycle/alloc) - 6/157 (fetch/transfer)
+07-07 22:51:46.761  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:46.761  4532  4568 I ReactNativeJS:   currentTime: 5.552,
+07-07 22:51:46.761  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:46.761  4532  4568 I ReactNativeJS:   timeStamp: 642600 }
+07-07 22:51:47.009  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:47.009  4532  4568 I ReactNativeJS:   currentTime: 5.799,
+07-07 22:51:47.009  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:47.009  4532  4568 I ReactNativeJS:   timeStamp: 642851 }
+07-07 22:51:47.261  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:47.261  4532  4568 I ReactNativeJS:   currentTime: 6.056,
+07-07 22:51:47.261  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:47.261  4532  4568 I ReactNativeJS:   timeStamp: 643102 }
+07-07 22:51:47.509  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:47.509  4532  4568 I ReactNativeJS:   currentTime: 6.306,
+07-07 22:51:47.509  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:47.509  4532  4568 I ReactNativeJS:   timeStamp: 643353 }
+07-07 22:51:47.761  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:47.761  4532  4568 I ReactNativeJS:   currentTime: 6.554,
+07-07 22:51:47.761  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:47.761  4532  4568 I ReactNativeJS:   timeStamp: 643604 }
+07-07 22:51:48.009  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:48.009  4532  4568 I ReactNativeJS:   currentTime: 6.801,
+07-07 22:51:48.009  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:48.009  4532  4568 I ReactNativeJS:   timeStamp: 643855 }
+07-07 22:51:48.259  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:48.259  4532  4568 I ReactNativeJS:   currentTime: 7.055,
+07-07 22:51:48.259  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:48.259  4532  4568 I ReactNativeJS:   timeStamp: 644106 }
+07-07 22:51:48.509  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:48.509  4532  4568 I ReactNativeJS:   currentTime: 7.305,
+07-07 22:51:48.509  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:48.509  4532  4568 I ReactNativeJS:   timeStamp: 644357 }
+07-07 22:51:48.761  4532  4568 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 22:51:48.761  4532  4568 I ReactNativeJS:   currentTime: 7.553,
+07-07 22:51:48.761  4532  4568 I ReactNativeJS:   target: 252,
+07-07 22:51:48.761  4532  4568 I ReactNativeJS:   timeStamp: 644608 }
+07-07 22:51:52.854  4532  4642 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d3572198 : 5(31457280 size) total buffers - 0(0 size) used buffers - 189/194 (recycle/alloc) - 6/193 (fetch/transfer)
+07-07 22:51:52.854  4532  4642 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
