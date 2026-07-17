@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Android build files
+android/app/build/
+android/.gradle/
+*.iml
+.idea/
+
+# iOS build files
+ios/build/
+ios/Pods/
+ios/DerivedData/
+
+# Environment variables
+.env
+.env.local
+
+# Logs and system files
+*.log
+.DS_Store
+Thumbs.db

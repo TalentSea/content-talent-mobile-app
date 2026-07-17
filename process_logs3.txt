@@ -1,0 +1,246 @@
+--------- beginning of main
+07-07 22:53:40.327  4716  4766 D TrafficStats: tagSocket(136) with statsTag=0xffffffff, statsUid=-1
+07-07 22:53:41.980  4716  4767 D TrafficStats: tagSocket(142) with statsTag=0xffffffff, statsUid=-1
+07-07 22:53:47.002  4716  4766 D TrafficStats: tagSocket(136) with statsTag=0xffffffff, statsUid=-1
+07-07 22:53:47.017  4716  4732 D EGL_emulation: app_time_stats: avg=5742.43ms min=17.83ms max=17185.80ms count=3
+07-07 22:53:48.051  4716  4732 D EGL_emulation: app_time_stats: avg=9.42ms min=2.72ms max=17.79ms count=19
+07-07 22:53:49.087  4716  4732 D EGL_emulation: app_time_stats: avg=6.91ms min=2.83ms max=17.57ms count=19
+07-07 22:53:50.134  4716  4732 D EGL_emulation: app_time_stats: avg=10.66ms min=2.73ms max=66.57ms count=17
+07-07 22:53:50.781  4716  4753 I ReactNativeJS: 'PLAY INFO:', { title: 'counting',
+07-07 22:53:50.781  4716  4753 I ReactNativeJS:   stream_url: 'https://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8',
+07-07 22:53:50.781  4716  4753 I ReactNativeJS:   poster: 'https://my-ott-app.b-cdn.net/assets/thumbnails/video_123_1783178759_2.png' }
+07-07 22:53:50.894  4716  4716 D NativeVideoPlayer: createViewInstance called
+07-07 22:53:50.958  4716  4716 I ExoPlayerImpl: Init 9e9e4bd [AndroidXMedia3/1.4.1] [emu64xa, sdk_gphone64_x86_64, Google, 35]
+07-07 22:53:51.047  4716  4716 W m.cleanvideoapp: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (unsupported, reflection, allowed)
+07-07 22:53:51.143  4716  4732 D EGL_emulation: app_time_stats: avg=8.77ms min=2.85ms max=16.10ms count=17
+07-07 22:53:51.294  4716  4716 D NativeVideoPlayer: setSource called with uri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:53:51.294  4716  4716 D NativeVideoPlayer: View setUri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 22:53:51.311  4716  4716 D NativeVideoPlayer: setPaused called with paused: false
+07-07 22:53:51.311  4716  4716 D NativeVideoPlayer: View setPaused: false
+07-07 22:53:51.328  4716  4716 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+07-07 22:53:51.328  4716  4716 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+07-07 22:53:51.512  4716  4716 D NativeVideoPlayer: onLayout: left=0, top=0, right=933, bottom=0, width=933, height=0
+07-07 22:53:51.890  4716  4716 I Choreographer: Skipped 33 frames!  The application may be doing too much work on its main thread.
+07-07 22:53:51.905  4716  4753 I ReactNativeJS: JS: onLoadStart
+07-07 22:53:51.906  4716  4753 I ReactNativeJS: 'JS: onBuffer', { isBuffering: true, target: 252, timeStamp: 767166 }
+07-07 22:53:51.962  4716  4728 I HWUI    : Davey! duration=999ms; Flags=1, FrameTimelineVsyncId=260791, IntendedVsync=766746241876, Vsync=766746241876, InputEventId=0, HandleInputStart=766749442906, AnimationStart=766749444521, PerformTraversalsStart=767376884615, DrawStart=767506809099, FrameDeadline=766762908542, FrameInterval=766749437713, FrameStartTime=16666666, SyncQueued=767513724088, SyncStart=767514102116, IssueDrawCommandsStart=767514219492, SwapBuffers=767559044635, FrameCompleted=767746365273, DequeueBufferDuration=4705, QueueBufferDuration=217419, GpuCompleted=767746365273, SwapBuffersCompleted=767730253949, DisplayPresentTime=0, CommandSubmissionCompleted=767559044635, 
+07-07 22:53:52.539  4716  4799 D TrafficStats: tagSocket(115) with statsTag=0xffffffff, statsUid=-1
+07-07 22:53:52.948  4716  4732 D EGL_emulation: app_time_stats: avg=28.10ms min=4.00ms max=82.17ms count=14
+07-07 22:53:53.951  4716  4732 D EGL_emulation: app_time_stats: avg=6.72ms min=3.37ms max=19.31ms count=13
+07-07 22:53:54.976  4716  4732 D EGL_emulation: app_time_stats: avg=11.10ms min=3.29ms max=36.71ms count=13
+07-07 22:53:55.984  4716  4732 D EGL_emulation: app_time_stats: avg=9.15ms min=4.45ms max=16.25ms count=13
+07-07 22:53:57.013  4716  4732 D EGL_emulation: app_time_stats: avg=12.02ms min=4.39ms max=28.02ms count=13
+07-07 22:53:58.042  4716  4732 D EGL_emulation: app_time_stats: avg=10.16ms min=3.89ms max=21.58ms count=12
+07-07 22:53:59.108  4716  4732 D EGL_emulation: app_time_stats: avg=12.80ms min=6.61ms max=26.14ms count=12
+07-07 22:53:59.597  4716  4810 E EGL_emulation: eglQueryContext 32c0  EGL_BAD_ATTRIBUTE
+07-07 22:53:59.597  4716  4810 E EGL_emulation: tid 4810: eglQueryContext(2161): error 0x3004 (EGL_BAD_ATTRIBUTE)
+07-07 22:53:59.597  4716  4797 I DMCodecAdapterFactory: Creating an asynchronous MediaCodec adapter for track type video
+07-07 22:53:59.600  4716  4812 D CCodec  : allocate(c2.goldfish.h264.decoder)
+07-07 22:53:59.601  4716  4812 I Codec2Client: Available Codec2 services: "default" "software"
+07-07 22:53:59.605  4716  4812 I CCodec  : setting up 'default' as default (vendor) store
+07-07 22:53:59.613  4716  4812 I CCodec  : Created component [c2.goldfish.h264.decoder]
+07-07 22:53:59.613  4716  4812 D CCodecConfig: read media type: video/avc
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.max-count.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: output.subscribed-indices.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: input.buffers.allocator-ids.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.allocator-ids.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.allocator-ids.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.pool-ids.values
+07-07 22:53:59.615  4716  4812 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.pool-ids.values
+07-07 22:53:59.629  4716  4812 D ReflectedParamUpdater: ignored struct field coded.color-format.locations
+07-07 22:53:59.630  4716  4812 D CCodecConfig: ignoring local param raw.size (0xd2001800) as it is already supported
+07-07 22:53:59.630  4716  4812 D CCodecConfig: ignoring local param default.color (0x5200180b) as it is already supported
+07-07 22:53:59.630  4716  4812 D ReflectedParamUpdater: ignored struct field raw.hdr-static-info.mastering
+07-07 22:53:59.630  4716  4812 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:53:59.631  4716  4812 D CCodecConfig: c2 config diff is Dict {
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.pl.level = 20496
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.pl.profile = 20481
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.vui.color.matrix = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.vui.color.primaries = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.vui.color.range = 2
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 coded.vui.color.transfer = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 default.color.matrix = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 default.color.primaries = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 default.color.range = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 default.color.transfer = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 input.buffers.max-size.value = 6291456
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 input.delay.value = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   string input.media-type.value = "video/avc"
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 output.delay.value = 8
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   string output.media-type.value = "video/raw"
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.color.matrix = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.color.primaries = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.color.range = 2
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.color.transfer = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.max-size.height = 240
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.max-size.width = 320
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.pixel-format.value = 35
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::i32 raw.rotation.flip = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::i32 raw.rotation.value = 0
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.sar.height = 1
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.sar.width = 1
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.size.height = 240
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2::u32 raw.size.width = 320
+07-07 22:53:59.631  4716  4812 D CCodecConfig:   c2:
+07-07 22:53:59.631  4716  4812 W ColorUtils: expected specified color aspects (2:0:0:0)
+07-07 22:53:59.652  4716  4811 I MediaCodec: MediaCodec will operate in async mode
+07-07 22:53:59.653  4716  4811 D SurfaceUtils: connecting to surface 0x7cb6c4e41540, reason connectToSurface
+07-07 22:53:59.653  4716  4811 I MediaCodec: [c2.goldfish.h264.decoder] setting surface generation to 4829185
+07-07 22:53:59.653  4716  4811 D SurfaceUtils: disconnecting from surface 0x7cb6c4e41540, reason connectToSurface(reconnect)
+07-07 22:53:59.653  4716  4811 D SurfaceUtils: connecting to surface 0x7cb6c4e41530, reason connectToSurface(reconnect-with-listener)
+07-07 22:53:59.654  4716  4812 D CCodec  : [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for log-session-id
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for importance
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for color-standard
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for csd-1
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for native-window
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for native-window-generation
+07-07 22:53:59.654  4716  4812 D CCodecConfig: no c2 equivalents for flags
+07-07 22:53:59.655  4716  4812 D CCodecConfig: config failed => CORRUPTED
+07-07 22:53:59.655  4716  4812 D CCodecConfig: c2 config diff is   c2::u32 default.color.matrix = 3
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 default.color.primaries = 3
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 default.color.range = 2
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 raw.max-size.height = 480
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 raw.max-size.width = 854
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 raw.size.height = 480
+07-07 22:53:59.655  4716  4812 D CCodecConfig:   c2::u32 raw.size.width = 854
+07-07 22:53:59.656  4716  4812 W Codec2Client: query -- param skipped: index = 1107298332.
+07-07 22:53:59.656  4716  4812 D CCodec  : client requested max input size 311040, which is smaller than what component recommended (6291456); overriding with component recommendation.
+07-07 22:53:59.656  4716  4812 W CCodec  : This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+07-07 22:53:59.656  4716  4812 D CCodec  : encoding statistics level = 0
+07-07 22:53:59.656  4716  4812 D CCodec  : setup formats input: AMessage(what = 0x00000000) = {
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t height = 480
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t level = 65536
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t max-input-size = 6291456
+07-07 22:53:59.656  4716  4812 D CCodec  :   string mime = "video/avc"
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t profile = 65536
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t width = 854
+07-07 22:53:59.656  4716  4812 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:53:59.656  4716  4812 D CCodec  : }
+07-07 22:53:59.656  4716  4812 D CCodec  : setup formats output: AMessage(what = 0x00000000) = {
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t android._color-format = 2135033992
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t android._video-scaling = 1
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t rotation-degrees = 0
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t color-standard = 1
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t color-range = 2
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t color-transfer = 3
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t sar-height = 1
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t sar-width = 1
+07-07 22:53:59.656  4716  4812 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t width = 854
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t height = 480
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t max-height = 480
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t max-width = 854
+07-07 22:53:59.656  4716  4812 D CCodec  :   string mime = "video/raw"
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t android._dataspace = 260
+07-07 22:53:59.656  4716  4812 D CCodec  :   int32_t color-format = 2130708361
+07-07 22:53:59.656  4716  4812 D CCodec  : }
+07-07 22:53:59.656  4716  4812 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 22:53:59.656  4716  4812 D CCodecConfig: c2 config diff is   c2::u32 raw.color.matrix = 3
+07-07 22:53:59.656  4716  4812 D CCodecConfig:   c2::u32 raw.color.primaries = 3
+07-07 22:53:59.657  4716  4797 D MediaCodec: keep callback message for reclaim
+07-07 22:53:59.658  4716  4812 W Codec2Client: query -- param skipped: index = 1342179345.
+07-07 22:53:59.658  4716  4812 W Codec2Client: query -- param skipped: index = 2415921170.
+07-07 22:53:59.658  4716  4812 W Codec2Client: query -- param skipped: index = 1610614798.
+07-07 22:53:59.658  4716  4812 W Codec2Client: query -- param skipped: index = 2684356609.
+07-07 22:53:59.658  4716  4812 D C2Store : Using DMABUF Heaps
+07-07 22:53:59.659  4716  4812 D CCodecBufferChannel: [c2.goldfish.h264.decoder#660] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+07-07 22:53:59.659  4716  4812 D CCodecBufferChannel: [c2.goldfish.h264.decoder#660] Query output surface allocator returned 0 params => BAD_INDEX (6)
+07-07 22:53:59.660  4716  4812 I CCodecBufferChannel: [c2.goldfish.h264.decoder#660] Created output block pool with allocatorID 18 => poolID 20 - OK
+07-07 22:53:59.660  4716  4812 D CCodecBufferChannel: [c2.goldfish.h264.decoder#660] Configured output block pool ids 20 => OK
+07-07 22:53:59.660  4716  4812 D Codec2-OutputBufferQueue: remote graphic buffer migration 0/0
+07-07 22:53:59.660  4716  4812 D Codec2Client: setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+07-07 22:53:59.660  4716  4812 D Codec2Client: setOutputSurface -- generation=4829185 consumer usage=0x900
+07-07 22:53:59.662  4716  4812 D Codec2Client: Surface configure completed
+07-07 22:53:59.662  4716  4812 I DMABUFHEAPS: Using DMA-BUF heap named: system
+07-07 22:54:00.173  4716  4732 D EGL_emulation: app_time_stats: avg=10.68ms min=3.38ms max=31.27ms count=11
+07-07 22:54:01.208  4716  4732 D EGL_emulation: app_time_stats: avg=11.62ms min=4.55ms max=28.00ms count=12
+07-07 22:54:02.272  4716  4732 D EGL_emulation: app_time_stats: avg=10.28ms min=4.65ms max=18.98ms count=13
+07-07 22:54:03.312  4716  4732 D EGL_emulation: app_time_stats: avg=10.67ms min=6.09ms max=18.03ms count=12
+07-07 22:54:04.333  4716  4732 D EGL_emulation: app_time_stats: avg=7.77ms min=3.47ms max=11.91ms count=12
+07-07 22:54:04.663  4716  4815 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d35d9958 : 4(25165824 size) total buffers - 4(25165824 size) used buffers - 2/6 (recycle/alloc) - 2/2 (fetch/transfer)
+07-07 22:54:04.663  4716  4815 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+07-07 22:54:05.399  4716  4732 D EGL_emulation: app_time_stats: avg=12.44ms min=4.09ms max=21.47ms count=12
+07-07 22:54:06.486  4716  4732 D EGL_emulation: app_time_stats: avg=16.26ms min=3.82ms max=28.53ms count=9
+07-07 22:54:07.107  4716  4766 D TrafficStats: tagSocket(136) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:07.542  4716  4732 D EGL_emulation: app_time_stats: avg=11.21ms min=3.54ms max=26.78ms count=12
+07-07 22:54:07.682  4716  4809 D TrafficStats: tagSocket(115) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:08.559  4716  4732 D EGL_emulation: app_time_stats: avg=8.62ms min=3.93ms max=18.37ms count=12
+07-07 22:54:09.592  4716  4732 D EGL_emulation: app_time_stats: avg=8.71ms min=4.17ms max=17.30ms count=12
+07-07 22:54:10.683  4716  4732 D EGL_emulation: app_time_stats: avg=35.22ms min=4.53ms max=102.08ms count=10
+07-07 22:54:11.747  4716  4732 D EGL_emulation: app_time_stats: avg=45.47ms min=3.27ms max=93.83ms count=12
+07-07 22:54:11.784  4716  4811 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d35d9958 : 4(25165824 size) total buffers - 4(25165824 size) used buffers - 2/6 (recycle/alloc) - 2/3 (fetch/transfer)
+07-07 22:54:12.850  4716  4732 D EGL_emulation: app_time_stats: avg=46.44ms min=3.30ms max=97.84ms count=12
+07-07 22:54:13.910  4716  4732 D EGL_emulation: app_time_stats: avg=45.01ms min=3.08ms max=89.40ms count=12
+07-07 22:54:14.579  4716  4812 D CCodecConfig: c2 config diff is   c2::u32 raw.color.primaries = 4
+07-07 22:54:14.579  4716  4812 D CCodecConfig:   c2::u32 raw.color.transfer = 5
+07-07 22:54:14.579  4716  4812 D CCodecConfig:   c2::u32 raw.crop.height = 480
+07-07 22:54:14.579  4716  4812 D CCodecConfig:   c2::u32 raw.crop.left = 0
+07-07 22:54:14.579  4716  4812 D CCodecConfig:   c2::u32 raw.crop.top = 0
+07-07 22:54:14.579  4716  4812 D CCodecConfig:   c2::u32 raw.crop.width = 854
+07-07 22:54:14.580  4716  4812 D CCodecBuffers: [c2.goldfish.h264.decoder#660:2D-Output] popFromStashAndRegister: at 1000000080000us, output format changed to AMessage(what = 0x00000000) = {
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t android._color-format = 2135033992
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t android._video-scaling = 1
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t rotation-degrees = 0
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t color-standard = 4
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t color-range = 2
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t color-transfer = 5
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t sar-height = 1
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t sar-width = 1
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   Rect crop(0, 0, 853, 479)
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t width = 854
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t height = 480
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t max-height = 480
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t max-width = 854
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   string mime = "video/raw"
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t android._dataspace = 293863424
+07-07 22:54:14.580  4716  4812 D CCodecBuffers:   int32_t color-format = 2130708361
+07-07 22:54:14.580  4716  4812 D CCodecBuffers: }
+07-07 22:54:14.989  4716  4732 D EGL_emulation: app_time_stats: avg=50.88ms min=3.04ms max=148.43ms count=10
+07-07 22:54:16.256  4716  4732 D EGL_emulation: app_time_stats: avg=94.70ms min=3.55ms max=216.29ms count=7
+07-07 22:54:17.259  4716  4732 D EGL_emulation: app_time_stats: avg=43.23ms min=4.23ms max=309.17ms count=9
+07-07 22:54:18.360  4716  4732 D EGL_emulation: app_time_stats: avg=10.00ms min=3.54ms max=20.90ms count=11
+07-07 22:54:19.364  4716  4732 D EGL_emulation: app_time_stats: avg=9.99ms min=4.32ms max=17.07ms count=11
+07-07 22:54:20.421  4716  4732 D EGL_emulation: app_time_stats: avg=9.18ms min=4.79ms max=15.73ms count=10
+07-07 22:54:21.471  4716  4732 D EGL_emulation: app_time_stats: avg=10.95ms min=6.48ms max=13.73ms count=11
+07-07 22:54:21.813  4716  4815 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d35d9958 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 19/24 (recycle/alloc) - 8/23 (fetch/transfer)
+07-07 22:54:21.813  4716  4815 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: Error occurred, shutting down websocket connection: Websocket exception
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: java.net.SocketException: Software caused connection abort
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.net.SocketInputStream.socketRead0(Native Method)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.net.SocketInputStream.socketRead(SocketInputStream.java:118)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.net.SocketInputStream.read(SocketInputStream.java:173)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.net.SocketInputStream.read(SocketInputStream.java:143)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okio.InputStreamSource.read(JvmOkio.kt:91)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okio.AsyncTimeout$source$1.read(AsyncTimeout.kt:129)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okio.RealBufferedSource.request(RealBufferedSource.kt:206)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okio.RealBufferedSource.require(RealBufferedSource.kt:199)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okio.RealBufferedSource.readByte(RealBufferedSource.kt:209)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okhttp3.internal.ws.WebSocketReader.readHeader(WebSocketReader.kt:119)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okhttp3.internal.ws.WebSocketReader.processNextFrame(WebSocketReader.kt:102)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okhttp3.internal.ws.RealWebSocket.loopReader(RealWebSocket.kt:293)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okhttp3.internal.ws.RealWebSocket$connect$1.onResponse(RealWebSocket.kt:195)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:519)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:644)
+07-07 22:54:21.961  4716  4740 E unknown:ReconnectingWebSocket: 	at java.lang.Thread.run(Thread.java:1012)
+07-07 22:54:21.961  4716  4740 W unknown:ReconnectingWebSocket: Couldn't connect to "ws://10.0.2.2:8081/message?device=sdk_gphone64_x86_64%20-%2015%20-%20API%2035&app=com.cleanvideoapp&clientid=BridgelessDevSupportManager", will silently retry
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: Cannot connect to Metro.
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: 
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: Try the following to fix the issue:
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: - Ensure that Metro is running and available on the same network
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: - Ensure that your device/emulator is connected to your machine and has USB debugging enabled - run 'adb devices' to see a list of connected devices
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: - If you're on a physical device connected to the same machine, run 'adb reverse tcp:8081 tcp:8081' to forward requests from your device
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: - If your device is on the same Wi-Fi network, set 'Debug server host & port for device' in 'Dev settings' to your machine's IP address and the port of the local dev server - e.g. 10.0.1.1:8081
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: 
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: URL: 10.0.2.2:8081
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: 
+07-07 22:54:22.052  4716  4753 W ReactNativeJS: Error: undefined
+07-07 22:54:22.067  4716  4766 D TrafficStats: tagSocket(115) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:22.360  4716  4766 D TrafficStats: tagSocket(136) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:22.562  4716  4732 D EGL_emulation: app_time_stats: avg=16.20ms min=9.54ms max=33.76ms count=9
+07-07 22:54:22.909  4716  4732 D EGL_emulation: app_time_stats: avg=3484.02ms min=3.27ms max=30939.38ms count=9
+07-07 22:54:23.012  4716  4809 D TrafficStats: tagSocket(147) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:23.615  4716  4732 D EGL_emulation: app_time_stats: avg=26.04ms min=4.93ms max=92.11ms count=10
+07-07 22:54:23.976  4716  4740 D TrafficStats: tagSocket(98) with statsTag=0xffffffff, statsUid=-1
+07-07 22:54:23.980  4716  4742 D TrafficStats: tagSocket(192) with statsTag=0xffffffff, statsUid=-1
