@@ -9,6 +9,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import android.util.Log
 import com.facebook.react.bridge.Arguments
@@ -21,6 +22,12 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
     private val player: ExoPlayer = ExoPlayer.Builder(context).build()
     private val playerView: PlayerView = LayoutInflater.from(context).inflate(R.layout.player_view_layout, this, false) as PlayerView
     private var hasSentLoadEvent = false
+    private var wasBuffering = false
+
+    // Desired volume/mute are tracked separately so toggling mute doesn't
+    // clobber the volume level the app last set, and vice versa.
+    private var desiredVolume: Float = 1.0f
+    private var isMuted: Boolean = false
 
     private val progressRunnable = object : Runnable {
         override fun run() {
@@ -52,12 +59,32 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                             }
                             sendEvent("onLoad", event)
                         }
+
+                        // Buffering has resolved — tell JS so the spinner can clear.
+                        if (wasBuffering) {
+                            wasBuffering = false
+                            val event = Arguments.createMap().apply {
+                                putBoolean("isBuffering", false)
+                            }
+                            sendEvent("onBuffer", event)
+                        }
                     }
                     Player.STATE_BUFFERING -> {
+                        wasBuffering = true
                         val event = Arguments.createMap().apply {
                             putBoolean("isBuffering", true)
                         }
                         sendEvent("onBuffer", event)
+                    }
+                    Player.STATE_ENDED -> {
+                        if (wasBuffering) {
+                            wasBuffering = false
+                            val bufferEvent = Arguments.createMap().apply {
+                                putBoolean("isBuffering", false)
+                            }
+                            sendEvent("onBuffer", bufferEvent)
+                        }
+                        sendEvent("onEnd", Arguments.createMap())
                     }
                 }
             }
@@ -90,6 +117,7 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         Log.d("NativeVideoPlayer", "View setUri: $uri")
         if (uri.isNullOrBlank()) return
         hasSentLoadEvent = false
+        wasBuffering = false
 
         val event = Arguments.createMap()
         sendEvent("onLoadStart", event)
@@ -102,6 +130,38 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
     fun setPaused(paused: Boolean) {
         Log.d("NativeVideoPlayer", "View setPaused: $paused")
         player.playWhenReady = !paused
+    }
+
+    fun setResizeMode(resizeMode: String) {
+        Log.d("NativeVideoPlayer", "View setResizeMode: $resizeMode")
+        playerView.resizeMode = when (resizeMode) {
+            "cover" -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            "stretch" -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+            "fixed-height" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+            "fixed-width" -> AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
+            else -> AspectRatioFrameLayout.RESIZE_MODE_FIT // "contain" (default)
+        }
+    }
+
+    fun setVolume(volume: Float) {
+        Log.d("NativeVideoPlayer", "View setVolume: $volume")
+        desiredVolume = volume.coerceIn(0f, 1f)
+        applyVolume()
+    }
+
+    fun setMuted(muted: Boolean) {
+        Log.d("NativeVideoPlayer", "View setMuted: $muted")
+        isMuted = muted
+        applyVolume()
+    }
+
+    private fun applyVolume() {
+        player.volume = if (isMuted) 0f else desiredVolume
+    }
+
+    fun setRepeat(repeat: Boolean) {
+        Log.d("NativeVideoPlayer", "View setRepeat: $repeat")
+        player.repeatMode = if (repeat) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
     }
 
     fun seekTo(positionMs: Long) {

@@ -11,14 +11,21 @@ import {
   ViewStyle,
 } from 'react-native';
 
+type ResizeMode = 'contain' | 'cover' | 'stretch' | 'fixed-height' | 'fixed-width';
+
 type NativeVideoPlayerProps = {
   source: { uri: string; type?: string };
   paused?: boolean;
+  resizeMode?: ResizeMode;
+  volume?: number;
+  muted?: boolean;
+  repeat?: boolean;
   style?: ViewStyle;
   onLoadStart?: () => void;
   onLoad?: (event: { nativeEvent: { duration: number } }) => void;
   onProgress?: (event: { nativeEvent: { currentTime: number; duration: number } }) => void;
   onBuffer?: (event: { nativeEvent: { isBuffering: boolean } }) => void;
+  onEnd?: () => void;
   onError?: (event: { nativeEvent: { message: string } }) => void;
 };
 
@@ -28,9 +35,22 @@ type VideoPlayerProps = {
   uri: string;
   style?: ViewStyle;
   onClose?: () => void;
+  resizeMode?: ResizeMode;
+  repeat?: boolean;
+  // Fires when playback reaches the end. If not provided, defaults to
+  // replaying from the start (harmless no-op when `repeat` is true,
+  // since native already loops in that case).
+  onEnd?: () => void;
 };
 
-export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerProps) {
+export default function NativeVideoPlayer({
+  uri,
+  style,
+  onClose,
+  resizeMode = 'contain',
+  repeat = false,
+  onEnd,
+}: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const [paused, setPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -38,6 +58,8 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
   const [isBuffering, setIsBuffering] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [progressBarWidth, setProgressBarWidth] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
 
   // Auto-hide controls timer
   useEffect(() => {
@@ -61,6 +83,11 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
     setShowControls(true);
   };
 
+  const toggleMute = () => {
+    setMuted(prev => !prev);
+    setShowControls(true);
+  };
+
   const handleProgressBarPress = (event: any) => {
     if (duration > 0 && progressBarWidth > 0) {
       const { locationX } = event.nativeEvent;
@@ -78,14 +105,12 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
   };
 
   const handleProgress = (e: any) => {
-    setIsBuffering(false);
     const { currentTime: current, duration: dur } = e.nativeEvent;
     setCurrentTime(current);
     setDuration(dur);
   };
 
   const handleLoad = (e: any) => {
-    setIsBuffering(false);
     const { duration: dur } = e.nativeEvent;
     setDuration(dur);
   };
@@ -95,34 +120,47 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
     setIsBuffering(buffering);
   };
 
+  const handleEnd = () => {
+    setShowControls(true);
+    if (onEnd) {
+      onEnd();
+    } else if (!repeat) {
+      // Sensible default: pause and rewind to the start.
+      setPaused(true);
+      setCurrentTime(0);
+      seekTo(0);
+    }
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-
-  const videoUri = uri;
-  console.log('JS: NativeVideoPlayer Render state:', { showControls, paused, isBuffering, duration, currentTime });
+  const httpUri = uri.replace('https://', 'http://');
 
   return (
     <View style={[styles.container, style]}>
       <RCTNativeVideoPlayer
         ref={playerRef}
-        source={{ uri: videoUri }}
+        source={{ uri: httpUri }}
         paused={paused}
+        resizeMode={resizeMode}
+        volume={volume}
+        muted={muted}
+        repeat={repeat}
         style={styles.player}
         onLoadStart={() => {
-          console.log('JS: onLoadStart');
           setIsBuffering(true);
         }}
         onLoad={(e: any) => {
-          console.log('JS: onLoad', e.nativeEvent);
           handleLoad(e);
         }}
         onProgress={(e: any) => {
-          console.log('JS: onProgress', e.nativeEvent);
           handleProgress(e);
         }}
         onBuffer={(e: any) => {
-          console.log('JS: onBuffer', e.nativeEvent);
           handleBuffer(e);
+        }}
+        onEnd={() => {
+          handleEnd();
         }}
         onError={(e: any) => {
           setIsBuffering(false);
@@ -144,8 +182,11 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
 
       {showControls && (
         <View style={styles.controlsOverlay} pointerEvents="box-none">
-          {/* Header row with Close button */}
+          {/* Header row with mute + Close button */}
           <View style={styles.header}>
+            <Pressable style={styles.muteButton} onPress={toggleMute}>
+              <Text style={styles.muteText}>{muted ? '🔇' : '🔊'}</Text>
+            </Pressable>
             <View style={styles.flexShim} />
             {onClose && (
               <Pressable style={styles.closeButton} onPress={onClose}>
@@ -224,6 +265,17 @@ const styles = StyleSheet.create({
   },
   flexShim: {
     flex: 1,
+  },
+  muteButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  muteText: {
+    fontSize: 13,
   },
   closeButton: {
     width: 28,

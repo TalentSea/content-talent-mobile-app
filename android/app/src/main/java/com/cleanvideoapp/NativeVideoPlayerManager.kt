@@ -29,13 +29,40 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setPaused(paused)
     }
 
+    // ---- New props ----
+
+    @ReactProp(name = "resizeMode")
+    fun setResizeMode(view: NativeVideoPlayerView, resizeMode: String?) {
+        Log.d("NativeVideoPlayer", "setResizeMode called with: $resizeMode")
+        view.setResizeMode(resizeMode ?: "contain")
+    }
+
+    @ReactProp(name = "volume", defaultFloat = 1.0f)
+    fun setVolume(view: NativeVideoPlayerView, volume: Float) {
+        Log.d("NativeVideoPlayer", "setVolume called with: $volume")
+        view.setVolume(volume)
+    }
+
+    @ReactProp(name = "muted", defaultBoolean = false)
+    fun setMuted(view: NativeVideoPlayerView, muted: Boolean) {
+        Log.d("NativeVideoPlayer", "setMuted called with: $muted")
+        view.setMuted(muted)
+    }
+
+    @ReactProp(name = "repeat", defaultBoolean = false)
+    fun setRepeat(view: NativeVideoPlayerView, repeat: Boolean) {
+        Log.d("NativeVideoPlayer", "setRepeat called with: $repeat")
+        view.setRepeat(repeat)
+    }
+
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
         return MapBuilder.of(
                 "onLoadStart", MapBuilder.of("registrationName", "onLoadStart"),
                 "onLoad", MapBuilder.of("registrationName", "onLoad"),
                 "onError", MapBuilder.of("registrationName", "onError"),
                 "onProgress", MapBuilder.of("registrationName", "onProgress"),
-                "onBuffer", MapBuilder.of("registrationName", "onBuffer")
+                "onBuffer", MapBuilder.of("registrationName", "onBuffer"),
+                "onEnd", MapBuilder.of("registrationName", "onEnd")
         )
     }
 
