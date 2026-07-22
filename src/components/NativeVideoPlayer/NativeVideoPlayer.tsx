@@ -180,7 +180,6 @@ export default function NativeVideoPlayer({
           console.warn('JS: Playback error:', e.nativeEvent.message);
         }}
       />
-
       {controls ? (
         <Pressable
           style={styles.touchOverlay}
@@ -191,24 +190,12 @@ export default function NativeVideoPlayer({
         />
       ) : null}
 
-      {isBuffering ? (
-        <View style={styles.spinnerWrapper} pointerEvents="none">
-          <ActivityIndicator size="large" color="#FFFFFF" />
-        </View>
-      ) : null}
-
-      {onClose && controls && showControls ? (
-        <Pressable style={styles.closeButton} onPress={onClose} hitSlop={10}>
-          <Text style={styles.closeText}>×</Text>
-        </Pressable>
-      ) : null}
-
       {controls && showControls ? (
         <View style={styles.controlsLayer} pointerEvents="box-none">
           <View style={styles.topBar} pointerEvents="box-none">
             {onClose ? (
               <Pressable style={styles.topIconButton} onPress={onClose} hitSlop={12}>
-                <Text style={styles.topIconText}>×</Text>
+                <Text style={styles.backIconText}>‹</Text>
               </Pressable>
             ) : (
               <View style={styles.topIconButton} />
@@ -221,11 +208,7 @@ export default function NativeVideoPlayer({
             <View style={styles.topIconButton} />
           </View>
 
-          <View style={styles.centerControls} pointerEvents="box-none">
-            <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
-              <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
-            </Pressable>
-          </View>
+          <View style={styles.centerSpacer} pointerEvents="none" />
 
           <View style={styles.bottomPanel} pointerEvents="box-none">
             <View style={styles.timeRow}>
@@ -277,25 +260,21 @@ export default function NativeVideoPlayer({
               </Pressable>
             </View>
           </View>
-
-          {showMoreMenu ? (
-            <View style={styles.speedMenu}>
-              {[0.5, 1, 1.5, 2].map(speed => (
-                <Pressable
-                  key={speed}
-                  style={styles.speedItem}
-                  onPress={() => {
-                    setRate(speed);
-                    setShowMoreMenu(false);
-                  }}
-                >
-                  <Text style={styles.speedText}>{speed}x</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
         </View>
       ) : null}
+
+      <View
+        style={styles.centerOverlay}
+        pointerEvents={isBuffering ? 'none' : 'box-none'}
+      >
+        {isBuffering ? (
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        ) : controls && showControls ? (
+          <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
+            <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -327,14 +306,6 @@ const styles = StyleSheet.create({
     elevation: 10,
     backgroundColor: 'transparent',
   },
-  spinnerWrapper: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    zIndex: 30,
-    elevation: 30,
-  },
   controlsLayer: {
     ...StyleSheet.absoluteFill,
     zIndex: 20,
@@ -350,16 +321,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
   topIconButton: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  topIconText: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    fontWeight: '300',
-    lineHeight: 36,
   },
   playerTitle: {
     flex: 1,
@@ -368,26 +334,49 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  centerControls: {
+  centerSpacer: {
     flex: 1,
+  },
+  topIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  backIconText: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 30,
+    fontWeight: '600',
+    lineHeight: 32,
+    marginLeft: -2,
+  },
+
   centerPlayButton: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: 'rgba(0,0,0,0.62)',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    borderColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   centerPlayIcon: {
     color: '#FFFFFF',
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 28,
+    fontWeight: '700',
     marginLeft: 2,
+  },
+
+  centerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 25,
+    elevation: 25,
   },
   bottomPanel: {
     paddingHorizontal: 14,
