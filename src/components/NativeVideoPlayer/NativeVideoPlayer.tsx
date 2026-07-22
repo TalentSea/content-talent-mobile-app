@@ -64,10 +64,13 @@ export default function NativeVideoPlayer({
   const [isMuted, setIsMuted] = useState(muted);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [rate, setRate] = useState(playbackRate);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     setPaused(!autoStart);
-      console.log('NativeVideoPlayer uri:', uri);
+    setError(null);
+    console.log('NativeVideoPlayer uri:', uri);
   }, [autoStart, uri]);
 
   useEffect(() => {
@@ -151,9 +154,25 @@ export default function NativeVideoPlayer({
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
+  console.log('[NativeVideoPlayer] render state', {
+    controls,
+    showControls,
+    isBuffering,
+    error,
+    paused,
+  });
+
+  const handleRetry = () => {
+    setError(null);
+    setIsBuffering(true);
+    setRetryCount(prev => prev + 1);
+  };
+
   return (
     <View style={[styles.container, style]}>
       <RCTNativeVideoPlayer
+        key={`${uri}-${retryCount}`}
         ref={playerRef}
         source={{
           uri,
@@ -177,7 +196,10 @@ export default function NativeVideoPlayer({
         }}
         onError={(e: any) => {
           setIsBuffering(false);
-          console.warn('JS: Playback error:', e.nativeEvent.message);
+          const message = e.nativeEvent?.message ?? 'Unknown playback error';
+          const errorCode = e.nativeEvent?.errorCode;
+          console.warn('JS: Playback error:', errorCode, message);
+          setError(errorCode ? `${errorCode}: ${message}` : message);
         }}
       />
       {controls ? (
@@ -242,11 +264,10 @@ export default function NativeVideoPlayer({
                 <Text style={styles.actionText}>{isMuted ? 'MUTE' : 'VOL'}</Text>
               </Pressable>
 
-              <Pressable style={styles.actionButton}>
-                <Text style={styles.actionText}>
-                  {captions.length > 0 ? 'CC' : 'CC OFF'}
-                </Text>
-              </Pressable>
+              {/* Captions aren't wired up yet — kept visible but inert for now */}
+              <View style={[styles.actionButton, styles.actionButtonDisabled]}>
+                <Text style={styles.actionText}>CC OFF</Text>
+              </View>
 
               <Pressable
                 style={styles.actionButton}
@@ -259,6 +280,30 @@ export default function NativeVideoPlayer({
                 <Text style={styles.actionText}>⛶</Text>
               </Pressable>
             </View>
+
+            {showMoreMenu ? (
+              <View style={styles.speedMenu}>
+                {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                  <Pressable
+                    key={speed}
+                    style={styles.speedItem}
+                    onPress={() => {
+                      setRate(speed);
+                      setShowMoreMenu(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.speedText,
+                        speed === rate && styles.speedTextActive,
+                      ]}
+                    >
+                      {speed}x{speed === rate ? '  ✓' : ''}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         </View>
       ) : null}
@@ -267,7 +312,17 @@ export default function NativeVideoPlayer({
         style={styles.centerOverlay}
         pointerEvents={isBuffering ? 'none' : 'box-none'}
       >
-        {isBuffering ? (
+        {error ? (
+          <View style={styles.errorBox} pointerEvents="auto">
+            <Text style={styles.errorText} numberOfLines={3}>
+              Couldn't play this video{'\n'}
+              {error}
+            </Text>
+            <Pressable style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : isBuffering ? (
           <ActivityIndicator size="large" color="#FFFFFF" />
         ) : controls && showControls ? (
           <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
@@ -337,13 +392,6 @@ const styles = StyleSheet.create({
   centerSpacer: {
     flex: 1,
   },
-  topIconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 
   backIconText: {
     color: 'rgba(255,255,255,0.92)',
@@ -377,6 +425,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 25,
     elevation: 25,
+    // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
+    borderWidth: 2,
+    borderColor: 'lime',
   },
   bottomPanel: {
     paddingHorizontal: 14,
@@ -439,6 +490,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  actionButtonDisabled: {
+    opacity: 0.4,
+  },
+  errorBox: {
+    maxWidth: '80%',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(18,18,18,0.9)',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   speedMenu: {
     position: 'absolute',
     right: 14,
@@ -458,5 +538,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+  speedTextActive: {
+    color: PLAYER_COLORS.accent,
   },
 });

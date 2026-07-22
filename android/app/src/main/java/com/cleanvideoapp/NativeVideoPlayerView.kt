@@ -31,6 +31,10 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
     private var hasSentLoadEvent = false
     private var currentVolume: Float = 1.0f
     private var isMuted: Boolean = false
+    // Reflects the last value the "paused" prop was set to. setSource() must
+    // respect this instead of unconditionally starting playback, otherwise
+    // autoplay behaves inconsistently depending on which prop is applied first.
+    private var desiredPaused: Boolean = false
 
     private val progressRunnable = object : Runnable {
         override fun run() {
@@ -95,10 +99,13 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
             override fun onPlayerError(error: PlaybackException) {
                 Log.e("NativeVideoPlayer", "onPlayerError: ${error.message}", error)
-                Log.e("NativeVideoPlayer", "ERROR code=${error.errorCodeName}, message=${error.message}", error)
+                Log.e("NativeVideoPlayer", "ERROR code=${error.errorCodeName}, message=${error.message}, cause=${error.cause}", error)
+
+                val detailedMessage = error.cause?.message ?: error.message ?: "Unknown error"
 
                 val event = Arguments.createMap().apply {
-                    putString("message", error.message ?: "Playback error")
+                    putString("message", detailedMessage)
+                    putString("errorCode", error.errorCodeName)
                 }
 
                 sendEvent("onError", event)
@@ -163,11 +170,12 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
         player.setMediaItem(builder.build())
         player.prepare()
-        player.playWhenReady = true
+        player.playWhenReady = !desiredPaused
     }
 
     fun setPaused(paused: Boolean) {
         Log.d("NativeVideoPlayer", "View setPaused: $paused")
+        desiredPaused = paused
         player.playWhenReady = !paused
     }
 
