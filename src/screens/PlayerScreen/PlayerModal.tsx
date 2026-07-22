@@ -1,5 +1,6 @@
-import React from 'react';
-import { Modal, StatusBar, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, StatusBar, Text, View, useWindowDimensions } from 'react-native';
+import Orientation from 'react-native-orientation-locker';
 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import type { PlayInfo } from '../../../types/video';
@@ -11,24 +12,50 @@ export function PlayerModal({
 }: {
   playingVideo: PlayInfo | null;
   onClose: () => void;
-})
+}) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { width, height } = useWindowDimensions();
 
- {
- console.log('PLAYER MODAL STREAM:', playingVideo?.stream_url);
+  function handleClose() {
+    Orientation.lockToPortrait();
+    onClose();
+  }
+
+  function toggleFullscreen() {
+    setIsFullscreen(prev => {
+      const next = !prev;
+
+      if (next) {
+        Orientation.lockToLandscape();
+      } else {
+        Orientation.lockToPortrait();
+      }
+
+      return next;
+    });
+  }
+
   return (
     <Modal
       visible={!!playingVideo}
       animationType="slide"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
       statusBarTranslucent
     >
       <View style={styles.playerScreen}>
         <StatusBar barStyle="light-content" hidden />
 
-        <View style={styles.playerVideoArea}>
+        <View
+          style={
+            isFullscreen
+              ? { width, height, backgroundColor: '#000000' }
+              : styles.playerVideoArea
+          }
+        >
           {playingVideo ? (
             <NativeVideoPlayer
               uri={playingVideo.stream_url}
+              title={playingVideo.title}
               autoStart={true}
               controls={true}
               loop={false}
@@ -37,13 +64,18 @@ export function PlayerModal({
               playbackRate={1}
               resizeMode="contain"
               captions={[]}
-              style={styles.videoPlayer}
-              onClose={onClose}
+              style={
+                isFullscreen
+                  ? { width, height, borderRadius: 0 }
+                  : styles.videoPlayer
+              }
+              onToggleFullscreen={toggleFullscreen}
+              onClose={handleClose}
             />
           ) : null}
         </View>
 
-        {playingVideo ? (
+        {!isFullscreen && playingVideo ? (
           <View style={styles.playerInfo}>
             <Text style={styles.playerTitle} numberOfLines={2}>
               {playingVideo.title}

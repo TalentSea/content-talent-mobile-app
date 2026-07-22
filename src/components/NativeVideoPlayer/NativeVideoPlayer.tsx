@@ -28,6 +28,8 @@ type VideoPlayerProps = {
   volume?: number;
   playbackRate?: number;
   resizeMode?: 'contain' | 'cover' | 'stretch';
+  title?: string;
+  onToggleFullscreen?: () => void;
   style?: ViewStyle;
   onClose?: () => void;
   onEnd?: () => void;
@@ -45,6 +47,8 @@ export default function NativeVideoPlayer({
   volume = 1,
   playbackRate = 1,
   resizeMode = 'contain',
+  title,
+  onToggleFullscreen,
   style,
   onClose,
   onEnd,
@@ -59,6 +63,7 @@ export default function NativeVideoPlayer({
   const [progressBarWidth, setProgressBarWidth] = useState(0);
   const [isMuted, setIsMuted] = useState(muted);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [rate, setRate] = useState(playbackRate);
 
   useEffect(() => {
     setPaused(!autoStart);
@@ -158,7 +163,7 @@ export default function NativeVideoPlayer({
         muted={isMuted}
         loop={loop}
         volume={volume}
-        playbackRate={playbackRate}
+        playbackRate={rate}
         resizeMode={resizeMode}
         style={styles.player}
         onLoadStart={() => setIsBuffering(true)}
@@ -199,62 +204,94 @@ export default function NativeVideoPlayer({
       ) : null}
 
       {controls && showControls ? (
-        <View style={styles.controlsOverlay} pointerEvents="box-none">
-          <View style={styles.bottomRow}>
-            <Pressable style={styles.iconButton} onPress={togglePlayPause} hitSlop={8}>
-              <Text style={styles.iconText}>{paused ? '▶' : '❚❚'}</Text>
-            </Pressable>
+        <View style={styles.controlsLayer} pointerEvents="box-none">
+          <View style={styles.topBar} pointerEvents="box-none">
+            {onClose ? (
+              <Pressable style={styles.topIconButton} onPress={onClose} hitSlop={12}>
+                <Text style={styles.topIconText}>×</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.topIconButton} />
+            )}
 
-            <Text style={styles.timeText}>
-              {formatTime(currentTime)} / {formatTime(duration)}
+            <Text style={styles.playerTitle} numberOfLines={1}>
+              {title ?? ''}
             </Text>
 
-            <View style={styles.rightControls}>
-              <Pressable style={styles.iconButton} onPress={toggleMute} hitSlop={8}>
-                <Text style={styles.iconText}>{isMuted ? '🔇' : '🔊'}</Text>
+            <View style={styles.topIconButton} />
+          </View>
+
+          <View style={styles.centerControls} pointerEvents="box-none">
+            <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
+              <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.bottomPanel} pointerEvents="box-none">
+            <View style={styles.timeRow}>
+              <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+              <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            </View>
+
+            <Pressable
+              style={styles.progressBarWrapper}
+              onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
+              onPress={handleProgressBarPress}
+            >
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${progressPercent}%` as any },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressThumb,
+                    { left: `${progressPercent}%` as any },
+                  ]}
+                />
+              </View>
+            </Pressable>
+
+            <View style={styles.bottomActions}>
+              <Pressable style={styles.actionButton} onPress={toggleMute}>
+                <Text style={styles.actionText}>{isMuted ? 'MUTE' : 'VOL'}</Text>
               </Pressable>
 
-              <Pressable style={styles.iconButton} hitSlop={8}>
-                <Text style={styles.iconText}>⛶</Text>
+              <Pressable style={styles.actionButton}>
+                <Text style={styles.actionText}>
+                  {captions.length > 0 ? 'CC' : 'CC OFF'}
+                </Text>
               </Pressable>
 
               <Pressable
-                style={styles.iconButton}
+                style={styles.actionButton}
                 onPress={() => setShowMoreMenu(prev => !prev)}
-                hitSlop={8}
               >
-                <Text style={styles.iconText}>⋮</Text>
+                <Text style={styles.actionText}>{rate}x</Text>
+              </Pressable>
+
+              <Pressable style={styles.actionButton} onPress={onToggleFullscreen}>
+                <Text style={styles.actionText}>⛶</Text>
               </Pressable>
             </View>
           </View>
 
-          <Pressable
-            style={styles.progressBarWrapper}
-            onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
-            onPress={handleProgressBarPress}
-          >
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progressPercent}%` as any },
-                ]}
-              />
-              <View
-                style={[
-                  styles.progressThumb,
-                  { left: `${progressPercent}%` as any },
-                ]}
-              />
-            </View>
-          </Pressable>
-
           {showMoreMenu ? (
-            <View style={styles.moreMenu}>
-              <Text style={styles.moreMenuText}>Speed: {playbackRate}x</Text>
-              <Text style={styles.moreMenuText}>
-                Captions: {captions.length > 0 ? 'Available' : 'Off'}
-              </Text>
+            <View style={styles.speedMenu}>
+              {[0.5, 1, 1.5, 2].map(speed => (
+                <Pressable
+                  key={speed}
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setRate(speed);
+                    setShowMoreMenu(false);
+                  }}
+                >
+                  <Text style={styles.speedText}>{speed}x</Text>
+                </Pressable>
+              ))}
             </View>
           ) : null}
         </View>
@@ -263,12 +300,21 @@ export default function NativeVideoPlayer({
   );
 }
 
+const PLAYER_COLORS = {
+  white: '#FFFFFF',
+  mutedWhite: 'rgba(255,255,255,0.72)',
+  overlayTop: 'rgba(0,0,0,0.35)',
+  overlayBottom: 'rgba(0,0,0,0.72)',
+  progressTrack: 'rgba(255,255,255,0.35)',
+  progressFill: '#FFFFFF',
+  accent: '#FF245E',
+};
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 220,
     backgroundColor: '#000000',
-    borderRadius: 0,
     overflow: 'hidden',
   },
   player: {
@@ -286,75 +332,93 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.25)',
-    zIndex: 11,
-    elevation: 11,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 14,
     zIndex: 30,
     elevation: 30,
   },
-  closeText: {
-    color: '#FFFFFF',
-    fontSize: 38,
-    fontWeight: '300',
-    lineHeight: 40,
-  },
-  controlsOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 14,
-    paddingBottom: 8,
-    paddingTop: 40,
-    backgroundColor: 'transparent',
+  controlsLayer: {
+    ...StyleSheet.absoluteFill,
     zIndex: 20,
     elevation: 20,
+    justifyContent: 'space-between',
   },
-  bottomRow: {
+  topBar: {
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 34,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  iconButton: {
-    width: 32,
-    height: 32,
+  topIconButton: {
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconText: {
+  topIconText: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 34,
+    fontWeight: '300',
+    lineHeight: 36,
   },
-  timeText: {
+  playerTitle: {
+    flex: 1,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
+    fontWeight: '700',
+    textAlign: 'center',
   },
-  rightControls: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
+  centerControls: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
+  centerPlayButton: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: 'rgba(0,0,0,0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerPlayIcon: {
+    color: '#FFFFFF',
+    fontSize: 30,
+    fontWeight: '800',
+    marginLeft: 2,
+  },
+  bottomPanel: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  timeText: {
+    color: 'rgba(255,255,255,0.86)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   progressBarWrapper: {
-    height: 16,
+    height: 22,
     justifyContent: 'center',
   },
   progressBarBackground: {
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.75)',
     borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.35)',
     overflow: 'visible',
   },
   progressBarFill: {
     height: 4,
-    backgroundColor: '#FFFFFF',
     borderRadius: 2,
+    backgroundColor: '#FFFFFF',
   },
   progressThumb: {
     position: 'absolute',
@@ -365,20 +429,45 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: '#FFFFFF',
   },
-  moreMenu: {
+  bottomActions: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  actionButton: {
+    minWidth: 42,
+    height: 30,
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  speedMenu: {
     position: 'absolute',
-    right: 12,
-    bottom: 58,
-    backgroundColor: 'rgba(20,20,20,0.95)',
-    borderRadius: 6,
-    padding: 10,
+    right: 14,
+    bottom: 62,
+    width: 120,
+    borderRadius: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(18,18,18,0.96)',
     zIndex: 40,
     elevation: 40,
   },
-  moreMenuText: {
+  speedItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  speedText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-    paddingVertical: 4,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });
