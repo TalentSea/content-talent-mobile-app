@@ -100,11 +100,10 @@ To learn more about React Native, take a look at the following resources:
 
 
 =======
-# projectvideo-frontend
->>>>>>> ddcaf0e9e75590a67581141a7045d4d4d888676e
 
 
 
+<<<<<<< HEAD
 projectvideo-frontend/
 ├── __tests__/                         # Frontend test files
 │   └── App.test.tsx                   # Default React Native test for the app
@@ -201,3 +200,6 @@ projectvideo-frontend/
 ├── tsconfig.json                      # TypeScript configuration
 ├── docker-compose.yml                 
 └── Dockerfile
+=======
+
+>>>>>>> 46008b018cc8b2ef2f4ae0ab2698f02070e82044

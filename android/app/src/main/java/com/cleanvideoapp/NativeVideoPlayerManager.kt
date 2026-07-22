@@ -18,9 +18,7 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
 
     @ReactProp(name = "source")
     fun setSource(view: NativeVideoPlayerView, source: ReadableMap?) {
-        val uri = source?.getString("uri")
-        Log.d("NativeVideoPlayer", "setSource called with uri: $uri")
-        view.setUri(uri)
+        view.setSource(source)
     }
 
     @ReactProp(name = "paused", defaultBoolean = true)
@@ -29,31 +27,31 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setPaused(paused)
     }
 
-    // ---- New props ----
+    @ReactProp(name = "muted", defaultBoolean = false)
+    fun setMuted(view: NativeVideoPlayerView, muted: Boolean) {
+        view.setMuted(muted)
+    }
 
-    @ReactProp(name = "resizeMode")
-    fun setResizeMode(view: NativeVideoPlayerView, resizeMode: String?) {
-        Log.d("NativeVideoPlayer", "setResizeMode called with: $resizeMode")
-        view.setResizeMode(resizeMode ?: "contain")
+    @ReactProp(name = "loop", defaultBoolean = false)
+    fun setLoop(view: NativeVideoPlayerView, loop: Boolean) {
+        view.setLoop(loop)
     }
 
     @ReactProp(name = "volume", defaultFloat = 1.0f)
     fun setVolume(view: NativeVideoPlayerView, volume: Float) {
-        Log.d("NativeVideoPlayer", "setVolume called with: $volume")
         view.setVolume(volume)
     }
 
-    @ReactProp(name = "muted", defaultBoolean = false)
-    fun setMuted(view: NativeVideoPlayerView, muted: Boolean) {
-        Log.d("NativeVideoPlayer", "setMuted called with: $muted")
-        view.setMuted(muted)
+    @ReactProp(name = "playbackRate", defaultFloat = 1.0f)
+    fun setPlaybackRate(view: NativeVideoPlayerView, rate: Float) {
+        view.setPlaybackRate(rate)
     }
 
-    @ReactProp(name = "repeat", defaultBoolean = false)
-    fun setRepeat(view: NativeVideoPlayerView, repeat: Boolean) {
-        Log.d("NativeVideoPlayer", "setRepeat called with: $repeat")
-        view.setRepeat(repeat)
+    @ReactProp(name = "resizeMode")
+    fun setResizeMode(view: NativeVideoPlayerView, resizeMode: String?) {
+        view.setResizeMode(resizeMode ?: "contain")
     }
+
 
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
         return MapBuilder.of(
@@ -63,6 +61,7 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
                 "onProgress", MapBuilder.of("registrationName", "onProgress"),
                 "onBuffer", MapBuilder.of("registrationName", "onBuffer"),
                 "onEnd", MapBuilder.of("registrationName", "onEnd")
+
         )
     }
 
