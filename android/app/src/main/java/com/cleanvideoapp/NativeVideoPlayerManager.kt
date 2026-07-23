@@ -18,9 +18,7 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
 
     @ReactProp(name = "source")
     fun setSource(view: NativeVideoPlayerView, source: ReadableMap?) {
-        val uri = source?.getString("uri")
-        Log.d("NativeVideoPlayer", "setSource called with uri: $uri")
-        view.setUri(uri)
+        view.setSource(source)
     }
 
     @ReactProp(name = "paused", defaultBoolean = true)
@@ -29,13 +27,41 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setPaused(paused)
     }
 
+    @ReactProp(name = "muted", defaultBoolean = false)
+    fun setMuted(view: NativeVideoPlayerView, muted: Boolean) {
+        view.setMuted(muted)
+    }
+
+    @ReactProp(name = "loop", defaultBoolean = false)
+    fun setLoop(view: NativeVideoPlayerView, loop: Boolean) {
+        view.setLoop(loop)
+    }
+
+    @ReactProp(name = "volume", defaultFloat = 1.0f)
+    fun setVolume(view: NativeVideoPlayerView, volume: Float) {
+        view.setVolume(volume)
+    }
+
+    @ReactProp(name = "playbackRate", defaultFloat = 1.0f)
+    fun setPlaybackRate(view: NativeVideoPlayerView, rate: Float) {
+        view.setPlaybackRate(rate)
+    }
+
+    @ReactProp(name = "resizeMode")
+    fun setResizeMode(view: NativeVideoPlayerView, resizeMode: String?) {
+        view.setResizeMode(resizeMode ?: "contain")
+    }
+
+
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
         return MapBuilder.of(
                 "onLoadStart", MapBuilder.of("registrationName", "onLoadStart"),
                 "onLoad", MapBuilder.of("registrationName", "onLoad"),
                 "onError", MapBuilder.of("registrationName", "onError"),
                 "onProgress", MapBuilder.of("registrationName", "onProgress"),
-                "onBuffer", MapBuilder.of("registrationName", "onBuffer")
+                "onBuffer", MapBuilder.of("registrationName", "onBuffer"),
+                "onEnd", MapBuilder.of("registrationName", "onEnd")
+
         )
     }
 

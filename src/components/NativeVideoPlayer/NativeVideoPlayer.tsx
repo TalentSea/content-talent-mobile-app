@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   findNodeHandle,
@@ -11,46 +11,91 @@ import {
   ViewStyle,
 } from 'react-native';
 
-type NativeVideoPlayerProps = {
-  source: { uri: string; type?: string };
-  paused?: boolean;
+type CaptionTrack = {
+  uri: string;
+  language?: string;
+  label?: string;
+  mimeType?: 'text/vtt' | 'application/x-subrip';
+};
+
+type VideoPlayerProps = {
+  uri: string;
+  captions?: CaptionTrack[];
+  autoStart?: boolean;
+  controls?: boolean;
+  muted?: boolean;
+  loop?: boolean;
+  volume?: number;
+  playbackRate?: number;
+  resizeMode?: 'contain' | 'cover' | 'stretch';
+  title?: string;
+  onToggleFullscreen?: () => void;
   style?: ViewStyle;
-  onLoadStart?: () => void;
-  onLoad?: (event: { nativeEvent: { duration: number } }) => void;
-  onProgress?: (event: { nativeEvent: { currentTime: number; duration: number } }) => void;
-  onBuffer?: (event: { nativeEvent: { isBuffering: boolean } }) => void;
-  onError?: (event: { nativeEvent: { message: string } }) => void;
+  onClose?: () => void;
+  onEnd?: () => void;
 };
 
 const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 
-type VideoPlayerProps = {
-  uri: string;
-  style?: ViewStyle;
-  onClose?: () => void;
-};
-
-export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerProps) {
+export default function NativeVideoPlayer({
+  uri,
+  captions = [],
+  autoStart = true,
+  controls = true,
+  muted = false,
+  loop = false,
+  volume = 1,
+  playbackRate = 1,
+  resizeMode = 'contain',
+  title,
+  onToggleFullscreen,
+  style,
+  onClose,
+  onEnd,
+}: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
-  const [paused, setPaused] = useState(false);
+
+  const [paused, setPaused] = useState(!autoStart);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useState(controls);
   const [progressBarWidth, setProgressBarWidth] = useState(0);
+  const [isMuted, setIsMuted] = useState(muted);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [rate, setRate] = useState(playbackRate);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
-  // Auto-hide controls timer
   useEffect(() => {
-    if (showControls && !paused) {
+    setPaused(!autoStart);
+    setError(null);
+    console.log('NativeVideoPlayer uri:', uri);
+  }, [autoStart, uri]);
+
+  useEffect(() => {
+    setShowControls(controls);
+  }, [controls]);
+
+  useEffect(() => {
+    setIsMuted(muted);
+  }, [muted]);
+
+  useEffect(() => {
+    if (controls && showControls && !paused) {
       const timer = setTimeout(() => {
         setShowControls(false);
+        setShowMoreMenu(false);
       }, 3500);
+
       return () => clearTimeout(timer);
     }
-  }, [showControls, paused]);
+  }, [controls, showControls, paused]);
+
 
   const seekTo = (seconds: number) => {
     const node = findNodeHandle(playerRef.current);
+
     if (node) {
       UIManager.dispatchViewManagerCommand(node, 1, [seconds]);
     }
@@ -61,11 +106,17 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
     setShowControls(true);
   };
 
+  const toggleMute = () => {
+    setIsMuted(prev => !prev);
+    setShowControls(true);
+  };
+
   const handleProgressBarPress = (event: any) => {
     if (duration > 0 && progressBarWidth > 0) {
       const { locationX } = event.nativeEvent;
       const pct = Math.min(Math.max(locationX / progressBarWidth, 0), 1);
       const targetTime = pct * duration;
+
       setCurrentTime(targetTime);
       seekTo(targetTime);
     }
@@ -74,18 +125,24 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+    return `${mins.toString().padStart(2, '0')}:${secs
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   const handleProgress = (e: any) => {
     setIsBuffering(false);
+
     const { currentTime: current, duration: dur } = e.nativeEvent;
+
     setCurrentTime(current);
     setDuration(dur);
   };
 
   const handleLoad = (e: any) => {
     setIsBuffering(false);
+
     const { duration: dur } = e.nativeEvent;
     setDuration(dur);
   };
@@ -97,73 +154,89 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
+  console.log('[NativeVideoPlayer] render state', {
+    controls,
+    showControls,
+    isBuffering,
+    error,
+    paused,
+  });
 
-  const videoUri = uri;
-  console.log('JS: NativeVideoPlayer Render state:', { showControls, paused, isBuffering, duration, currentTime });
+  const handleRetry = () => {
+    setError(null);
+    setIsBuffering(true);
+    setRetryCount(prev => prev + 1);
+  };
 
   return (
     <View style={[styles.container, style]}>
       <RCTNativeVideoPlayer
+        key={`${uri}-${retryCount}`}
         ref={playerRef}
-        source={{ uri: videoUri }}
+        source={{
+          uri,
+          captions,
+        }}
         paused={paused}
+        muted={isMuted}
+        loop={loop}
+        volume={volume}
+        playbackRate={rate}
+        resizeMode={resizeMode}
         style={styles.player}
-        onLoadStart={() => {
-          console.log('JS: onLoadStart');
-          setIsBuffering(true);
-        }}
-        onLoad={(e: any) => {
-          console.log('JS: onLoad', e.nativeEvent);
-          handleLoad(e);
-        }}
-        onProgress={(e: any) => {
-          console.log('JS: onProgress', e.nativeEvent);
-          handleProgress(e);
-        }}
-        onBuffer={(e: any) => {
-          console.log('JS: onBuffer', e.nativeEvent);
-          handleBuffer(e);
+        onLoadStart={() => setIsBuffering(true)}
+        onLoad={handleLoad}
+        onProgress={handleProgress}
+        onBuffer={handleBuffer}
+        onEnd={() => {
+          setPaused(true);
+          setShowControls(true);
+          onEnd?.();
         }}
         onError={(e: any) => {
           setIsBuffering(false);
-          console.warn('JS: Playback error:', e.nativeEvent.message);
+          const message = e.nativeEvent?.message ?? 'Unknown playback error';
+          const errorCode = e.nativeEvent?.errorCode;
+          console.warn('JS: Playback error:', errorCode, message);
+          setError(errorCode ? `${errorCode}: ${message}` : message);
         }}
       />
+      {controls ? (
+        <Pressable
+          style={styles.touchOverlay}
+          onPress={() => {
+            setShowControls(prev => !prev);
+            setShowMoreMenu(false);
+          }}
+        />
+      ) : null}
 
-      {/* Unified tap overlay — always present, toggles controls */}
-      <Pressable
-        style={styles.touchOverlay}
-        onPress={() => setShowControls(prev => !prev)}
-      />
-
-      {isBuffering && (
-        <View style={styles.spinnerWrapper} pointerEvents="none">
-          <ActivityIndicator size="large" color="#FF245E" />
-        </View>
-      )}
-
-      {showControls && (
-        <View style={styles.controlsOverlay} pointerEvents="box-none">
-          {/* Header row with Close button */}
-          <View style={styles.header}>
-            <View style={styles.flexShim} />
-            {onClose && (
-              <Pressable style={styles.closeButton} onPress={onClose}>
-                <Text style={styles.closeText}>✕</Text>
+      {controls && showControls ? (
+        <View style={styles.controlsLayer} pointerEvents="box-none">
+          <View style={styles.topBar} pointerEvents="box-none">
+            {onClose ? (
+              <Pressable style={styles.topIconButton} onPress={onClose} hitSlop={12}>
+                <Text style={styles.backIconText}>‹</Text>
               </Pressable>
+            ) : (
+              <View style={styles.topIconButton} />
             )}
+
+            <Text style={styles.playerTitle} numberOfLines={1}>
+              {title ?? ''}
+            </Text>
+
+            <View style={styles.topIconButton} />
           </View>
 
-          {/* Large Center Play/Pause button */}
-          <View style={styles.centerControls} pointerEvents="box-none">
-            <Pressable style={styles.playButton} onPress={togglePlayPause}>
-              <Text style={styles.playIcon}>{paused ? '▶' : '❚❚'}</Text>
-            </Pressable>
-          </View>
+          <View style={styles.centerSpacer} pointerEvents="none" />
 
-          {/* Bottom control bar with slider and timers */}
-          <View style={styles.bottomControls} pointerEvents="box-none">
-            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+          <View style={styles.bottomPanel} pointerEvents="box-none">
+            <View style={styles.timeRow}>
+              <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+              <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            </View>
 
             <Pressable
               style={styles.progressBarWrapper}
@@ -171,24 +244,111 @@ export default function NativeVideoPlayer({ uri, style, onClose }: VideoPlayerPr
               onPress={handleProgressBarPress}
             >
               <View style={styles.progressBarBackground}>
-                <View style={[styles.progressBarFill, { width: `${progressPercent}%` as any }]} />
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${progressPercent}%` as any },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressThumb,
+                    { left: `${progressPercent}%` as any },
+                  ]}
+                />
               </View>
             </Pressable>
 
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+            <View style={styles.bottomActions}>
+              <Pressable style={styles.actionButton} onPress={toggleMute}>
+                <Text style={styles.actionText}>{isMuted ? 'MUTE' : 'VOL'}</Text>
+              </Pressable>
+
+              {/* Captions aren't wired up yet — kept visible but inert for now */}
+              <View style={[styles.actionButton, styles.actionButtonDisabled]}>
+                <Text style={styles.actionText}>CC OFF</Text>
+              </View>
+
+              <Pressable
+                style={styles.actionButton}
+                onPress={() => setShowMoreMenu(prev => !prev)}
+              >
+                <Text style={styles.actionText}>{rate}x</Text>
+              </Pressable>
+
+              <Pressable style={styles.actionButton} onPress={onToggleFullscreen}>
+                <Text style={styles.actionText}>⛶</Text>
+              </Pressable>
+            </View>
+
+            {showMoreMenu ? (
+              <View style={styles.speedMenu}>
+                {[0.5, 0.75, 1, 1.25, 1.5, 2].map(speed => (
+                  <Pressable
+                    key={speed}
+                    style={styles.speedItem}
+                    onPress={() => {
+                      setRate(speed);
+                      setShowMoreMenu(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.speedText,
+                        speed === rate && styles.speedTextActive,
+                      ]}
+                    >
+                      {speed}x{speed === rate ? '  ✓' : ''}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         </View>
-      )}
+      ) : null}
+
+      <View
+        style={styles.centerOverlay}
+        pointerEvents={isBuffering ? 'none' : 'box-none'}
+      >
+        {error ? (
+          <View style={styles.errorBox} pointerEvents="auto">
+            <Text style={styles.errorText} numberOfLines={3}>
+              Couldn't play this video{'\n'}
+              {error}
+            </Text>
+            <Pressable style={styles.retryButton} onPress={handleRetry}>
+              <Text style={styles.retryText}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : isBuffering ? (
+          <ActivityIndicator size="large" color="#FFFFFF" />
+        ) : controls && showControls ? (
+          <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
+            <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
+
+const PLAYER_COLORS = {
+  white: '#FFFFFF',
+  mutedWhite: 'rgba(255,255,255,0.72)',
+  overlayTop: 'rgba(0,0,0,0.35)',
+  overlayBottom: 'rgba(0,0,0,0.72)',
+  progressTrack: 'rgba(255,255,255,0.35)',
+  progressFill: '#FFFFFF',
+  accent: '#FF245E',
+};
 
 const styles = StyleSheet.create({
   container: {
     width: '100%',
     height: 220,
     backgroundColor: '#000000',
-    borderRadius: 12,
     overflow: 'hidden',
   },
   player: {
@@ -197,98 +357,189 @@ const styles = StyleSheet.create({
   },
   touchOverlay: {
     ...StyleSheet.absoluteFill,
-    zIndex: 12,
-    elevation: 12,
-    backgroundColor: 'transparent',
-  },
-  spinnerWrapper: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     zIndex: 10,
     elevation: 10,
+    backgroundColor: 'transparent',
   },
-  controlsOverlay: {
+  controlsLayer: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'space-between',
-    padding: 12,
     zIndex: 20,
     elevation: 20,
-  },
-  header: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  topBar: {
+    minHeight: 56,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  flexShim: {
-    flex: 1,
-  },
-  closeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+  topIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeText: {
+  playerTitle: {
+    flex: 1,
     color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: 'bold',
-  },
-  centerControls: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FF245E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  playIcon: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 2,
-  },
-  bottomControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 30,
-  },
-  timeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-    width: 38,
+    fontWeight: '700',
     textAlign: 'center',
   },
-  progressBarWrapper: {
+  centerSpacer: {
     flex: 1,
-    height: 20,
+  },
+
+  backIconText: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 30,
+    fontWeight: '600',
+    lineHeight: 32,
+    marginLeft: -2,
+  },
+
+  centerPlayButton: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
     justifyContent: 'center',
-    marginHorizontal: 8,
+    alignItems: 'center',
+  },
+
+  centerPlayIcon: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '700',
+    marginLeft: 2,
+  },
+
+  centerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 25,
+    elevation: 25,
+    // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
+    borderWidth: 2,
+    borderColor: 'lime',
+  },
+  bottomPanel: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  timeText: {
+    color: 'rgba(255,255,255,0.86)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  progressBarWrapper: {
+    height: 22,
+    justifyContent: 'center',
   },
   progressBarBackground: {
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 2,
-    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    overflow: 'visible',
   },
   progressBarFill: {
-    height: '100%' as any,
-    backgroundColor: '#FF245E',
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  progressThumb: {
+    position: 'absolute',
+    top: -5,
+    width: 14,
+    height: 14,
+    marginLeft: -7,
+    borderRadius: 7,
+    backgroundColor: '#FFFFFF',
+  },
+  bottomActions: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  actionButton: {
+    minWidth: 42,
+    height: 30,
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  actionButtonDisabled: {
+    opacity: 0.4,
+  },
+  errorBox: {
+    maxWidth: '80%',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: 'rgba(18,18,18,0.9)',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  retryButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  speedMenu: {
+    position: 'absolute',
+    right: 14,
+    bottom: 62,
+    width: 120,
+    borderRadius: 10,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(18,18,18,0.96)',
+    zIndex: 40,
+    elevation: 40,
+  },
+  speedItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  speedText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  speedTextActive: {
+    color: PLAYER_COLORS.accent,
   },
 });
