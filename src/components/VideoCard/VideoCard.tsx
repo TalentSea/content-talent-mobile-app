@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import type { ApiVideo } from '../../../types/video';
+import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
 import { styles } from './styles';
 
 export function VideoCard({
@@ -15,7 +16,9 @@ export function VideoCard({
 }) {
     const category = video.category || 'Video';
     const tags = video.tags?.length ? video.tags.slice(0, 2).join(', ') : 'Streamr';
-    const isReady = String(video.status).trim().toLowerCase() === 'ready';
+    const streamable = isStreamable(video.status);
+    const statusInfo = getStatusDisplay(video.status);
+    const isEncoding = video.status.trim().toUpperCase() === 'ENCODING';
 
     return (
         <Pressable
@@ -38,12 +41,28 @@ export function VideoCard({
                 />
 
                 <View style={styles.playBadge}>
-                    <Text style={styles.playIcon}>{isReady ? '▶' : '…'}</Text>
+                    <Text style={styles.playIcon}>{streamable ? '▶' : '…'}</Text>
                 </View>
 
-                {!isReady ? (
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>{video.status}</Text>
+                {!streamable ? (
+                    <View
+                        style={[
+                            styles.statusBadge,
+                            { backgroundColor: statusInfo.color },
+                        ]}
+                    >
+                        <Text style={styles.statusText}>{statusInfo.label}</Text>
+                    </View>
+                ) : null}
+
+                {isEncoding && video.encode_progress != null ? (
+                    <View style={styles.encodeProgressWrap}>
+                        <View
+                            style={[
+                                styles.encodeProgressFill,
+                                { width: `${video.encode_progress}%` as any },
+                            ]}
+                        />
                     </View>
                 ) : null}
             </View>

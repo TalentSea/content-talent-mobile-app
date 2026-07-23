@@ -1,120 +1,123 @@
-import { StyleSheet, Dimensions } from 'react-native';
-import { colors } from '../../constants/colors';
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: colors.background,
-        justifyContent: 'center',
-    },
-    glowBlob: {
-        position: 'absolute',
-        width: 300,
-        height: 300,
-        borderRadius: 150,
-        opacity: 0.15,
-    },
-    blob1: {
-        top: -50,
-        right: -50,
-        backgroundColor: colors.primary,
-    },
-    blob2: {
-        bottom: -50,
-        left: -50,
-        backgroundColor: '#3B82F6', // Sleek blue highlight
+        backgroundColor: '#0A0A12',
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
-        justifyContent: 'space-between',
-        paddingVertical: 40,
+        paddingHorizontal: 28,
+        justifyContent: 'center',
     },
-    logoContainer: {
+
+    // ── Hero Section ──
+    heroSection: {
         alignItems: 'center',
-        marginTop: 60,
+        marginBottom: 48,
     },
-    logoGlow: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(255, 36, 94, 0.1)',
+    iconContainer: {
+        width: 88,
+        height: 88,
+        borderRadius: 24,
+        marginBottom: 28,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        elevation: 8,
+        overflow: 'hidden',
     },
-    logoText: {
-        color: colors.text,
-        fontSize: 36,
-        fontWeight: '900',
-        letterSpacing: 1,
+    // Two layered views to simulate the purple-to-pink gradient
+    iconGradientLayer1: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: '#7B2FF2',  // Purple
+        borderRadius: 24,
     },
-    tagline: {
-        color: colors.muted,
-        fontSize: 14,
-        marginTop: 6,
+    iconGradientLayer2: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: '#C850C0',  // Pink
+        borderRadius: 24,
+        opacity: 0.7,
+        // Shift to bottom-right to create gradient effect
+        top: '30%',
+        left: '30%',
+        right: '-30%',
+        bottom: '-30%',
+    },
+    iconInner: {
+        zIndex: 1,
+        // Slight offset to center the play icon visually
+        paddingLeft: 4,
+    },
+    title: {
+        color: '#FFFFFF',
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: 0.3,
+        marginBottom: 8,
+    },
+    subtitle: {
+        color: '#7A7A8E',
+        fontSize: 15,
         fontWeight: '500',
     },
-    card: {
-        backgroundColor: colors.surface,
-        borderRadius: 24,
-        padding: 24,
+
+    // ── Buttons Section ──
+    buttonsSection: {
+        gap: 14,
+    },
+    socialButton: {
+        backgroundColor: '#16161F',
+        borderRadius: 16,
+        height: 58,
+        justifyContent: 'center',
+        paddingHorizontal: 20,
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.5,
-        shadowRadius: 16,
-        elevation: 10,
+        borderColor: 'rgba(255, 255, 255, 0.06)',
     },
-    cardTitle: {
-        color: colors.text,
-        fontSize: 22,
-        fontWeight: '800',
-        marginBottom: 8,
-        textAlign: 'center',
+    socialButtonPressed: {
+        opacity: 0.75,
+        transform: [{ scale: 0.985 }],
     },
-    cardSubtitle: {
-        color: colors.muted,
-        fontSize: 14,
-        lineHeight: 20,
-        textAlign: 'center',
-        marginBottom: 28,
-        paddingHorizontal: 10,
+    socialButtonDisabled: {
+        opacity: 0.5,
     },
-    loginButton: {
-        backgroundColor: colors.primary,
-        borderRadius: 14,
-        height: 56,
+    socialButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    socialButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 14,
+    },
+
+    // ── Google Icon ──
+    googleIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#FFFFFF',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
     },
-    loginButtonPressed: {
-        opacity: 0.85,
-        transform: [{ scale: 0.98 }],
-    },
-    loginButtonText: {
-        color: colors.text,
-        fontSize: 16,
+    googleIconText: {
+        color: '#4285F4',
+        fontSize: 17,
         fontWeight: '700',
     },
-    footer: {
+
+    // ── Facebook Icon ──
+    facebookIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#1877F2',
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    footerText: {
-        color: colors.muted,
-        fontSize: 12,
-        fontWeight: '600',
-        opacity: 0.6,
+    facebookIconText: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '700',
     },
 });

@@ -6,13 +6,23 @@ import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import type { PlayInfo } from '../../../types/video';
 import { styles } from '../PlayerScreen/styles';
 
+type PlayerModalProps = {
+  playingVideo: PlayInfo | null;
+  autoplay?: boolean;
+  hasNextVideo?: boolean;
+  onToggleAutoplay?: () => void;
+  onVideoEnd?: () => void;
+  onClose: () => void;
+};
+
 export function PlayerModal({
   playingVideo,
+  autoplay = false,
+  hasNextVideo = false,
+  onToggleAutoplay,
+  onVideoEnd,
   onClose,
-}: {
-  playingVideo: PlayInfo | null;
-  onClose: () => void;
-}) {
+}: PlayerModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { width, height } = useWindowDimensions();
 
@@ -63,14 +73,17 @@ export function PlayerModal({
               volume={1}
               playbackRate={1}
               resizeMode="contain"
-              captions={[]}
+              captions={playingVideo.captions ?? []}
               style={
                 isFullscreen
                   ? { width, height, borderRadius: 0 }
                   : styles.videoPlayer
               }
               onToggleFullscreen={toggleFullscreen}
+              autoplay={autoplay}
+              onToggleAutoplay={onToggleAutoplay}
               onClose={handleClose}
+              onEnd={onVideoEnd}
             />
           ) : null}
         </View>
@@ -91,4 +104,4 @@ export function PlayerModal({
       </View>
     </Modal>
   );
-}
+}

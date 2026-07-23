@@ -32,9 +32,13 @@ export function HomeScreen({ navigation }: any) {
         playingVideo,
         playerLoading,
         playbackError,
+        autoplay,
+        hasNextVideo,
+        setAutoplay,
         playVideo,
+        handleVideoEnd,
         closePlayer,
-    } = useVideoPlayback();
+    } = useVideoPlayback(popularVideos);
 
     return (
         <SafeAreaView style={styles.screen}>
@@ -89,7 +93,14 @@ export function HomeScreen({ navigation }: any) {
                 />
             </ScrollView>
 
-            <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
+            <PlayerModal
+                playingVideo={playingVideo}
+                autoplay={autoplay}
+                hasNextVideo={hasNextVideo}
+                onToggleAutoplay={() => setAutoplay(prev => !prev)}
+                onVideoEnd={handleVideoEnd}
+                onClose={closePlayer}
+            />
 
             {playerLoading ? (
                 <View style={styles.playerLoading}>

@@ -12,6 +12,8 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
@@ -29,8 +31,10 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                     .inflate(R.layout.player_view_layout, this, false) as PlayerView
 
     private var hasSentLoadEvent = false
+    private var hasSentTracksEvent = false
     private var currentVolume: Float = 1.0f
     private var isMuted: Boolean = false
+    private var captionsEnabled: Boolean = false
     // Reflects the last value the "paused" prop was set to. setSource() must
     // respect this instead of unconditionally starting playback, otherwise
     // autoplay behaves inconsistently depending on which prop is applied first.
@@ -68,6 +72,12 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                             Log.d("NativeVideoPlayer", "STATE_READY duration=${player.duration}")
 
                             sendEvent("onLoad", event)
+                        }
+
+                        // Detect embedded subtitle tracks from HLS manifest
+                        if (!hasSentTracksEvent) {
+                            hasSentTracksEvent = true
+                            sendTracksEvent()
                         }
 
                         val bufferEvent = Arguments.createMap().apply {
@@ -131,6 +141,7 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         Log.d("NativeVideoPlayer", "View setSource: $uri")
 
         hasSentLoadEvent = false
+        hasSentTracksEvent = false
         sendEvent("onLoadStart", Arguments.createMap())
 
         val builder = MediaItem.Builder()
@@ -246,6 +257,54 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
     fun releasePlayer() {
         removeCallbacks(progressRunnable)
         player.release()
+    }
+
+    /**
+     * Enable or disable subtitle text track rendering.
+     * ExoPlayer discovers embedded HLS subtitle tracks automatically;
+     * this method toggles their visibility via trackSelectionParameters.
+     */
+    fun setCaptionsEnabled(enabled: Boolean) {
+        captionsEnabled = enabled
+        Log.d("NativeVideoPlayer", "setCaptionsEnabled: $enabled")
+
+        player.trackSelectionParameters = player.trackSelectionParameters
+            .buildUpon()
+            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
+            .build()
+    }
+
+    /**
+     * Enumerate available text tracks (from HLS manifest or sidecar)
+     * and send an onTracksAvailable event to JS with the count + details.
+     */
+    private fun sendTracksEvent() {
+        var textTrackCount = 0
+        val tracksArray = Arguments.createArray()
+
+        for (group in player.currentTracks.groups) {
+            if (group.type == C.TRACK_TYPE_TEXT) {
+                for (i in 0 until group.length) {
+                    val format = group.getTrackFormat(i)
+                    textTrackCount++
+
+                    val trackMap = Arguments.createMap().apply {
+                        putString("language", format.language ?: "und")
+                        putString("label", format.label ?: "Track $textTrackCount")
+                        putString("mimeType", format.sampleMimeType ?: "")
+                    }
+                    tracksArray.pushMap(trackMap)
+                }
+            }
+        }
+
+        Log.d("NativeVideoPlayer", "sendTracksEvent: $textTrackCount text tracks found")
+
+        val event = Arguments.createMap().apply {
+            putInt("textTrackCount", textTrackCount)
+            putArray("textTracks", tracksArray)
+        }
+        sendEvent("onTracksAvailable", event)
     }
 }
 

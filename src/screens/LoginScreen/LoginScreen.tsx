@@ -8,64 +8,101 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth0 } from 'react-native-auth0';
-import { Shield } from 'lucide-react-native';
+import { Play } from 'lucide-react-native';
 import { styles } from './styles';
-import { colors } from '../../constants/colors';
 
 export function LoginScreen() {
     const { authorize, isLoading } = useAuth0();
+    const [loadingProvider, setLoadingProvider] = React.useState<string | null>(null);
 
-    const handleLogin = async () => {
+    const handleSocialLogin = async (connection: string) => {
         try {
+            setLoadingProvider(connection);
             await authorize({
-                scope: 'openid profile email'
+                scope: 'openid profile email',
+                connection,
+                additionalParameters: {
+                    screen_hint: 'login',  // Force login, no signup
+                },
             });
         } catch (error) {
             console.warn('Login failed:', error);
+        } finally {
+            setLoadingProvider(null);
         }
     };
 
+    const isDisabled = isLoading || loadingProvider !== null;
+
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="light-content" />
-
-            {/* Dynamic visual blobs for glowing theme */}
-            <View style={[styles.glowBlob, styles.blob1]} />
-            <View style={[styles.glowBlob, styles.blob2]} />
+            <StatusBar barStyle="light-content" backgroundColor="#0A0A12" />
 
             <View style={styles.content}>
-                <View style={styles.logoContainer}>
-                    <View style={styles.logoGlow}>
-                        <Shield color={colors.primary} size={48} strokeWidth={1.5} />
+                {/* Play Icon with gradient-like background */}
+                <View style={styles.heroSection}>
+                    <View style={styles.iconContainer}>
+                        <View style={styles.iconGradientLayer1} />
+                        <View style={styles.iconGradientLayer2} />
+                        <View style={styles.iconInner}>
+                            <Play
+                                color="#FFFFFF"
+                                size={32}
+                                fill="#FFFFFF"
+                                strokeWidth={0}
+                            />
+                        </View>
                     </View>
-                    <Text style={styles.logoText}>Streamr</Text>
-                    <Text style={styles.tagline}>Elevate Your Video Experience</Text>
+
+                    <Text style={styles.title}>Welcome Back</Text>
+                    <Text style={styles.subtitle}>Sign in to continue watching</Text>
                 </View>
 
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>Welcome back</Text>
-                    <Text style={styles.cardSubtitle}>
-                        Sign in to access your dashboard, track rendering status, and enjoy premium streams.
-                    </Text>
-
+                {/* Social Login Buttons */}
+                <View style={styles.buttonsSection}>
+                    {/* Google Button */}
                     <Pressable
                         style={({ pressed }) => [
-                            styles.loginButton,
-                            pressed && styles.loginButtonPressed,
+                            styles.socialButton,
+                            pressed && styles.socialButtonPressed,
+                            isDisabled && styles.socialButtonDisabled,
                         ]}
-                        onPress={handleLogin}
-                        disabled={isLoading}
+                        onPress={() => handleSocialLogin('google-oauth2')}
+                        disabled={isDisabled}
                     >
-                        {isLoading ? (
+                        {loadingProvider === 'google-oauth2' ? (
                             <ActivityIndicator color="#FFFFFF" size="small" />
                         ) : (
-                            <Text style={styles.loginButtonText}>Get Started</Text>
+                            <View style={styles.socialButtonContent}>
+                                <View style={styles.googleIconCircle}>
+                                    <Text style={styles.googleIconText}>G</Text>
+                                </View>
+                                <Text style={styles.socialButtonText}>Continue with Google</Text>
+                            </View>
                         )}
                     </Pressable>
-                </View>
 
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Secured by Auth0</Text>
+                    {/* Facebook Button */}
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.socialButton,
+                            pressed && styles.socialButtonPressed,
+                            isDisabled && styles.socialButtonDisabled,
+                        ]}
+                        onPress={() => handleSocialLogin('facebook')}
+                        disabled={isDisabled}
+                    >
+                        {loadingProvider === 'facebook' ? (
+                            <ActivityIndicator color="#FFFFFF" size="small" />
+                        ) : (
+                            <View style={styles.socialButtonContent}>
+                                <View style={styles.facebookIconCircle}>
+                                    <Text style={styles.facebookIconText}>f</Text>
+                                </View>
+                                <Text style={styles.socialButtonText}>Continue with Facebook</Text>
+                            </View>
+                        )}
+                    </Pressable>
                 </View>
             </View>
         </SafeAreaView>

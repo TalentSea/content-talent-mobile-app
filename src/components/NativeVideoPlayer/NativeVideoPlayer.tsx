@@ -10,6 +10,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { Volume2, VolumeX } from 'lucide-react-native';
 
 type CaptionTrack = {
   uri: string;
@@ -29,6 +30,8 @@ type VideoPlayerProps = {
   playbackRate?: number;
   resizeMode?: 'contain' | 'cover' | 'stretch';
   title?: string;
+  autoplay?: boolean;
+  onToggleAutoplay?: () => void;
   onToggleFullscreen?: () => void;
   style?: ViewStyle;
   onClose?: () => void;
@@ -48,6 +51,8 @@ export default function NativeVideoPlayer({
   playbackRate = 1,
   resizeMode = 'contain',
   title,
+  autoplay,
+  onToggleAutoplay,
   onToggleFullscreen,
   style,
   onClose,
@@ -67,6 +72,10 @@ export default function NativeVideoPlayer({
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  const [hasEmbeddedCaptions, setHasEmbeddedCaptions] = useState(false);
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [currentVolume, setCurrentVolume] = useState(volume);
+
   useEffect(() => {
     setPaused(!autoStart);
     setError(null);
@@ -82,7 +91,7 @@ export default function NativeVideoPlayer({
   }, [muted]);
 
   useEffect(() => {
-    if (controls && showControls && !paused) {
+    if (controls && showControls && !paused && !error) {
       const timer = setTimeout(() => {
         setShowControls(false);
         setShowMoreMenu(false);
@@ -90,7 +99,7 @@ export default function NativeVideoPlayer({
 
       return () => clearTimeout(timer);
     }
-  }, [controls, showControls, paused]);
+  }, [controls, showControls, paused, error]);
 
 
   const seekTo = (seconds: number) => {
@@ -108,6 +117,15 @@ export default function NativeVideoPlayer({
 
   const toggleMute = () => {
     setIsMuted(prev => !prev);
+    setShowControls(true);
+  };
+
+  const handleVolumeChange = (e: any) => {
+    const { locationX } = e.nativeEvent;
+    const v = Math.min(Math.max(locationX / 60, 0), 1);
+    setCurrentVolume(v);
+    if (v > 0) setIsMuted(false);
+    else setIsMuted(true);
     setShowControls(true);
   };
 
@@ -163,6 +181,20 @@ export default function NativeVideoPlayer({
     paused,
   });
 
+  const handleEnd = () => {
+    setPaused(true);
+    setShowControls(true);
+    onEnd?.();
+  };
+
+  const handleTracksAvailable = (e: any) => {
+    const { textTrackCount, textTracks } = e.nativeEvent;
+    if (textTrackCount > 0) {
+      setHasEmbeddedCaptions(true);
+    }
+    console.log('Tracks Available:', textTracks);
+  };
+
   const handleRetry = () => {
     setError(null);
     setIsBuffering(true);
@@ -181,7 +213,7 @@ export default function NativeVideoPlayer({
         paused={paused}
         muted={isMuted}
         loop={loop}
-        volume={volume}
+        volume={currentVolume}
         playbackRate={rate}
         resizeMode={resizeMode}
         style={styles.player}
@@ -189,17 +221,16 @@ export default function NativeVideoPlayer({
         onLoad={handleLoad}
         onProgress={handleProgress}
         onBuffer={handleBuffer}
-        onEnd={() => {
-          setPaused(true);
-          setShowControls(true);
-          onEnd?.();
-        }}
+        onEnd={handleEnd}
+        onTracksAvailable={handleTracksAvailable}
+        captionsEnabled={captionsEnabled}
         onError={(e: any) => {
           setIsBuffering(false);
           const message = e.nativeEvent?.message ?? 'Unknown playback error';
           const errorCode = e.nativeEvent?.errorCode;
           console.warn('JS: Playback error:', errorCode, message);
           setError(errorCode ? `${errorCode}: ${message}` : message);
+          setShowControls(true);
         }}
       />
       {controls ? (
@@ -260,14 +291,75 @@ export default function NativeVideoPlayer({
             </Pressable>
 
             <View style={styles.bottomActions}>
-              <Pressable style={styles.actionButton} onPress={toggleMute}>
-                <Text style={styles.actionText}>{isMuted ? 'MUTE' : 'VOL'}</Text>
-              </Pressable>
+              <View style={styles.volumeControlRow}>
+                <Pressable style={styles.actionButton} onPress={toggleMute}>
+                  {isMuted ? (
+                    <VolumeX color="#FFFFFF" size={16} />
+                  ) : (
+                    <Volume2 color="#FFFFFF" size={16} />
+                  )}
+                </Pressable>
 
-              {/* Captions aren't wired up yet — kept visible but inert for now */}
-              <View style={[styles.actionButton, styles.actionButtonDisabled]}>
-                <Text style={styles.actionText}>CC OFF</Text>
+                <View
+                  style={styles.volumeSliderWrapper}
+                  onStartShouldSetResponder={() => true}
+                  onResponderMove={handleVolumeChange}
+                  onResponderGrant={handleVolumeChange}
+                >
+                  <View style={styles.volumeSliderBg}>
+                    <View
+                      style={[
+                        styles.volumeSliderFill,
+                        { width: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.volumeSliderThumb,
+                        { left: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
+                      ]}
+                    />
+                  </View>
+                </View>
               </View>
+
+              {onToggleAutoplay ? (
+                <Pressable
+                  style={[
+                    styles.actionButton,
+                    autoplay && styles.actionButtonActive,
+                  ]}
+                  onPress={() => {
+                    onToggleAutoplay();
+                    setShowControls(true);
+                  }}
+                >
+                  <Text style={styles.actionText}>
+                    {autoplay ? 'AUTO' : 'AUTO'}
+                  </Text>
+                </Pressable>
+              ) : null}
+
+              {(hasEmbeddedCaptions || captions.length > 0) ? (
+                <Pressable
+                  style={[
+                    styles.actionButton,
+                    captionsEnabled && styles.actionButtonActive,
+                  ]}
+                  onPress={() => {
+                    setCaptionsEnabled(prev => !prev);
+                    setShowControls(true);
+                  }}
+                >
+                  <Text style={styles.actionText}>
+                    {captionsEnabled ? 'CC ON' : 'CC OFF'}
+                  </Text>
+                </Pressable>
+              ) : (
+                <View style={[styles.actionButton, styles.actionButtonDisabled]}>
+                  <Text style={styles.actionText}>CC</Text>
+                </View>
+              )}
 
               <Pressable
                 style={styles.actionButton}
@@ -420,11 +512,7 @@ const styles = StyleSheet.create({
   },
 
   centerOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 25,
@@ -496,6 +584,43 @@ const styles = StyleSheet.create({
   },
   actionButtonDisabled: {
     opacity: 0.4,
+  },
+  actionButtonActive: {
+    backgroundColor: 'rgba(255,255,255,0.32)',
+  },
+  volumeControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  volumeSliderWrapper: {
+    width: 60,
+    height: 32,
+    justifyContent: 'center',
+    marginLeft: 4,
+    marginRight: 8,
+  },
+  volumeSliderBg: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 2,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  volumeSliderFill: {
+    height: '100%',
+    backgroundColor: '#FF245E',
+    borderRadius: 2,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  volumeSliderThumb: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFFFF',
+    position: 'absolute',
+    marginLeft: -5,
   },
   errorBox: {
     maxWidth: '80%',

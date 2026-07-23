@@ -84,4 +84,16 @@ export const styles = StyleSheet.create({
         fontWeight: '600',
         maxWidth: 65,
     },
+    encodeProgressWrap: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 3,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+    },
+    encodeProgressFill: {
+        height: 3,
+        backgroundColor: '#3B82F6',
+    },
 });

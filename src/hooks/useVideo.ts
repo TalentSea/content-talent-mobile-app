@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchVideos } from '../services/api/video';
 import type { ApiVideo } from '../../types/video';
+import { isStreamable } from '../constants/videoStatus';
 
 export function useVideos() {
   const [videos, setVideos] = useState<ApiVideo[]>([]);
@@ -33,13 +34,9 @@ export function useVideos() {
     return () => clearInterval(interval);
   }, []);
 
-  const popularVideos = videos.filter(
-    video => String(video.status).trim().toLowerCase() === 'ready',
-  );
+  const popularVideos = videos.filter(video => isStreamable(video.status));
 
-  const processingVideos = videos.filter(
-    video => String(video.status).trim().toLowerCase() !== 'ready',
-  );
+  const processingVideos = videos.filter(video => !isStreamable(video.status));
 
   return {
     videos,

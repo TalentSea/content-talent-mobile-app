@@ -14,15 +14,16 @@ import { colors } from '../constants/colors';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-    const { user, isLoading } = useAuth0();
+    // AUTH0 TEMPORARILY DISABLED — remove this bypass to re-enable auth
+    // const { user, isLoading } = useAuth0();
 
-    if (isLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-        );
-    }
+    // if (isLoading) {
+    //     return (
+    //         <View style={styles.loadingContainer}>
+    //             <ActivityIndicator size="large" color={colors.primary} />
+    //         </View>
+    //     );
+    // }
 
     return (
         <NavigationContainer>
@@ -32,15 +33,10 @@ export function RootNavigator() {
                     contentStyle: { backgroundColor: '#05050A' },
                 }}
             >
-                {user ? (
-                    <>
-                        <Stack.Screen name="Home" component={HomeScreen} />
-                        <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
-                        <Stack.Screen name="Profile" component={ProfileScreen} />
-                    </>
-                ) : (
-                    <Stack.Screen name="Login" component={LoginScreen} />
-                )}
+                <Stack.Screen name="Home" component={HomeScreen} />
+                <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
+                <Stack.Screen name="Profile" component={ProfileScreen} />
+                {/* <Stack.Screen name="Login" component={LoginScreen} /> */}
             </Stack.Navigator>
         </NavigationContainer>
     );

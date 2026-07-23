@@ -32,4 +32,18 @@ export const styles = StyleSheet.create({
         marginTop: 8,
         lineHeight: 18,
     },
+    autoplayRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 16,
+        paddingTop: 14,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+    },
+    autoplayLabel: {
+        color: colors.text,
+        fontSize: 13,
+        fontWeight: '700',
+    },
 });
