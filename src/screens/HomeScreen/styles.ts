@@ -50,4 +50,29 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: colors.surface,
     },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerButton: {
+        marginRight: 16,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+    },
+    profileButton: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    avatarMini: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+    },
 });

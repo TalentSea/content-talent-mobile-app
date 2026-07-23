@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     ActivityIndicator,
+    Image,
     ScrollView,
     StatusBar,
     Text,
@@ -8,6 +9,8 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth0 } from 'react-native-auth0';
+import { User } from 'lucide-react-native';
 
 import { VideoSection } from '../../components/VideoSection';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
@@ -16,6 +19,7 @@ import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { styles } from './styles';
 
 export function HomeScreen({ navigation }: any) {
+    const { user } = useAuth0();
     const {
         popularVideos,
         processingVideos,
@@ -40,9 +44,22 @@ export function HomeScreen({ navigation }: any) {
                 <View style={styles.header}>
                     <Text style={styles.appTitle}>Streamr</Text>
 
-                    <Pressable onPress={() => reload()}>
-                        <Text style={styles.refreshText}>Refresh</Text>
-                    </Pressable>
+                    <View style={styles.headerActions}>
+                        <Pressable onPress={() => reload()} style={styles.headerButton}>
+                            <Text style={styles.refreshText}>Refresh</Text>
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => navigation.navigate('Profile')}
+                            style={styles.profileButton}
+                        >
+                            {user?.picture ? (
+                                <Image source={{ uri: user.picture }} style={styles.avatarMini} />
+                            ) : (
+                                <User color="#FFFFFF" size={18} />
+                            )}
+                        </Pressable>
+                    </View>
                 </View>
 
                 {loading ? (
