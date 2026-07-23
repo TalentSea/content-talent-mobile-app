@@ -71,16 +71,16 @@ Desktop.ini
 
 # Logs / crash files from your machine
 logcat*.txt
-filtered_logcat.txt
-hs_err_pid*.log
-*.apk
-*.aab
-android/app/build/
 logcat.txt
 logcat2.txt
 filtered_logcat.txt
 hs_err_pid*.log
 replay_pid*.log
+
+#apks if generated
+*.apk
+*.aab
+android/app/build/
 
 # Temporary files
 *.tmp

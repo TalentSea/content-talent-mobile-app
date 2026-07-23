@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
@@ -99,11 +98,6 @@ To learn more about React Native, take a look at the following resources:
 
 
 
-=======
-
-
-
-<<<<<<< HEAD
 projectvideo-frontend/
 ├── __tests__/                         # Frontend test files
 │   └── App.test.tsx                   # Default React Native test for the app
@@ -201,5 +195,3 @@ projectvideo-frontend/
 ├── docker-compose.yml                 
 └── Dockerfile
 =======
-
->>>>>>> 46008b018cc8b2ef2f4ae0ab2698f02070e82044
