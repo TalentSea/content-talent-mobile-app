@@ -335,7 +335,7 @@ export default function NativeVideoPlayer({
                   }}
                 >
                   <Text style={styles.actionText}>
-                    {autoplay ? 'AUTO' : 'AUTO'}
+                    {autoplay ? 'AUTO ON' : 'AUTO OFF'}
                   </Text>
                 </Pressable>
               ) : null}
@@ -439,7 +439,7 @@ const PLAYER_COLORS = {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 220,
+    height: '100%',
     backgroundColor: '#000000',
     overflow: 'hidden',
   },
@@ -494,21 +494,21 @@ const styles = StyleSheet.create({
   },
 
   centerPlayButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255, 36, 94, 0.9)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   centerPlayIcon: {
     color: '#FFFFFF',
-    fontSize: 28,
+    fontSize: 40,
     fontWeight: '700',
-    marginLeft: 2,
+    marginLeft: 4,
   },
 
   centerOverlay: {
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   actionButtonActive: {
-    backgroundColor: 'rgba(255,255,255,0.32)',
+    backgroundColor: '#FF245E',
   },
   volumeControlRow: {
     flexDirection: 'row',

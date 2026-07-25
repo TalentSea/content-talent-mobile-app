@@ -1,17 +1,16 @@
-/**
- * All statuses the backend can assign via Bunny Stream webhook codes 0–10.
- * The string fallback covers any future/unknown codes.
- */
 export type VideoStatus =
-  | 'PENDING'          // code 0 — Queued in GPU pipeline
-  | 'PROCESSING'       // code 1 — Extracting audio/frame preview
-  | 'ENCODING'         // code 2 — Encoding active (encode_progress < 100)
-  | 'READY'            // code 3 — All resolutions ready
-  | 'PLAYABLE'         // code 4 — First resolution (240p) ready
-  | 'FAILED'           // code 5 — Corrupt video codec/format
-  | 'UPLOAD_FINISHED'  // code 7 — Bytes received by Bunny
-  | 'UPLOAD_FAILED'    // code 8 — Upload interrupted
-  | string;            // fallback
+  | 'draft'
+  | 'published'
+  | 'scheduled'
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'ENCODING'
+  | 'READY'
+  | 'PLAYABLE'
+  | 'FAILED'
+  | 'UPLOAD_FINISHED'
+  | 'UPLOAD_FAILED'
+  | string;
 
 export type CaptionTrack = {
   uri: string;
@@ -22,18 +21,32 @@ export type CaptionTrack = {
 
 export type ApiVideo = {
   id: number;
-  user_id?: number;
-  bunny_video_id?: string;
   title: string;
-  description?: string;
-  category?: string;
-  tags?: string[];
-  thumbnail_url?: string;
-  alt_thumbnails?: string[];
+  description: string | null;
+  category: string | null;
+  tags: string[];
   status: VideoStatus;
-  encode_progress?: number;    // 0–100, populated during ENCODING
-  is_playable?: boolean;       // true once webhook code 4 fires
-  captions?: CaptionTrack[];   // sidecar caption URLs from webhook code 9
+  encode_progress: number;
+  is_playable: boolean;
+  views: number;
+  duration: string | null;
+  main_thumbnail_url: string | null;
+  published_at: string | null;
+  scheduled_at: string | null;
+  created_at: string | null;
+};
+
+export type VideoDetails = ApiVideo & {
+  playback_url: string | null;
+  alt_thumbnail_urls: string[];
+};
+
+export type PaginatedVideosResponse = {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  items: ApiVideo[];
 };
 
 export type PlayInfo = {
@@ -41,7 +54,7 @@ export type PlayInfo = {
   description?: string;
   stream_url: string;
   poster?: string;
-  captions?: CaptionTrack[];   // sidecar captions (fallback for non-HLS)
+  captions?: CaptionTrack[];
 };
 
 export type VideoSectionKey = 'popular' | 'processing';

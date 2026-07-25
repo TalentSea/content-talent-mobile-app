@@ -34,7 +34,7 @@ export function VideoCard({
                 <Image
                     source={{
                         uri:
-                            video.thumbnail_url ||
+                            video.main_thumbnail_url ||
                             'https://via.placeholder.com/400x240?text=No+Thumbnail',
                     }}
                     style={styles.thumbnail}

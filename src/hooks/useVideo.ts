@@ -15,8 +15,8 @@ export function useVideos() {
       }
 
       setError('');
-      const data = await fetchVideos();
-      setVideos(data);
+      const response = await fetchVideos({ page: 1, limit: 50 });
+      setVideos(response.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
