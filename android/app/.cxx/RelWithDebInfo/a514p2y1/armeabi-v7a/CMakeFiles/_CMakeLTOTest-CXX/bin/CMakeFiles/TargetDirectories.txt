@@ -1,4 +1,0 @@
-D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
-D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
-D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
-D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir
