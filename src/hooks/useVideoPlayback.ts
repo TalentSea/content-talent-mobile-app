@@ -23,8 +23,10 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             setCurrentVideoId(video.id);
             setPlayingVideo({
                 ...data,
+                description: data.description ?? undefined,
+                poster: data.poster ?? undefined,
                 title: data.title || video.title,
-                captions: data.captions ?? video.captions ?? [],
+                captions: data.captions ?? [],
             });
         } catch (err) {
             setPlaybackError(err instanceof Error ? err.message : 'Failed to play video');

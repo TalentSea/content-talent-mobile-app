@@ -73,8 +73,14 @@ export default function NativeVideoPlayer({
   const [retryCount, setRetryCount] = useState(0);
 
   const [hasEmbeddedCaptions, setHasEmbeddedCaptions] = useState(false);
+  const [nativeTextTracks, setNativeTextTracks] = useState<any[]>([]);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [currentVolume, setCurrentVolume] = useState(volume);
+  const [activeCaptions, setActiveCaptions] = useState(captions);
+
+  useEffect(() => {
+    setActiveCaptions(captions);
+  }, [captions]);
 
   useEffect(() => {
     setPaused(!autoStart);
@@ -161,8 +167,16 @@ export default function NativeVideoPlayer({
   const handleLoad = (e: any) => {
     setIsBuffering(false);
 
-    const { duration: dur } = e.nativeEvent;
+    const { duration: dur, textTracks, textTrackCount } = e.nativeEvent;
     setDuration(dur);
+    console.log('[NativeVideoPlayer] onLoad event:', { textTrackCount, textTracks });
+
+    if (textTracks && textTracks.length > 0) {
+      setHasEmbeddedCaptions(true);
+      setNativeTextTracks(textTracks);
+    } else if (textTrackCount > 0) {
+      setHasEmbeddedCaptions(true);
+    }
   };
 
   const handleBuffer = (e: any) => {
@@ -174,9 +188,10 @@ export default function NativeVideoPlayer({
 
   // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
   console.log('[NativeVideoPlayer] render state', {
-    controls,
-    showControls,
-    isBuffering,
+    hasEmbeddedCaptions,
+    captionsLength: captions?.length,
+    nativeTracksLength: nativeTextTracks.length,
+    captionsEnabled,
     error,
     paused,
   });
@@ -191,9 +206,41 @@ export default function NativeVideoPlayer({
     const { textTrackCount, textTracks } = e.nativeEvent;
     if (textTrackCount > 0) {
       setHasEmbeddedCaptions(true);
+      // Enable captions automatically if the HLS stream contains subtitle tracks
+      setCaptionsEnabled(true);
+    }
+    if (textTracks && textTracks.length > 0) {
+      setNativeTextTracks(textTracks);
     }
     console.log('Tracks Available:', textTracks);
   };
+
+  const getSelectedTextTrack = () => {
+    if (!captionsEnabled) return { type: 'disabled' };
+
+    if (nativeTextTracks.length > 0) {
+      return {
+        type: 'language',
+        value: nativeTextTracks[0].language || nativeTextTracks[0].title || 'en',
+      };
+    }
+
+    if (activeCaptions && activeCaptions.length > 0) {
+      return {
+        type: 'title',
+        value: activeCaptions[0].label || 'English',
+      };
+    }
+
+    return { type: 'language', value: 'en' };
+  };
+
+  const formattedTextTracks = activeCaptions.map(c => ({
+    title: c.label || 'English',
+    language: c.language || 'en',
+    type: c.mimeType || 'text/vtt',
+    uri: c.uri,
+  }));
 
   const handleRetry = () => {
     setError(null);
@@ -208,8 +255,11 @@ export default function NativeVideoPlayer({
         ref={playerRef}
         source={{
           uri,
-          captions,
+          type: 'm3u8',
+          captions: activeCaptions,
+          textTracks: formattedTextTracks,
         }}
+        textTracks={formattedTextTracks}
         paused={paused}
         muted={isMuted}
         loop={loop}
@@ -224,11 +274,22 @@ export default function NativeVideoPlayer({
         onEnd={handleEnd}
         onTracksAvailable={handleTracksAvailable}
         captionsEnabled={captionsEnabled}
+        selectedTextTrack={getSelectedTextTrack()}
         onError={(e: any) => {
           setIsBuffering(false);
           const message = e.nativeEvent?.message ?? 'Unknown playback error';
           const errorCode = e.nativeEvent?.errorCode;
           console.warn('JS: Playback error:', errorCode, message);
+
+          // Fail-safe recovery: if side-loaded VTT 404s, disable captions silently and allow playback
+          if (activeCaptions.length > 0 && (message.includes('404') || message.includes('BAD_HTTP_STATUS') || String(errorCode).includes('IO'))) {
+            console.warn('[NativeVideoPlayer] Side-loaded VTT returned 404, disabling captions and resuming video...');
+            setActiveCaptions([]);
+            setHasEmbeddedCaptions(false);
+            setCaptionsEnabled(false);
+            return;
+          }
+
           setError(errorCode ? `${errorCode}: ${message}` : message);
           setShowControls(true);
         }}
@@ -261,7 +322,13 @@ export default function NativeVideoPlayer({
             <View style={styles.topIconButton} />
           </View>
 
-          <View style={styles.centerSpacer} pointerEvents="none" />
+          <View style={styles.centerSpacer} pointerEvents="box-none">
+            {!error && !isBuffering ? (
+              <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
+                <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
 
           <View style={styles.bottomPanel} pointerEvents="box-none">
             <View style={styles.timeRow}>
@@ -340,7 +407,7 @@ export default function NativeVideoPlayer({
                 </Pressable>
               ) : null}
 
-              {(hasEmbeddedCaptions || captions.length > 0) ? (
+              {(hasEmbeddedCaptions || (activeCaptions && activeCaptions.length > 0)) ? (
                 <Pressable
                   style={[
                     styles.actionButton,
@@ -400,28 +467,26 @@ export default function NativeVideoPlayer({
         </View>
       ) : null}
 
-      <View
-        style={styles.centerOverlay}
-        pointerEvents={isBuffering ? 'none' : 'box-none'}
-      >
-        {error ? (
-          <View style={styles.errorBox} pointerEvents="auto">
-            <Text style={styles.errorText} numberOfLines={3}>
-              Couldn't play this video{'\n'}
-              {error}
-            </Text>
-            <Pressable style={styles.retryButton} onPress={handleRetry}>
-              <Text style={styles.retryText}>Retry</Text>
-            </Pressable>
-          </View>
-        ) : isBuffering ? (
-          <ActivityIndicator size="large" color="#FFFFFF" />
-        ) : controls && showControls ? (
-          <Pressable style={styles.centerPlayButton} onPress={togglePlayPause}>
-            <Text style={styles.centerPlayIcon}>{paused ? '▶' : 'Ⅱ'}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      {(error || isBuffering) ? (
+        <View
+          style={styles.centerOverlay}
+          pointerEvents={isBuffering ? 'none' : 'box-none'}
+        >
+          {error ? (
+            <View style={styles.errorBox} pointerEvents="auto">
+              <Text style={styles.errorText} numberOfLines={3}>
+                Couldn't play this video{'\n'}
+                {error}
+              </Text>
+              <Pressable style={styles.retryButton} onPress={handleRetry}>
+                <Text style={styles.retryText}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -483,6 +548,8 @@ const styles = StyleSheet.create({
   },
   centerSpacer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   backIconText: {
@@ -512,14 +579,15 @@ const styles = StyleSheet.create({
   },
 
   centerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 25,
     elevation: 25,
-    // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
-    borderWidth: 2,
-    borderColor: 'lime',
   },
   bottomPanel: {
     paddingHorizontal: 14,

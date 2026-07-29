@@ -39,6 +39,8 @@ export type ApiVideo = {
 export type VideoDetails = ApiVideo & {
   playback_url: string | null;
   alt_thumbnail_urls: string[];
+  caption_url?: string;
+  caption_lang?: string;
 };
 
 export type PaginatedVideosResponse = {

@@ -48,10 +48,6 @@ export function fetchVideoDetails(
   );
 }
 
-/**
- * Backend currently has no /play endpoint.
- * Playback URL comes from GET /api/v1/admin/videos/{id}.
- */
 export async function fetchVideoPlayInfo(videoId: number) {
   const video = await fetchVideoDetails(videoId);
 
@@ -63,11 +59,44 @@ export async function fetchVideoPlayInfo(videoId: number) {
     );
   }
 
+  const captions: import('../../../types/video').CaptionTrack[] = [];
+  
+  const tokenParams = video.playback_url.includes('?')
+    ? video.playback_url.split('?')[1]
+    : '';
+
+  if (video.caption_url) {
+    // If backend returns full URL or relative path
+    const captionUri = video.caption_url.startsWith('http')
+      ? video.caption_url
+      : video.main_thumbnail_url
+        ? video.main_thumbnail_url.replace(/thumb_[0-9]+\.(jpg|png|jpeg)(\?.*)?/, video.caption_url.replace(/^(\.\.\/)+/, ''))
+        : video.caption_url;
+
+    captions.push({
+      uri: captionUri,
+      language: video.caption_lang || 'en',
+      label: video.caption_lang === 'es' ? 'Spanish' : 'English',
+      mimeType: video.caption_url.endsWith('.srt') ? 'application/x-subrip' : 'text/vtt',
+    });
+  } else if (video.main_thumbnail_url) {
+    // Construct VTT URL on the Pull Zone domain (talentsea77999.b-cdn.net):
+    // e.g. https://talentsea77999.b-cdn.net/{video_id}/captions/en.vtt
+    const captionUri = video.main_thumbnail_url.replace(/thumb_[0-9]+\.(jpg|png|jpeg)(\?.*)?/, 'captions/en.vtt');
+
+    captions.push({
+      uri: captionUri,
+      language: 'en',
+      label: 'English',
+      mimeType: 'text/vtt',
+    });
+  }
+
   return {
     title: video.title,
     description: video.description,
     stream_url: video.playback_url,
     poster: video.main_thumbnail_url,
-    captions: [],
+    captions,
   };
 }

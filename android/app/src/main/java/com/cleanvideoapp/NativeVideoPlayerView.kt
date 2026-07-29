@@ -99,6 +99,10 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                 }
             }
 
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                sendTracksEvent()
+            }
+
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
                     post(progressRunnable)
@@ -268,10 +272,16 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         captionsEnabled = enabled
         Log.d("NativeVideoPlayer", "setCaptionsEnabled: $enabled")
 
-        player.trackSelectionParameters = player.trackSelectionParameters
-            .buildUpon()
-            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
-            .build()
+        val builder = player.trackSelectionParameters.buildUpon()
+        builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
+        
+        if (enabled) {
+            builder.setPreferredTextLanguage("en")
+            // Also select the track regardless of system locale matching if needed, 
+            // but preferred language usually suffices.
+        }
+
+        player.trackSelectionParameters = builder.build()
     }
 
     /**
