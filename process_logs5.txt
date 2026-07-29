@@ -1,0 +1,583 @@
+--------- beginning of main
+07-07 23:15:00.767  5893  5893 I m.cleanvideoapp: Late-enabling -Xcheck:jni
+07-07 23:15:00.807  5893  5893 I m.cleanvideoapp: Using CollectorTypeCMC GC.
+07-07 23:15:00.808  5893  5893 W m.cleanvideoapp: Unexpected CPU variant for x86: x86_64.
+07-07 23:15:00.808  5893  5893 W m.cleanvideoapp: Known variants: atom, sandybridge, silvermont, goldmont, goldmont-plus, goldmont-without-sha-xsaves, tremont, kabylake, default
+07-07 23:15:00.826  5893  5893 D nativeloader: Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+07-07 23:15:00.976  5893  5893 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+07-07 23:15:00.976  5893  5893 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+07-07 23:15:00.978  5893  5893 W ziparchive: Unable to open '/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.dm': No such file or directory
+07-07 23:15:00.978  5893  5893 W ziparchive: Unable to open '/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.dm': No such file or directory
+07-07 23:15:01.534  5893  5893 D nativeloader: Configuring clns-7 for other apk /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/lib/x86_64:/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand:/data/user/0/com.cleanvideoapp
+07-07 23:15:01.558  5893  5893 V GraphicsEnvironment: Currently set values for:
+07-07 23:15:01.558  5893  5893 V GraphicsEnvironment:   angle_gl_driver_selection_pkgs=[]
+07-07 23:15:01.558  5893  5893 V GraphicsEnvironment:   angle_gl_driver_selection_values=[]
+07-07 23:15:01.558  5893  5893 V GraphicsEnvironment: Global.Settings values are invalid: number of packages: 0, number of values: 0
+07-07 23:15:01.558  5893  5893 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+07-07 23:15:01.598  5893  5893 W SoLoader: Initializing SoLoader: 0
+07-07 23:15:01.600  5893  5893 W SoLoader: Recording new base apk path: /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk
+07-07 23:15:01.600  5893  5893 W SoLoader: Previously recorded 0 base apk paths.
+07-07 23:15:01.604  5893  5893 I SoLoader: Preparing SO source: DirectorySoSource[root = /vendor/lib64 flags = 2]
+07-07 23:15:01.604  5893  5893 I SoLoader: Preparing SO source: DirectorySoSource[root = /system/lib64 flags = 2]
+07-07 23:15:01.605  5893  5893 I SoLoader: Preparing SO source: DirectApkSoSource[root = [/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64]]
+07-07 23:15:01.740  5893  5893 I SoLoader: Preparing SO source: ApplicationSoSource[DirectorySoSource[root = /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/lib/x86_64 flags = 0]]
+07-07 23:15:01.741  5893  5893 I SoLoader: init finish: 4 SO sources prepared
+07-07 23:15:01.741  5893  5893 W SoLoader: SoLoader initialized: 8
+07-07 23:15:01.991  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libc++_shared.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.036  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libjsi.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.062  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libfbjni.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.082  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libreactnative.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Entering merged library JNI_OnLoad.
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing 13 pre-merged libs (including stub)
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libfabricjni_so.  onload_func: 0x7cb5f767ffd0
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreact_devsupportjni_so.  onload_func: 0x7cb5f78cbbb0
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreact_featureflagsjni_so.  onload_func: 0x7cb5f78de440
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreact_newarchdefaults_so.  onload_func: 0x7cb5f7986fd0
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreact_tracingjni_so.  onload_func: 0x7cb5f7c88f40
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreactnativeblob_so.  onload_func: 0x7cb5f7c9be90
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreactnativejni_so.  onload_func: 0x7cb5f7cbf100
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libreactnativejni_common_so.  onload_func: 0x7cb5f7cc4bf0
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register librninstance_so.  onload_func: 0x7cb5f7d41920
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libturbomodulejsijni_so.  onload_func: 0x7cb5f7ea4740
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libuimanagerjni_so.  onload_func: 0x7cb5f7ebab10
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: Preparing to register libyoga_so.  onload_func: 0x7cb5f7ec9b10
+07-07 23:15:02.082  5893  5893 D jni_lib_merge: About to register 12 actual methods.
+07-07 23:15:02.134  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libreact_codegen_safeareacontext.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.137  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libappmodules.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.200  5893  5893 D AppCompatDelegate: Checking for metadata for AppLocalesMetadataHolderService : Service not found
+07-07 23:15:02.320  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libhermesvm.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.322  5893  5893 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libhermestooling.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: Entering merged library JNI_OnLoad.
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: Preparing 4 pre-merged libs (including stub)
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: Preparing to register libhermes_executor_so.  onload_func: 0x7cb67a8ff6e0
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: Preparing to register libhermesinstancejni_so.  onload_func: 0x7cb67a92bb60
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: Preparing to register libjsijniprofiler_so.  onload_func: 0x7cb67a92d900
+07-07 23:15:02.322  5893  5893 D jni_lib_merge: About to register 3 actual methods.
+07-07 23:15:02.531  5893  5917 D TrafficStats: tagSocket(98) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:02.617  5893  5893 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Schedule
+07-07 23:15:02.617  5893  5893 W unknown:BridgelessReact: ReactHost{0}.attachSurface(surfaceId = 0)
+07-07 23:15:02.618  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask()
+07-07 23:15:02.619  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Start
+07-07 23:15:02.619  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getJSBundleLoader()
+07-07 23:15:02.620  5893  5920 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning()
+07-07 23:15:02.626  5893  5921 D TrafficStats: tagSocket(100) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:02.627  5893  5893 W m.cleanvideoapp: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (unsupported, reflection, allowed)
+07-07 23:15:02.641  5893  5893 W unknown:BridgelessReact: ReactHost{0}.onHostResume(activity)
+07-07 23:15:02.641  5893  5893 W unknown:ReactNative: Packager connection already open, nooping.
+07-07 23:15:02.647  5893  5893 W HWUI    : Unknown dataspace 0
+07-07 23:15:02.655  5893  5893 I Choreographer: Skipped 62 frames!  The application may be doing too much work on its main thread.
+07-07 23:15:02.677  5893  5909 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+07-07 23:15:02.677  5893  5909 I EGL_emulation: Opening libGLESv2_emulation.so
+07-07 23:15:02.693  5893  5909 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+07-07 23:15:02.776  5893  5909 I Gralloc4: mapper 4.x is not supported
+07-07 23:15:03.021  5893  5904 I HWUI    : Davey! duration=1333ms; Flags=1, FrameTimelineVsyncId=788783, IntendedVsync=2037462857714, Vsync=2038496191006, InputEventId=0, HandleInputStart=2038510795215, AnimationStart=2038510802914, PerformTraversalsStart=2038510951670, DrawStart=2038688678068, FrameDeadline=2037479524380, FrameInterval=2038510460248, FrameStartTime=16666666, SyncQueued=2038690173448, SyncStart=2038690459411, IssueDrawCommandsStart=2038690859259, SwapBuffers=2038691670994, FrameCompleted=2038796353872, DequeueBufferDuration=4004, QueueBufferDuration=370435, GpuCompleted=2038796353872, SwapBuffersCompleted=2038784447652, DisplayPresentTime=72904454231359566, CommandSubmissionCompleted=2038691670994, 
+07-07 23:15:03.101  5893  5893 W unknown:BridgelessReact: ReactHost{0}.raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: Unhandled SoftException
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: com.facebook.react.bridge.ReactNoCrashSoftException: raiseSoftException(onWindowFocusChange(hasFocus = "true")): Tried to access onWindowFocusChange while context is not ready
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException(ReactHostImpl.kt:919)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.raiseSoftException$default(ReactHostImpl.kt:910)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.runtime.ReactHostImpl.onWindowFocusChange(ReactHostImpl.kt:682)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.ReactDelegate.onWindowFocusChanged(ReactDelegate.kt:229)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.ReactActivityDelegate.onWindowFocusChanged(ReactActivityDelegate.java:235)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.facebook.react.ReactActivity.onWindowFocusChanged(ReactActivity.java:161)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at androidx.appcompat.view.WindowCallbackWrapper.onWindowFocusChanged(WindowCallbackWrapper.java:124)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.android.internal.policy.DecorView.onWindowFocusChanged(DecorView.java:1772)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.View.dispatchWindowFocusChanged(View.java:16743)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewGroup.dispatchWindowFocusChanged(ViewGroup.java:1505)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewRootImpl.dispatchFocusEvent(ViewRootImpl.java:4697)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewRootImpl.handleWindowFocusChanged(ViewRootImpl.java:4601)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewRootImpl.-$$Nest$mhandleWindowFocusChanged(Unknown Source:0)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessageImpl(ViewRootImpl.java:6773)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.view.ViewRootImpl$ViewRootHandler.handleMessage(ViewRootImpl.java:6683)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.os.Handler.dispatchMessage(Handler.java:107)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.os.Looper.loopOnce(Looper.java:232)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.os.Looper.loop(Looper.java:317)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at android.app.ActivityThread.main(ActivityThread.java:8705)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at java.lang.reflect.Method.invoke(Native Method)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:580)
+07-07 23:15:03.104  5893  5893 E unknown:ReactHost: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:886)
+07-07 23:15:03.177  5893  5898 I m.cleanvideoapp: Compiler allocated 5174KB to compile void android.view.ViewRootImpl.performTraversals()
+07-07 23:15:03.605  5893  5921 W unknown:BridgelessReact: ReactHost{0}.isMetroRunning(): Async result = true
+07-07 23:15:03.606  5893  5920 W unknown:BridgelessReact: ReactHost{0}.loadJSBundleFromMetro()
+07-07 23:15:03.704  5893  5898 I m.cleanvideoapp: Compiler allocated 4219KB to compile void android.widget.TextView.<init>(android.content.Context, android.util.AttributeSet, int, int)
+07-07 23:15:04.421  5893  5893 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda11@949474c
+07-07 23:15:04.421  5893  5921 W unknown:BridgelessReact: ReactHost{0}.loadJSBundleFromMetro(): Creating BundleLoader
+07-07 23:15:04.421  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating BridgelessReactContext
+07-07 23:15:04.424  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Creating ReactInstance
+07-07 23:15:04.438  5893  5921 D TrafficStats: tagSocket(123) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:04.505  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Loading JS Bundle
+07-07 23:15:04.505  5893  5920 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): DevSupportManager.onNewReactContextCreated()
+07-07 23:15:04.513  5893  5920 W unknown:BridgelessReact: ReactHost{0}.startSurface(surfaceId = 0): Execute
+07-07 23:15:04.517  5893  5893 W unknown:ReactNative: Packager connection already open, nooping.
+07-07 23:15:04.517  5893  5893 W unknown:BridgelessReact: ReactHost{0}.ReactContext.onHostResume()
+07-07 23:15:04.517  5893  5893 W unknown:BridgelessReact: ReactHost{0}.getOrCreateReactInstanceTask(): Executing ReactInstanceEventListeners
+07-07 23:15:04.766  5893  5931 I WebViewFactory: Loading com.google.android.webview version 149.0.7827.91 (code 782709108)
+--------- beginning of system
+07-07 23:15:04.769  5893  5931 V ResourcesManager: The following library key has been added: ResourcesKey{ mHash=3c2594a mResDir=null mSplitDirs=[] mOverlayDirs=[/product/overlay/EmulationPixel8/EmulationPixel8Overlay.apk,/product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk,/data/resource-cache/com.android.systemui-neutral-7dLa.frro,/data/resource-cache/com.android.systemui-accent-fL4w.frro,/data/resource-cache/com.android.systemui-dynamic-2DPX.frro] mLibDirs=[/data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk,/system/framework/android.test.base.jar,/system_ext/framework/androidx.window.extensions.jar] mDisplayId=0 mOverrideConfig=v35 mCompatInfo={420dpi always-compat} mLoaders=[]}
+07-07 23:15:04.770  5893  5931 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+07-07 23:15:04.770  5893  5931 D ApplicationLoaders: Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+07-07 23:15:04.772  5893  5931 W m.cleanvideoapp: Loading /data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/oat/x86_64/base.odex non-executable as it requires an image which we failed to load
+07-07 23:15:04.775  5893  5931 D nativeloader: Configuring clns-8 for other apk /data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/lib/x86_64:/data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk!/lib/x86_64, permitted_path=/data:/mnt/expand
+07-07 23:15:04.819  5893  5931 I cr_WVCFactoryProvider: version=149.0.7827.91 (782709108) minSdkVersion=29 multiprocess=true packageId=2 splits=<none>
+07-07 23:15:04.825  5893  5931 D nativeloader: Load /data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk!/lib/x86_64/libwebviewchromium.so using ns clns-8 from class loader (caller=/data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk): ok
+07-07 23:15:04.828  5893  5931 D nativeloader: Load /system/lib64/libwebviewchromium_plat_support.so using ns clns-8 from class loader (caller=/data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk): ok
+07-07 23:15:04.830  5893  5936 I chromium: [0707/231504.830161:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+07-07 23:15:04.830  5893  5936 I chromium: [0707/231504.830366:INFO:android_webview/browser/variations/variations_seed_loader.cc:67] Failed to open file for reading.: No such file or directory (2)
+07-07 23:15:04.831  5893  5930 I ReactNativeJS: Running "CleanVideoApp" with {"rootTag":1,"initialProps":{},"fabric":true}
+07-07 23:15:04.837  5893  5931 I cr_LibraryLoader: Successfully loaded native library
+07-07 23:15:04.838  5893  5931 I cr_CachingUmaRecorder: Flushed 41 samples from 19 histograms, 0 samples were dropped.
+07-07 23:15:04.844  5893  5939 D TrafficStats: tagSocket(134) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:04.847  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaProviderManager
+07-07 23:15:04.852  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.uimanager.LayoutShadowNode
+07-07 23:15:04.856  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewManager
+07-07 23:15:04.859  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.th3rdwave.safeareacontext.SafeAreaViewShadowNode
+07-07 23:15:04.860  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.cleanvideoapp.NativeVideoPlayerManager
+07-07 23:15:04.887  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.debuggingoverlay.DebuggingOverlayManager
+07-07 23:15:04.896  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.safeareaview.ReactSafeAreaViewManager
+07-07 23:15:04.904  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.modal.ReactModalHostManager
+07-07 23:15:04.913  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.progressbar.ReactProgressBarViewManager
+07-07 23:15:04.922  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollViewManager
+07-07 23:15:04.932  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.image.ReactImageManager
+07-07 23:15:04.943  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.ReactTextViewManager
+07-07 23:15:04.951  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactHorizontalScrollContainerViewManager
+07-07 23:15:04.960  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.unimplementedview.ReactUnimplementedViewManager
+07-07 23:15:04.968  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.scroll.ReactScrollViewManager
+07-07 23:15:04.978  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.view.ReactViewManager
+07-07 23:15:04.988  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.drawer.ReactDrawerLayoutManager
+07-07 23:15:04.997  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.switchview.ReactSwitchManager
+07-07 23:15:05.006  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.swiperefresh.SwipeRefreshLayoutManager
+07-07 23:15:05.017  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.textinput.ReactTextInputManager
+07-07 23:15:05.030  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.text.SelectableTextViewManager
+07-07 23:15:05.038  5893  5930 W unknown:ViewManagerPropertyUpdater: Could not find generated setter for class com.facebook.react.views.virtual.view.ReactVirtualViewManager
+07-07 23:15:05.190  5893  5939 D TrafficStats: tagSocket(134) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:05.261  5893  5930 W ReactNativeJS: SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/AppAndFlow/react-native-safe-area-context
+07-07 23:15:05.482  5893  5893 W m.cleanvideoapp: Accessing hidden field Landroid/widget/ScrollView;->mScroller:Landroid/widget/OverScroller; (unsupported, reflection, allowed)
+07-07 23:15:05.642  5893  5941 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libimagepipeline.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:05.735  5893  5943 D TrafficStats: tagSocket(139) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:05.746  5893  5942 D TrafficStats: tagSocket(135) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:06.784  5893  5893 W m.cleanvideoapp: Accessing hidden field Landroid/widget/HorizontalScrollView;->mScroller:Landroid/widget/OverScroller; (unsupported, reflection, allowed)
+07-07 23:15:07.025  5893  5899 I m.cleanvideoapp: NativeAlloc concurrent mark compact GC freed 13MB AllocSpace bytes, 16(840KB) LOS objects, 49% free, 5715KB/11MB, paused 482us,3.263ms total 132.940ms
+07-07 23:15:07.136  5893  5949 D nativeloader: Load /data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!/lib/x86_64/libnative-imagetranscoder.so using ns clns-7 from class loader (caller=/data/app/~~pFErmrk2XoqpUVaCCN_Wyg==/com.cleanvideoapp-hSaiNFNnSeya5UqSY5J4dg==/base.apk!classes7.dex): ok
+07-07 23:15:07.229  5893  5909 D EGL_emulation: app_time_stats: avg=288.31ms min=3.33ms max=3151.79ms count=13
+07-07 23:15:07.238  5893  5901 W m.cleanvideoapp: ApkAssets: Deleting an ApkAssets object '<empty> and /data/app/~~qoL83oMdkWVRGF9a3M7kMA==/com.google.android.webview-Hvqgj-cP324-3QoMezjoaw==/base.apk' with 2 weak references
+07-07 23:15:08.293  5893  5909 D EGL_emulation: app_time_stats: avg=101.58ms min=16.63ms max=484.29ms count=8
+07-07 23:15:08.460  5893  5953 D ProfileInstaller: Installing profile for com.cleanvideoapp
+07-07 23:15:09.669  5893  5909 D EGL_emulation: app_time_stats: avg=232.98ms min=15.06ms max=1081.27ms count=5
+07-07 23:15:09.995  5893  5930 I ReactNativeJS: 'PLAY INFO:', { title: 'counting',
+07-07 23:15:09.995  5893  5930 I ReactNativeJS:   stream_url: 'https://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8',
+07-07 23:15:09.995  5893  5930 I ReactNativeJS:   poster: 'https://my-ott-app.b-cdn.net/assets/thumbnails/video_123_1783178759_2.png' }
+07-07 23:15:10.092  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:10.092  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:10.092  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:10.092  5893  5930 I ReactNativeJS:   duration: 0,
+07-07 23:15:10.092  5893  5930 I ReactNativeJS:   currentTime: 0 }
+07-07 23:15:10.146  5893  5893 D NativeVideoPlayer: createViewInstance called
+07-07 23:15:10.214  5893  5893 I ExoPlayerImpl: Init 6b19606 [AndroidXMedia3/1.4.1] [emu64xa, sdk_gphone64_x86_64, Google, 35]
+07-07 23:15:10.307  5893  5893 W m.cleanvideoapp: Accessing hidden method Landroid/media/AudioTrack;->getLatency()I (unsupported, reflection, allowed)
+07-07 23:15:10.359  5893  5899 I m.cleanvideoapp: Background concurrent mark compact GC freed 5464KB AllocSpace bytes, 2(92KB) LOS objects, 49% free, 5839KB/11MB, paused 662us,6.256ms total 72.723ms
+07-07 23:15:10.646  5893  5893 D NativeVideoPlayer: setSource called with uri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 23:15:10.646  5893  5893 D NativeVideoPlayer: View setUri: http://vz-b9303f26-5b8.b-cdn.net/b8ae5965-95ed-46ff-ab30-fb0f1cb3d469/playlist.m3u8
+07-07 23:15:10.668  5893  5893 D NativeVideoPlayer: setPaused called with paused: false
+07-07 23:15:10.668  5893  5893 D NativeVideoPlayer: View setPaused: false
+07-07 23:15:10.677  5893  5909 D EGL_emulation: app_time_stats: avg=13.70ms min=4.77ms max=40.37ms count=13
+07-07 23:15:10.712  5893  5893 W WindowOnBackDispatcher: OnBackInvokedCallback is not enabled for the application.
+07-07 23:15:10.712  5893  5893 W WindowOnBackDispatcher: Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+07-07 23:15:10.801  5893  5893 D NativeVideoPlayer: onLayout: left=0, top=0, right=933, bottom=578, width=933, height=578
+07-07 23:15:10.828  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:10.828  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:10.828  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:10.828  5893  5930 I ReactNativeJS:   duration: 0,
+07-07 23:15:10.828  5893  5930 I ReactNativeJS:   currentTime: 0 }
+07-07 23:15:10.913  5893  5967 D TrafficStats: tagSocket(138) with statsTag=0xffffffff, statsUid=-1
+07-07 23:15:10.983  5893  5927 I HWUI    : Davey! duration=742ms; Flags=0, FrameTimelineVsyncId=791335, IntendedVsync=2045996190706, Vsync=2045996190706, InputEventId=0, HandleInputStart=2046000299390, AnimationStart=2046000300866, PerformTraversalsStart=2046664561998, DrawStart=2046674318560, FrameDeadline=2046746190676, FrameInterval=2046000293596, FrameStartTime=16666666, SyncQueued=2046677740795, SyncStart=2046716975961, IssueDrawCommandsStart=2046717538396, SwapBuffers=2046718876330, FrameCompleted=2046777946151, DequeueBufferDuration=38238764, QueueBufferDuration=264547, GpuCompleted=2046777716273, SwapBuffersCompleted=2046777946151, DisplayPresentTime=0, CommandSubmissionCompleted=2046718876330, 
+07-07 23:15:11.205  5893  5930 I ReactNativeJS: JS: onLoadStart
+07-07 23:15:11.206  5893  5930 I ReactNativeJS: 'JS: onBuffer', { isBuffering: true, target: 252, timeStamp: 2046523 }
+07-07 23:15:11.211  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:11.211  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:11.211  5893  5930 I ReactNativeJS:   isBuffering: true,
+07-07 23:15:11.211  5893  5930 I ReactNativeJS:   duration: 0,
+07-07 23:15:11.211  5893  5930 I ReactNativeJS:   currentTime: 0 }
+07-07 23:15:11.248  5893  5927 I HWUI    : Davey! duration=1032ms; Flags=1, FrameTimelineVsyncId=791335, IntendedVsync=2045996190706, Vsync=2045996190706, InputEventId=0, HandleInputStart=2046000299390, AnimationStart=2046000300866, PerformTraversalsStart=2046664561998, DrawStart=2046783167142, FrameDeadline=2046012857372, FrameInterval=2046000293596, FrameStartTime=16666666, SyncQueued=2046799208221, SyncStart=2046800472625, IssueDrawCommandsStart=2046800635444, SwapBuffers=2046837552981, FrameCompleted=2047029675314, DequeueBufferDuration=4681, QueueBufferDuration=497536, GpuCompleted=2047029675314, SwapBuffersCompleted=2047024204508, DisplayPresentTime=0, CommandSubmissionCompleted=2046837552981, 
+07-07 23:15:11.326  5893  5893 D NativeVideoPlayer: onLayout: left=0, top=0, right=933, bottom=577, width=933, height=577
+07-07 23:15:11.669  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:11.669  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:11.669  5893  5930 I ReactNativeJS:   isBuffering: true,
+07-07 23:15:11.669  5893  5930 I ReactNativeJS:   duration: 0,
+07-07 23:15:11.669  5893  5930 I ReactNativeJS:   currentTime: 0 }
+07-07 23:15:12.074  5893  5966 I DMCodecAdapterFactory: Creating an asynchronous MediaCodec adapter for track type video
+07-07 23:15:12.080  5893  5978 D CCodec  : allocate(c2.goldfish.h264.decoder)
+07-07 23:15:12.085  5893  5978 I Codec2Client: Available Codec2 services: "default" "software"
+07-07 23:15:12.098  5893  5978 I CCodec  : setting up 'default' as default (vendor) store
+07-07 23:15:12.117  5893  5978 I CCodec  : Created component [c2.goldfish.h264.decoder]
+07-07 23:15:12.118  5893  5978 D CCodecConfig: read media type: video/avc
+07-07 23:15:12.119  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.max-count.values
+07-07 23:15:12.129  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: output.subscribed-indices.values
+07-07 23:15:12.129  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: input.buffers.allocator-ids.values
+07-07 23:15:12.129  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.allocator-ids.values
+07-07 23:15:12.129  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.allocator-ids.values
+07-07 23:15:12.129  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: output.buffers.pool-ids.values
+07-07 23:15:12.130  5893  5978 D ReflectedParamUpdater: extent() != 1 for single value type: algo.buffers.pool-ids.values
+07-07 23:15:12.131  5893  5978 D ReflectedParamUpdater: ignored struct field coded.color-format.locations
+07-07 23:15:12.131  5893  5978 D CCodecConfig: ignoring local param raw.size (0xd2001800) as it is already supported
+07-07 23:15:12.131  5893  5978 D CCodecConfig: ignoring local param default.color (0x5200180b) as it is already supported
+07-07 23:15:12.135  5893  5978 D ReflectedParamUpdater: ignored struct field raw.hdr-static-info.mastering
+07-07 23:15:12.141  5893  5978 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 23:15:12.146  5893  5978 D CCodecConfig: c2 config diff is Dict {
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.pl.level = 20496
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.pl.profile = 20481
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.vui.color.matrix = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.vui.color.primaries = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.vui.color.range = 2
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 coded.vui.color.transfer = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 default.color.matrix = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 default.color.primaries = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 default.color.range = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 default.color.transfer = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 input.buffers.max-size.value = 6291456
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 input.delay.value = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   string input.media-type.value = "video/avc"
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 output.delay.value = 8
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   string output.media-type.value = "video/raw"
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.color.matrix = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.color.primaries = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.color.range = 2
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.color.transfer = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.max-size.height = 240
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.max-size.width = 320
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.pixel-format.value = 35
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::i32 raw.rotation.flip = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::i32 raw.rotation.value = 0
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.sar.height = 1
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.sar.width = 1
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.size.height = 240
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2::u32 raw.size.width = 320
+07-07 23:15:12.146  5893  5978 D CCodecConfig:   c2:
+07-07 23:15:12.146  5893  5978 W ColorUtils: expected specified color aspects (2:0:0:0)
+07-07 23:15:12.160  5893  5977 I MediaCodec: MediaCodec will operate in async mode
+07-07 23:15:12.163  5893  5977 D SurfaceUtils: connecting to surface 0x7cb6c515b690, reason connectToSurface
+07-07 23:15:12.165  5893  5977 I MediaCodec: [c2.goldfish.h264.decoder] setting surface generation to 6034433
+07-07 23:15:12.165  5893  5977 D SurfaceUtils: disconnecting from surface 0x7cb6c515b690, reason connectToSurface(reconnect)
+07-07 23:15:12.165  5893  5977 D SurfaceUtils: connecting to surface 0x7cb6c515b680, reason connectToSurface(reconnect-with-listener)
+07-07 23:15:12.165  5893  5978 D CCodec  : [c2.goldfish.h264.decoder] buffers are bound to CCodec for this session
+07-07 23:15:12.166  5893  5978 D CCodecConfig: no c2 equivalents for log-session-id
+07-07 23:15:12.166  5893  5978 D CCodecConfig: no c2 equivalents for importance
+07-07 23:15:12.167  5893  5978 D CCodecConfig: no c2 equivalents for color-standard
+07-07 23:15:12.167  5893  5978 D CCodecConfig: no c2 equivalents for csd-1
+07-07 23:15:12.167  5893  5978 D CCodecConfig: no c2 equivalents for native-window
+07-07 23:15:12.167  5893  5978 D CCodecConfig: no c2 equivalents for native-window-generation
+07-07 23:15:12.167  5893  5978 D CCodecConfig: no c2 equivalents for flags
+07-07 23:15:12.167  5893  5978 D CCodecConfig: config failed => CORRUPTED
+07-07 23:15:12.168  5893  5978 D CCodecConfig: c2 config diff is   c2::u32 default.color.matrix = 3
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 default.color.primaries = 3
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 default.color.range = 2
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 raw.max-size.height = 480
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 raw.max-size.width = 854
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 raw.size.height = 480
+07-07 23:15:12.168  5893  5978 D CCodecConfig:   c2::u32 raw.size.width = 854
+07-07 23:15:12.168  5893  5978 W Codec2Client: query -- param skipped: index = 1107298332.
+07-07 23:15:12.168  5893  5978 D CCodec  : client requested max input size 311040, which is smaller than what component recommended (6291456); overriding with component recommendation.
+07-07 23:15:12.168  5893  5978 W CCodec  : This behavior is subject to change. It is recommended that app developers double check whether the requested max input size is in reasonable range.
+07-07 23:15:12.168  5893  5978 D CCodec  : encoding statistics level = 0
+07-07 23:15:12.168  5893  5978 D CCodec  : setup formats input: AMessage(what = 0x00000000) = {
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t height = 480
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t level = 65536
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t max-input-size = 6291456
+07-07 23:15:12.168  5893  5978 D CCodec  :   string mime = "video/avc"
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t profile = 65536
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t width = 854
+07-07 23:15:12.168  5893  5978 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 23:15:12.168  5893  5978 D CCodec  : }
+07-07 23:15:12.168  5893  5978 D CCodec  : setup formats output: AMessage(what = 0x00000000) = {
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t android._color-format = 2135033992
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t android._video-scaling = 1
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t rotation-degrees = 0
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t color-standard = 1
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t color-range = 2
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t color-transfer = 3
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t sar-height = 1
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t sar-width = 1
+07-07 23:15:12.168  5893  5978 D CCodec  :   Rect crop(0, 0, 853, 479)
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t width = 854
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t height = 480
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t max-height = 480
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t max-width = 854
+07-07 23:15:12.168  5893  5978 D CCodec  :   string mime = "video/raw"
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t android._dataspace = 260
+07-07 23:15:12.168  5893  5978 D CCodec  :   int32_t color-format = 2130708361
+07-07 23:15:12.168  5893  5978 D CCodec  : }
+07-07 23:15:12.169  5893  5978 I CCodecConfig: query failed after returning 12 values (BAD_INDEX)
+07-07 23:15:12.169  5893  5978 D CCodecConfig: c2 config diff is   c2::u32 raw.color.matrix = 3
+07-07 23:15:12.169  5893  5978 D CCodecConfig:   c2::u32 raw.color.primaries = 3
+07-07 23:15:12.170  5893  5966 D MediaCodec: keep callback message for reclaim
+07-07 23:15:12.170  5893  5978 W Codec2Client: query -- param skipped: index = 1342179345.
+07-07 23:15:12.170  5893  5978 W Codec2Client: query -- param skipped: index = 2415921170.
+07-07 23:15:12.170  5893  5978 W Codec2Client: query -- param skipped: index = 1610614798.
+07-07 23:15:12.171  5893  5978 W Codec2Client: query -- param skipped: index = 2684356609.
+07-07 23:15:12.171  5893  5978 D C2Store : Using DMABUF Heaps
+07-07 23:15:12.172  5893  5978 D CCodecBufferChannel: [c2.goldfish.h264.decoder#294] Created input block pool with allocatorID 16 => poolID 17 - OK (0)
+07-07 23:15:12.173  5893  5978 D CCodecBufferChannel: [c2.goldfish.h264.decoder#294] Query output surface allocator returned 0 params => BAD_INDEX (6)
+07-07 23:15:12.174  5893  5978 I CCodecBufferChannel: [c2.goldfish.h264.decoder#294] Created output block pool with allocatorID 18 => poolID 23 - OK
+07-07 23:15:12.174  5893  5978 D CCodecBufferChannel: [c2.goldfish.h264.decoder#294] Configured output block pool ids 23 => OK
+07-07 23:15:12.174  5893  5978 D Codec2-OutputBufferQueue: remote graphic buffer migration 0/0
+07-07 23:15:12.174  5893  5978 D Codec2Client: setOutputSurface -- failed to set consumer usage (6/BAD_INDEX)
+07-07 23:15:12.174  5893  5978 D Codec2Client: setOutputSurface -- generation=6034433 consumer usage=0x900
+07-07 23:15:12.180  5893  5978 D Codec2Client: Surface configure completed
+07-07 23:15:12.180  5893  5978 I DMABUFHEAPS: Using DMA-BUF heap named: system
+07-07 23:15:12.204  5893  5982 D CCodecBufferChannel: [c2.goldfish.h264.decoder#294] Ignoring stale input buffer done callback: last flush index = 0, frameIndex = 0
+07-07 23:15:12.406  5893  5978 D CCodecConfig: c2 config diff is   c2::u32 raw.color.primaries = 4
+07-07 23:15:12.406  5893  5978 D CCodecConfig:   c2::u32 raw.color.transfer = 5
+07-07 23:15:12.406  5893  5978 D CCodecConfig:   c2::u32 raw.crop.height = 480
+07-07 23:15:12.406  5893  5978 D CCodecConfig:   c2::u32 raw.crop.left = 0
+07-07 23:15:12.406  5893  5978 D CCodecConfig:   c2::u32 raw.crop.top = 0
+07-07 23:15:12.406  5893  5978 D CCodecConfig:   c2::u32 raw.crop.width = 854
+07-07 23:15:12.407  5893  5978 D CCodecBuffers: [c2.goldfish.h264.decoder#294:2D-Output] popFromStashAndRegister: at 1000000080000us, output format changed to AMessage(what = 0x00000000) = {
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t android._color-format = 2135033992
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t android._video-scaling = 1
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t rotation-degrees = 0
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t color-standard = 4
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t color-range = 2
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t color-transfer = 5
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t sar-height = 1
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t sar-width = 1
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   Rect crop(0, 0, 853, 479)
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t width = 854
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t height = 480
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t max-height = 480
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t max-width = 854
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   string mime = "video/raw"
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t android._dataspace = 293863424
+07-07 23:15:12.407  5893  5978 D CCodecBuffers:   int32_t color-format = 2130708361
+07-07 23:15:12.407  5893  5978 D CCodecBuffers: }
+07-07 23:15:12.561  5893  5909 D EGL_emulation: app_time_stats: avg=48.24ms min=3.29ms max=154.33ms count=12
+07-07 23:15:12.684  5893  5930 I ReactNativeJS: 'JS: onLoad', { duration: 7.64, target: 252, timeStamp: 2048521 }
+07-07 23:15:12.688  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:12.688  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:12.688  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:12.688  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:12.688  5893  5930 I ReactNativeJS:   currentTime: 0 }
+07-07 23:15:13.392  5893  5893 I Choreographer: Skipped 43 frames!  The application may be doing too much work on its main thread.
+07-07 23:15:13.475  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:13.475  5893  5930 I ReactNativeJS:   currentTime: 0.618,
+07-07 23:15:13.475  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:13.475  5893  5930 I ReactNativeJS:   timeStamp: 2049246 }
+07-07 23:15:13.497  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: true,
+07-07 23:15:13.497  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:13.497  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:13.497  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:13.497  5893  5930 I ReactNativeJS:   currentTime: 0.618 }
+07-07 23:15:13.523  5893  5903 I HWUI    : Davey! duration=723ms; Flags=0, FrameTimelineVsyncId=792274, IntendedVsync=2048429523942, Vsync=2048429523942, InputEventId=0, HandleInputStart=2048430008401, AnimationStart=2048430009445, PerformTraversalsStart=2048430201045, DrawStart=2048430276461, FrameDeadline=2048446190608, FrameInterval=2048430004029, FrameStartTime=16666666, SyncQueued=2048430347012, SyncStart=2048516615365, IssueDrawCommandsStart=2048516749863, SwapBuffers=2049030773955, FrameCompleted=2049239651522, DequeueBufferDuration=5018, QueueBufferDuration=169339, GpuCompleted=2049239554404, SwapBuffersCompleted=2049239651522, DisplayPresentTime=0, CommandSubmissionCompleted=2049030773955, 
+07-07 23:15:13.572  5893  5909 D EGL_emulation: app_time_stats: avg=332.02ms min=49.01ms max=822.57ms count=3
+07-07 23:15:13.762  5893  5903 I HWUI    : Davey! duration=881ms; Flags=0, FrameTimelineVsyncId=792302, IntendedVsync=2048529523938, Vsync=2049246190576, InputEventId=0, HandleInputStart=2049247864178, AnimationStart=2049247866250, PerformTraversalsStart=2049282474390, DrawStart=2049282570304, FrameDeadline=2049412857236, FrameInterval=2049247146605, FrameStartTime=16666666, SyncQueued=2049284372177, SyncStart=2049379775945, IssueDrawCommandsStart=2049380240736, SwapBuffers=2049381350614, FrameCompleted=2049506284942, DequeueBufferDuration=73779160, QueueBufferDuration=241554, GpuCompleted=2049501018413, SwapBuffersCompleted=2049506284942, DisplayPresentTime=0, CommandSubmissionCompleted=2049381350614, 
+07-07 23:15:13.809  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:13.809  5893  5930 I ReactNativeJS:   currentTime: 1.199,
+07-07 23:15:13.809  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:13.809  5893  5930 I ReactNativeJS:   timeStamp: 2049629 }
+07-07 23:15:13.832  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:13.832  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:13.832  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:13.832  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:13.832  5893  5930 I ReactNativeJS:   currentTime: 1.199 }
+07-07 23:15:14.151  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:14.151  5893  5930 I ReactNativeJS:   currentTime: 1.538,
+07-07 23:15:14.151  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:14.151  5893  5930 I ReactNativeJS:   timeStamp: 2049972 }
+07-07 23:15:14.165  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:14.165  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:14.165  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:14.165  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:14.165  5893  5930 I ReactNativeJS:   currentTime: 1.538 }
+07-07 23:15:14.551  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:14.551  5893  5930 I ReactNativeJS:   currentTime: 1.936,
+07-07 23:15:14.551  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:14.551  5893  5930 I ReactNativeJS:   timeStamp: 2050387 }
+07-07 23:15:14.555  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:14.555  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:14.555  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:14.555  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:14.555  5893  5930 I ReactNativeJS:   currentTime: 1.936 }
+07-07 23:15:14.693  5893  5909 D EGL_emulation: app_time_stats: avg=150.74ms min=77.04ms max=208.20ms count=6
+07-07 23:15:15.021  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:15.021  5893  5930 I ReactNativeJS:   currentTime: 2.322,
+07-07 23:15:15.021  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:15.021  5893  5930 I ReactNativeJS:   timeStamp: 2050751 }
+07-07 23:15:15.029  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:15.029  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:15.029  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:15.029  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:15.029  5893  5930 I ReactNativeJS:   currentTime: 2.322 }
+07-07 23:15:15.423  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:15.423  5893  5930 I ReactNativeJS:   currentTime: 2.85,
+07-07 23:15:15.423  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:15.423  5893  5930 I ReactNativeJS:   timeStamp: 2051275 }
+07-07 23:15:15.426  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:15.426  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:15.426  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:15.426  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:15.426  5893  5930 I ReactNativeJS:   currentTime: 2.85 }
+07-07 23:15:15.698  5893  5909 D EGL_emulation: app_time_stats: avg=111.24ms min=51.32ms max=186.35ms count=6
+07-07 23:15:15.885  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:15.885  5893  5930 I ReactNativeJS:   currentTime: 3.273,
+07-07 23:15:15.885  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:15.885  5893  5930 I ReactNativeJS:   timeStamp: 2051717 }
+07-07 23:15:15.888  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:15.888  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:15.888  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:15.888  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:15.888  5893  5930 I ReactNativeJS:   currentTime: 3.273 }
+07-07 23:15:16.191  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:16.191  5893  5930 I ReactNativeJS:   currentTime: 3.572,
+07-07 23:15:16.191  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:16.191  5893  5930 I ReactNativeJS:   timeStamp: 2051997 }
+07-07 23:15:16.201  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:16.201  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:16.201  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:16.201  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:16.201  5893  5930 I ReactNativeJS:   currentTime: 3.572 }
+07-07 23:15:16.437  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:16.437  5893  5930 I ReactNativeJS:   currentTime: 3.851,
+07-07 23:15:16.437  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:16.437  5893  5930 I ReactNativeJS:   timeStamp: 2052277 }
+07-07 23:15:16.447  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:16.447  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:16.447  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:16.447  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:16.447  5893  5930 I ReactNativeJS:   currentTime: 3.851 }
+07-07 23:15:16.752  5893  5909 D EGL_emulation: app_time_stats: avg=45.10ms min=33.96ms max=66.12ms count=10
+07-07 23:15:16.753  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:16.753  5893  5930 I ReactNativeJS:   currentTime: 4.148,
+07-07 23:15:16.753  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:16.753  5893  5930 I ReactNativeJS:   timeStamp: 2052576 }
+07-07 23:15:16.759  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:16.759  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:16.759  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:16.759  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:16.759  5893  5930 I ReactNativeJS:   currentTime: 4.148 }
+07-07 23:15:17.042  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:17.042  5893  5930 I ReactNativeJS:   currentTime: 4.431,
+07-07 23:15:17.042  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:17.042  5893  5930 I ReactNativeJS:   timeStamp: 2052866 }
+07-07 23:15:17.046  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:17.046  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:17.046  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:17.046  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:17.046  5893  5930 I ReactNativeJS:   currentTime: 4.431 }
+07-07 23:15:17.310  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:17.310  5893  5930 I ReactNativeJS:   currentTime: 4.729,
+07-07 23:15:17.310  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:17.310  5893  5930 I ReactNativeJS:   timeStamp: 2053162 }
+07-07 23:15:17.326  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:17.326  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:17.326  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:17.326  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:17.326  5893  5930 I ReactNativeJS:   currentTime: 4.729 }
+07-07 23:15:17.493  5893  5977 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d3582dd8 : 5(31457280 size) total buffers - 4(25165824 size) used buffers - 140/145 (recycle/alloc) - 5/145 (fetch/transfer)
+07-07 23:15:17.661  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:17.661  5893  5930 I ReactNativeJS:   currentTime: 5.078,
+07-07 23:15:17.661  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:17.661  5893  5930 I ReactNativeJS:   timeStamp: 2053508 }
+07-07 23:15:17.668  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:17.668  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:17.668  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:17.668  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:17.668  5893  5930 I ReactNativeJS:   currentTime: 5.078 }
+07-07 23:15:17.760  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:17.760  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:17.760  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:17.760  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:17.760  5893  5930 I ReactNativeJS:   currentTime: 5.078 }
+07-07 23:15:17.840  5893  5909 D EGL_emulation: app_time_stats: avg=50.36ms min=33.41ms max=91.89ms count=11
+07-07 23:15:17.993  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:17.993  5893  5930 I ReactNativeJS:   currentTime: 5.416,
+07-07 23:15:17.993  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:17.993  5893  5930 I ReactNativeJS:   timeStamp: 2053839 }
+07-07 23:15:18.021  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:18.021  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:18.021  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:18.021  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:18.021  5893  5930 I ReactNativeJS:   currentTime: 5.416 }
+07-07 23:15:18.283  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:18.283  5893  5930 I ReactNativeJS:   currentTime: 5.71,
+07-07 23:15:18.283  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:18.283  5893  5930 I ReactNativeJS:   timeStamp: 2054136 }
+07-07 23:15:18.285  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:18.285  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:18.285  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:18.285  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:18.285  5893  5930 I ReactNativeJS:   currentTime: 5.71 }
+07-07 23:15:18.563  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:18.563  5893  5930 I ReactNativeJS:   currentTime: 5.972,
+07-07 23:15:18.563  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:18.563  5893  5930 I ReactNativeJS:   timeStamp: 2054403 }
+07-07 23:15:18.578  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:18.578  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:18.578  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:18.578  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:18.578  5893  5930 I ReactNativeJS:   currentTime: 5.972 }
+07-07 23:15:18.810  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:18.810  5893  5930 I ReactNativeJS:   currentTime: 6.21,
+07-07 23:15:18.810  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:18.810  5893  5930 I ReactNativeJS:   timeStamp: 2054658 }
+07-07 23:15:18.817  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:18.817  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:18.817  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:18.817  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:18.817  5893  5930 I ReactNativeJS:   currentTime: 6.21 }
+07-07 23:15:18.897  5893  5909 D EGL_emulation: app_time_stats: avg=43.06ms min=34.81ms max=62.56ms count=11
+07-07 23:15:19.106  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:19.106  5893  5930 I ReactNativeJS:   currentTime: 6.487,
+07-07 23:15:19.106  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:19.106  5893  5930 I ReactNativeJS:   timeStamp: 2054924 }
+07-07 23:15:19.112  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:19.112  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:19.112  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:19.112  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:19.112  5893  5930 I ReactNativeJS:   currentTime: 6.487 }
+07-07 23:15:19.351  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:19.351  5893  5930 I ReactNativeJS:   currentTime: 6.756,
+07-07 23:15:19.351  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:19.351  5893  5930 I ReactNativeJS:   timeStamp: 2055182 }
+07-07 23:15:19.357  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:19.357  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:19.357  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:19.357  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:19.357  5893  5930 I ReactNativeJS:   currentTime: 6.756 }
+07-07 23:15:19.613  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:19.613  5893  5930 I ReactNativeJS:   currentTime: 7.017,
+07-07 23:15:19.613  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:19.613  5893  5930 I ReactNativeJS:   timeStamp: 2055448 }
+07-07 23:15:19.615  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:19.615  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:19.615  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:19.615  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:19.615  5893  5930 I ReactNativeJS:   currentTime: 7.017 }
+07-07 23:15:19.910  5893  5909 D EGL_emulation: app_time_stats: avg=44.98ms min=32.78ms max=80.63ms count=10
+07-07 23:15:19.960  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:19.960  5893  5930 I ReactNativeJS:   currentTime: 7.386,
+07-07 23:15:19.960  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:19.960  5893  5930 I ReactNativeJS:   timeStamp: 2055813 }
+07-07 23:15:19.969  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:19.969  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:19.969  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:19.969  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:19.969  5893  5930 I ReactNativeJS:   currentTime: 7.386 }
+07-07 23:15:20.233  5893  5930 I ReactNativeJS: 'JS: onProgress', { duration: 7.64,
+07-07 23:15:20.233  5893  5930 I ReactNativeJS:   currentTime: 7.635,
+07-07 23:15:20.233  5893  5930 I ReactNativeJS:   target: 252,
+07-07 23:15:20.233  5893  5930 I ReactNativeJS:   timeStamp: 2056063 }
+07-07 23:15:20.235  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:20.235  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:20.235  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:20.235  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:20.235  5893  5930 I ReactNativeJS:   currentTime: 7.635 }
+07-07 23:15:21.849  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:21.849  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:21.849  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:21.849  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:21.849  5893  5930 I ReactNativeJS:   currentTime: 7.635 }
+07-07 23:15:25.291  5893  5981 D BufferPoolAccessor2.0: bufferpool2 0x7cb7d3582dd8 : 5(31457280 size) total buffers - 0(0 size) used buffers - 189/194 (recycle/alloc) - 5/193 (fetch/transfer)
+07-07 23:15:25.292  5893  5981 D BufferPoolAccessor2.0: evictor expired: 1, evicted: 1
+07-07 23:15:26.743  5893  5930 I ReactNativeJS: 'JS: NativeVideoPlayer Render state:', { showControls: false,
+07-07 23:15:26.743  5893  5930 I ReactNativeJS:   paused: false,
+07-07 23:15:26.743  5893  5930 I ReactNativeJS:   isBuffering: false,
+07-07 23:15:26.743  5893  5930 I ReactNativeJS:   duration: 7.64,
+07-07 23:15:26.743  5893  5930 I ReactNativeJS:   currentTime: 7.635 }

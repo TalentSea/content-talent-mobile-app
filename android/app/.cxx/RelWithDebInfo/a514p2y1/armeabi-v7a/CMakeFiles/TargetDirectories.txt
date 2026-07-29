@@ -1,0 +1,12 @@
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/appmodules.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/CMakeFiles/rebuild_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/safeareacontext_autolinked_build/CMakeFiles/edit_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/safeareacontext_autolinked_build/CMakeFiles/rebuild_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnscreens_autolinked_build/CMakeFiles/edit_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnscreens_autolinked_build/CMakeFiles/rebuild_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnsvg_autolinked_build/CMakeFiles/react_codegen_rnsvg.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnsvg_autolinked_build/CMakeFiles/edit_cache.dir
+D:/nageswari/content-talent-mobile-app/android/app/.cxx/RelWithDebInfo/a514p2y1/armeabi-v7a/rnsvg_autolinked_build/CMakeFiles/rebuild_cache.dir

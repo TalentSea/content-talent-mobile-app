@@ -52,17 +52,22 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setResizeMode(resizeMode ?: "contain")
     }
 
+    @ReactProp(name = "captionsEnabled", defaultBoolean = false)
+    fun setCaptionsEnabled(view: NativeVideoPlayerView, enabled: Boolean) {
+        view.setCaptionsEnabled(enabled)
+    }
+
 
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
-        return MapBuilder.of(
-                "onLoadStart", MapBuilder.of("registrationName", "onLoadStart"),
-                "onLoad", MapBuilder.of("registrationName", "onLoad"),
-                "onError", MapBuilder.of("registrationName", "onError"),
-                "onProgress", MapBuilder.of("registrationName", "onProgress"),
-                "onBuffer", MapBuilder.of("registrationName", "onBuffer"),
-                "onEnd", MapBuilder.of("registrationName", "onEnd")
-
-        )
+        val builder = MapBuilder.newHashMap<String, Any>()
+        builder["onLoadStart"] = MapBuilder.of("registrationName", "onLoadStart")
+        builder["onLoad"] = MapBuilder.of("registrationName", "onLoad")
+        builder["onError"] = MapBuilder.of("registrationName", "onError")
+        builder["onProgress"] = MapBuilder.of("registrationName", "onProgress")
+        builder["onBuffer"] = MapBuilder.of("registrationName", "onBuffer")
+        builder["onEnd"] = MapBuilder.of("registrationName", "onEnd")
+        builder["onTracksAvailable"] = MapBuilder.of("registrationName", "onTracksAvailable")
+        return builder
     }
 
     override fun receiveCommand(view: NativeVideoPlayerView, commandId: Int, args: ReadableArray?) {

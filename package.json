@@ -1,7 +1,6 @@
 {
   "name": "CleanVideoApp",
   "version": "0.0.1",
-  "main": "index.js",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -17,6 +16,7 @@
     "lucide-react-native": "^1.25.0",
     "react": "19.2.3",
     "react-native": "^0.86.0",
+    "react-native-auth0": "^5.10.0",
     "react-native-orientation-locker": "^1.7.0",
     "react-native-safe-area-context": "^5.8.0",
     "react-native-screens": "^4.26.0",
