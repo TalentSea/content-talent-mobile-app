@@ -1,81 +1,76 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-  cardContainer: {
-    width: '100%',
-    backgroundColor: '#0A0A0A',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#181818',
+  container: {
+    marginRight: 12,
   },
-  thumbnailWrapper: {
-    width: '100%',
-    height: 195,
-    backgroundColor: '#121212',
+  imageWrapper: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#1E1E1E',
     position: 'relative',
   },
-  thumbnailImage: {
+  thumbnail: {
     width: '100%',
     height: '100%',
   },
-  emptyThumbnailBox: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#141414',
+  badge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: '#E50914',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    zIndex: 2,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
   durationBadge: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 3,
+    zIndex: 2,
   },
   durationText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
   },
-  progressTrack: {
+  progressBackground: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: '#222222',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    zIndex: 2,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#E50914',
   },
-  detailsContainer: {
-    padding: 12,
-  },
-  titleText: {
+  title: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
-    lineHeight: 20,
+    marginTop: 6,
   },
-  metaText: {
-    color: '#888888',
+  category: {
+    color: '#B0B0B0',
     fontSize: 12,
-    marginTop: 4,
+    marginTop: 2,
   },
-  emptyTitleLine: {
-    width: '75%',
-    height: 14,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 4,
-    marginBottom: 8,
-  },
-  emptyMetaLine: {
-    width: '35%',
-    height: 10,
-    backgroundColor: '#141414',
-    borderRadius: 4,
+  metaString: {
+    color: '#808080',
+    fontSize: 11,
+    marginTop: 2,
   },
 });
