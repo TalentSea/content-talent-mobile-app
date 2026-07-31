@@ -1,4 +1,5 @@
 import { apiGet } from './client';
+import { API_BASE_URL } from '../../constants/config';
 import type {
   ApiVideo,
   PaginatedVideosResponse,
@@ -92,11 +93,16 @@ export async function fetchVideoPlayInfo(videoId: number) {
     });
   }
 
+  const streamUrl = video.playback_url.startsWith('http')
+    ? video.playback_url
+    : `${API_BASE_URL}${video.playback_url}`;
+
   return {
     title: video.title,
     description: video.description,
-    stream_url: video.playback_url,
+    stream_url: streamUrl,
     poster: video.main_thumbnail_url,
     captions,
+    adTagUrl: (video as any).ad_tag_url || 'https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/vmap_ad_samples&sz=640x480&cust_params=sample_ar%3Dpremidpost&ciu_szs=300x250&gdfp_req=1&ad_rule=1&output=vmap&unviewed_position_start=1&env=vp&impl=s&correlator=',
   };
 }

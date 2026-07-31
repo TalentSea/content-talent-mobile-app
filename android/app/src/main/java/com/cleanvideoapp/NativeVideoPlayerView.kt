@@ -15,6 +15,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.ima.ImaAdsLoader
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.facebook.react.bridge.Arguments
@@ -25,10 +27,9 @@ import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.events.Event
 
 class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
-    private val player: ExoPlayer = ExoPlayer.Builder(context).build()
-    private val playerView: PlayerView =
-            LayoutInflater.from(context)
-                    .inflate(R.layout.player_view_layout, this, false) as PlayerView
+    private var imaAdsLoader: ImaAdsLoader? = null
+    private val playerView: PlayerView
+    private val player: ExoPlayer
 
     private var hasSentLoadEvent = false
     private var hasSentTracksEvent = false
@@ -55,7 +56,20 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                 ViewGroup.LayoutParams.MATCH_PARENT
         )
 
+        playerView = LayoutInflater.from(context)
+                .inflate(R.layout.player_view_layout, this, false) as PlayerView
+
+        imaAdsLoader = ImaAdsLoader.Builder(context).build()
+
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setLocalAdInsertionComponents({ imaAdsLoader }, playerView)
+
+        player = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+
         playerView.player = player
+        imaAdsLoader?.setPlayer(player)
         addView(playerView)
 
         player.addListener(object : Player.Listener {
@@ -148,8 +162,18 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         hasSentTracksEvent = false
         sendEvent("onLoadStart", Arguments.createMap())
 
+        val type = source.getString("type")
         val builder = MediaItem.Builder()
                 .setUri(Uri.parse(uri))
+
+        if (type == "m3u8" || uri.contains(".m3u8")) {
+            builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+        }
+
+        val adTagUrl = source.getString("adTagUrl")
+        if (!adTagUrl.isNullOrBlank()) {
+            builder.setAdsConfiguration(MediaItem.AdsConfiguration.Builder(Uri.parse(adTagUrl)).build())
+        }
 
         if (source.hasKey("captions")) {
             val captions = source.getArray("captions")
@@ -260,6 +284,8 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
     fun releasePlayer() {
         removeCallbacks(progressRunnable)
+        imaAdsLoader?.setPlayer(null)
+        imaAdsLoader?.release()
         player.release()
     }
 
