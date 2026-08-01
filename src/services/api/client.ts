@@ -12,10 +12,10 @@ export class ApiError extends Error {
   }
 }
 
-let accessToken: string | null = null;
+let accessToken: string | null = 'test_token';
 
 export function setApiAccessToken(token: string | null) {
-  accessToken = token;
+  accessToken = token ?? 'test_token';
 }
 
 type ApiRequestOptions = RequestInit & {

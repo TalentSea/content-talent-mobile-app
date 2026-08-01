@@ -115,6 +115,9 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
             override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
                 sendTracksEvent()
+                if (pendingSelectedTextTrack != null) {
+                    applySelectedTextTrack(pendingSelectedTextTrack)
+                }
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -289,25 +292,89 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         player.release()
     }
 
-    /**
-     * Enable or disable subtitle text track rendering.
-     * ExoPlayer discovers embedded HLS subtitle tracks automatically;
-     * this method toggles their visibility via trackSelectionParameters.
-     */
+    private var pendingSelectedTextTrack: ReadableMap? = null
+
     fun setCaptionsEnabled(enabled: Boolean) {
         captionsEnabled = enabled
         Log.d("NativeVideoPlayer", "setCaptionsEnabled: $enabled")
 
+        if (!enabled) {
+            val builder = player.trackSelectionParameters.buildUpon()
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            player.trackSelectionParameters = builder.build()
+        } else if (pendingSelectedTextTrack != null) {
+            applySelectedTextTrack(pendingSelectedTextTrack)
+        }
+    }
+
+    fun setSelectedTextTrack(selectedTrack: ReadableMap?) {
+        pendingSelectedTextTrack = selectedTrack
+        applySelectedTextTrack(selectedTrack)
+    }
+
+    private fun applySelectedTextTrack(selectedTrack: ReadableMap?) {
+        if (selectedTrack == null) return
+        val type = selectedTrack.getString("type")
         val builder = player.trackSelectionParameters.buildUpon()
-        builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
-        
-        if (enabled) {
-            builder.setPreferredTextLanguage("en")
-            // Also select the track regardless of system locale matching if needed, 
-            // but preferred language usually suffices.
+
+        if (type == "disabled") {
+            captionsEnabled = false
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            player.trackSelectionParameters = builder.build()
+            return
+        }
+
+        captionsEnabled = true
+        builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+        builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+
+        val lang = selectedTrack.getString("value")
+        val targetIndex = if (selectedTrack.hasKey("index")) selectedTrack.getInt("index") else 0
+
+        if (!lang.isNullOrEmpty()) {
+            builder.setPreferredTextLanguage(lang)
+        }
+
+        var globalIndex = 0
+        var matched = false
+
+        for (group in player.currentTracks.groups) {
+            if (group.type == C.TRACK_TYPE_TEXT) {
+                for (i in 0 until group.length) {
+                    if (globalIndex == targetIndex) {
+                        builder.setOverrideForType(
+                            TrackSelectionOverride(group.mediaTrackGroup, i)
+                        )
+                        matched = true
+                        Log.d("NativeVideoPlayer", "applySelectedTextTrack matched track: globalIndex=$globalIndex, groupTrack=$i, language=${group.getTrackFormat(i).language}")
+                        break
+                    }
+                    globalIndex++
+                }
+                if (matched) break
+            }
+        }
+
+        if (!matched && player.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT }) {
+            for (group in player.currentTracks.groups) {
+                if (group.type == C.TRACK_TYPE_TEXT && group.length > 0) {
+                    builder.setOverrideForType(
+                        TrackSelectionOverride(group.mediaTrackGroup, 0)
+                    )
+                    matched = true
+                    break
+                }
+            }
         }
 
         player.trackSelectionParameters = builder.build()
+        playerView.subtitleView?.let { subView ->
+            subView.visibility = android.view.View.VISIBLE
+            subView.setPadding(0, 0, 0, 100)
+        }
+        Log.d("NativeVideoPlayer", "applySelectedTextTrack finished: targetIndex=$targetIndex, matched=$matched, textGroups=${player.currentTracks.groups.count { it.type == C.TRACK_TYPE_TEXT }}")
     }
 
     /**

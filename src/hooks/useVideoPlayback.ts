@@ -27,6 +27,9 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
                 poster: data.poster ?? undefined,
                 title: data.title || video.title,
                 captions: data.captions ?? [],
+                inbuiltCaptionTracks: data.inbuiltCaptionTracks ?? [],
+                hasInbuiltCaptions: data.hasInbuiltCaptions ?? false,
+                adTagUrl: (data as any).adTagUrl,
             });
         } catch (err) {
             setPlaybackError(err instanceof Error ? err.message : 'Failed to play video');

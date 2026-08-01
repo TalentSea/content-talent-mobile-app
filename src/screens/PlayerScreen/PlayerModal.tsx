@@ -74,6 +74,9 @@ export function PlayerModal({
               playbackRate={1}
               resizeMode="contain"
               captions={playingVideo.captions ?? []}
+              inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
+              hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
+              adTagUrl={playingVideo.adTagUrl}
               style={
                 isFullscreen
                   ? { width, height, borderRadius: 0 }

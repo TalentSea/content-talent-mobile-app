@@ -13,15 +13,21 @@ import {
 import { Volume2, VolumeX } from 'lucide-react-native';
 
 type CaptionTrack = {
-  uri: string;
+  uri?: string;
   language?: string;
   label?: string;
-  mimeType?: 'text/vtt' | 'application/x-subrip';
+  mimeType?: 'text/vtt' | 'application/x-subrip' | string;
+  isInbuilt?: boolean;
+  trackIndex?: number;
+  kind?: 'subtitles' | 'captions' | 'descriptions';
 };
 
 type VideoPlayerProps = {
   uri: string;
   captions?: CaptionTrack[];
+  inbuiltCaptionTracks?: CaptionTrack[];
+  hasInbuiltCaptions?: boolean;
+  adTagUrl?: string;
   autoStart?: boolean;
   controls?: boolean;
   muted?: boolean;
@@ -43,6 +49,9 @@ const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 export default function NativeVideoPlayer({
   uri,
   captions = [],
+  inbuiltCaptionTracks = [],
+  hasInbuiltCaptions: hasInbuiltCaptionsProp = false,
+  adTagUrl,
   autoStart = true,
   controls = true,
   muted = false,
@@ -74,13 +83,22 @@ export default function NativeVideoPlayer({
 
   const [hasEmbeddedCaptions, setHasEmbeddedCaptions] = useState(false);
   const [nativeTextTracks, setNativeTextTracks] = useState<any[]>([]);
-  const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [selectedCaptionIndex, setSelectedCaptionIndex] = useState<number>(-1);
+  const [showCaptionMenu, setShowCaptionMenu] = useState(false);
   const [currentVolume, setCurrentVolume] = useState(volume);
   const [activeCaptions, setActiveCaptions] = useState(captions);
 
   useEffect(() => {
     setActiveCaptions(captions);
-  }, [captions]);
+    if (inbuiltCaptionTracks.length > 0 || hasInbuiltCaptionsProp) {
+      setHasEmbeddedCaptions(true);
+    }
+    if ((captions && captions.length > 0) || (inbuiltCaptionTracks && inbuiltCaptionTracks.length > 0)) {
+      if (selectedCaptionIndex === -1) {
+        setSelectedCaptionIndex(0);
+      }
+    }
+  }, [captions, inbuiltCaptionTracks, hasInbuiltCaptionsProp]);
 
   useEffect(() => {
     setPaused(!autoStart);
@@ -101,6 +119,7 @@ export default function NativeVideoPlayer({
       const timer = setTimeout(() => {
         setShowControls(false);
         setShowMoreMenu(false);
+        setShowCaptionMenu(false);
       }, 3500);
 
       return () => clearTimeout(timer);
@@ -174,8 +193,14 @@ export default function NativeVideoPlayer({
     if (textTracks && textTracks.length > 0) {
       setHasEmbeddedCaptions(true);
       setNativeTextTracks(textTracks);
+      if (selectedCaptionIndex === -1) {
+        setSelectedCaptionIndex(0);
+      }
     } else if (textTrackCount > 0) {
       setHasEmbeddedCaptions(true);
+      if (selectedCaptionIndex === -1) {
+        setSelectedCaptionIndex(0);
+      }
     }
   };
 
@@ -185,16 +210,6 @@ export default function NativeVideoPlayer({
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
-  // TEMP DEBUG — remove once the button visibility issue is confirmed fixed
-  console.log('[NativeVideoPlayer] render state', {
-    hasEmbeddedCaptions,
-    captionsLength: captions?.length,
-    nativeTracksLength: nativeTextTracks.length,
-    captionsEnabled,
-    error,
-    paused,
-  });
 
   const handleEnd = () => {
     setPaused(true);
@@ -206,8 +221,9 @@ export default function NativeVideoPlayer({
     const { textTrackCount, textTracks } = e.nativeEvent;
     if (textTrackCount > 0) {
       setHasEmbeddedCaptions(true);
-      // Enable captions automatically if the HLS stream contains subtitle tracks
-      setCaptionsEnabled(true);
+      if (selectedCaptionIndex === -1) {
+        setSelectedCaptionIndex(0);
+      }
     }
     if (textTracks && textTracks.length > 0) {
       setNativeTextTracks(textTracks);
@@ -216,23 +232,36 @@ export default function NativeVideoPlayer({
   };
 
   const getSelectedTextTrack = () => {
-    if (!captionsEnabled) return { type: 'disabled' };
+    if (selectedCaptionIndex === -1) return { type: 'disabled' };
 
-    if (nativeTextTracks.length > 0) {
+    if (nativeTextTracks.length > 0 && nativeTextTracks[selectedCaptionIndex]) {
+      const track = nativeTextTracks[selectedCaptionIndex];
       return {
         type: 'language',
-        value: nativeTextTracks[0].language || nativeTextTracks[0].title || 'en',
+        value: track.language || track.label || track.title || 'en',
+        index: selectedCaptionIndex,
       };
     }
 
-    if (activeCaptions && activeCaptions.length > 0) {
+    if (activeCaptions.length > 0 && activeCaptions[selectedCaptionIndex]) {
+      const track = activeCaptions[selectedCaptionIndex];
       return {
-        type: 'title',
-        value: activeCaptions[0].label || 'English',
+        type: 'language',
+        value: track.language || 'en',
+        index: selectedCaptionIndex,
       };
     }
 
-    return { type: 'language', value: 'en' };
+    if (inbuiltCaptionTracks.length > 0 && inbuiltCaptionTracks[selectedCaptionIndex]) {
+      const track = inbuiltCaptionTracks[selectedCaptionIndex];
+      return {
+        type: 'language',
+        value: track.language || track.label || 'en',
+        index: selectedCaptionIndex,
+      };
+    }
+
+    return { type: 'disabled' };
   };
 
   const formattedTextTracks = activeCaptions.map(c => ({
@@ -258,6 +287,7 @@ export default function NativeVideoPlayer({
           type: 'm3u8',
           captions: activeCaptions,
           textTracks: formattedTextTracks,
+          adTagUrl,
         }}
         textTracks={formattedTextTracks}
         paused={paused}
@@ -273,7 +303,7 @@ export default function NativeVideoPlayer({
         onBuffer={handleBuffer}
         onEnd={handleEnd}
         onTracksAvailable={handleTracksAvailable}
-        captionsEnabled={captionsEnabled}
+        captionsEnabled={selectedCaptionIndex !== -1}
         selectedTextTrack={getSelectedTextTrack()}
         onError={(e: any) => {
           setIsBuffering(false);
@@ -281,12 +311,13 @@ export default function NativeVideoPlayer({
           const errorCode = e.nativeEvent?.errorCode;
           console.warn('JS: Playback error:', errorCode, message);
 
-          // Fail-safe recovery: if side-loaded VTT 404s, disable captions silently and allow playback
+          // Fail-safe recovery: if side-loaded VTT 404s, isolate side-loaded captions silently and allow playback
           if (activeCaptions.length > 0 && (message.includes('404') || message.includes('BAD_HTTP_STATUS') || String(errorCode).includes('IO'))) {
-            console.warn('[NativeVideoPlayer] Side-loaded VTT returned 404, disabling captions and resuming video...');
+            console.warn('[NativeVideoPlayer] Side-loaded VTT returned 404, clearing side-loaded captions list...');
             setActiveCaptions([]);
-            setHasEmbeddedCaptions(false);
-            setCaptionsEnabled(false);
+            if (!hasEmbeddedCaptions) {
+              setSelectedCaptionIndex(-1);
+            }
             return;
           }
 
@@ -407,19 +438,28 @@ export default function NativeVideoPlayer({
                 </Pressable>
               ) : null}
 
-              {(hasEmbeddedCaptions || (activeCaptions && activeCaptions.length > 0)) ? (
+              {(hasEmbeddedCaptions || hasInbuiltCaptionsProp || (inbuiltCaptionTracks && inbuiltCaptionTracks.length > 0) || (activeCaptions && activeCaptions.length > 0)) ? (
                 <Pressable
                   style={[
                     styles.actionButton,
-                    captionsEnabled && styles.actionButtonActive,
+                    selectedCaptionIndex !== -1 && styles.actionButtonActive,
                   ]}
                   onPress={() => {
-                    setCaptionsEnabled(prev => !prev);
+                    const tracksList = nativeTextTracks.length > 0
+                      ? nativeTextTracks
+                      : (activeCaptions.length > 0 ? activeCaptions : inbuiltCaptionTracks);
+                    const availableTracksCount = tracksList.length;
+                    if (availableTracksCount <= 1) {
+                      setSelectedCaptionIndex(prev => (prev === -1 ? 0 : -1));
+                    } else {
+                      setShowCaptionMenu(prev => !prev);
+                      setShowMoreMenu(false);
+                    }
                     setShowControls(true);
                   }}
                 >
                   <Text style={styles.actionText}>
-                    {captionsEnabled ? 'CC ON' : 'CC OFF'}
+                    {selectedCaptionIndex !== -1 ? 'CC ON' : 'CC OFF'}
                   </Text>
                 </Pressable>
               ) : (
@@ -430,7 +470,10 @@ export default function NativeVideoPlayer({
 
               <Pressable
                 style={styles.actionButton}
-                onPress={() => setShowMoreMenu(prev => !prev)}
+                onPress={() => {
+                  setShowMoreMenu(prev => !prev);
+                  setShowCaptionMenu(false);
+                }}
               >
                 <Text style={styles.actionText}>{rate}x</Text>
               </Pressable>
@@ -439,6 +482,63 @@ export default function NativeVideoPlayer({
                 <Text style={styles.actionText}>⛶</Text>
               </Pressable>
             </View>
+
+            {showCaptionMenu ? (
+              <View style={styles.speedMenu}>
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setSelectedCaptionIndex(-1);
+                    setShowCaptionMenu(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.speedText,
+                      selectedCaptionIndex === -1 && styles.speedTextActive,
+                    ]}
+                  >
+                    Off{selectedCaptionIndex === -1 ? '  ✓' : ''}
+                  </Text>
+                </Pressable>
+
+                {(() => {
+                  const tracksList = nativeTextTracks.length > 0
+                    ? nativeTextTracks
+                    : (activeCaptions.length > 0 ? activeCaptions : inbuiltCaptionTracks);
+                  return tracksList.map((track: any, idx: number) => {
+                    let baseLabel = track.label || track.title || (track.language ? track.language.toUpperCase() : `Track ${idx + 1}`);
+                    if (track.isInbuilt && !baseLabel.includes('(Inbuilt)')) {
+                      baseLabel = `${baseLabel} (Inbuilt)`;
+                    }
+                    const duplicateCount = tracksList.filter(t => (t.label || t.title || (t.language ? t.language.toUpperCase() : '')) === baseLabel).length;
+                    if (duplicateCount > 1) {
+                      baseLabel = idx === 0 ? `${baseLabel} (Auto)` : `${baseLabel} (${idx + 1})`;
+                    }
+                    const isSelected = selectedCaptionIndex === idx;
+                    return (
+                      <Pressable
+                        key={idx}
+                        style={styles.speedItem}
+                        onPress={() => {
+                          setSelectedCaptionIndex(idx);
+                          setShowCaptionMenu(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.speedText,
+                            isSelected && styles.speedTextActive,
+                          ]}
+                        >
+                          {baseLabel}{isSelected ? '  ✓' : ''}
+                        </Text>
+                      </Pressable>
+                    );
+                  });
+                })()}
+              </View>
+            ) : null}
 
             {showMoreMenu ? (
               <View style={styles.speedMenu}>

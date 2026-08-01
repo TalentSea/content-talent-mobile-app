@@ -13,14 +13,20 @@ export type VideoStatus =
   | string;
 
 export type CaptionTrack = {
-  uri: string;
+  uri?: string;
   language?: string;
   label?: string;
-  mimeType?: 'text/vtt' | 'application/x-subrip';
+  mimeType?: 'text/vtt' | 'application/x-subrip' | string;
+  isInbuilt?: boolean;
+  isDefault?: boolean;
+  trackIndex?: number;
+  kind?: 'subtitles' | 'captions' | 'descriptions';
 };
 
 export type ApiVideo = {
   id: number;
+  bunny_video_id?: string;
+  bunny_library_id?: string;
   title: string;
   description: string | null;
   category: string | null;
@@ -41,6 +47,7 @@ export type VideoDetails = ApiVideo & {
   alt_thumbnail_urls: string[];
   caption_url?: string;
   caption_lang?: string;
+  captions_data?: Array<{ label?: string; srclang?: string; url?: string; isInbuilt?: boolean; is_default?: boolean }>;
 };
 
 export type PaginatedVideosResponse = {
@@ -57,6 +64,9 @@ export type PlayInfo = {
   stream_url: string;
   poster?: string;
   captions?: CaptionTrack[];
+  inbuiltCaptionTracks?: CaptionTrack[];
+  hasInbuiltCaptions?: boolean;
+  adTagUrl?: string;
 };
 
 export type VideoSectionKey = 'popular' | 'processing';
