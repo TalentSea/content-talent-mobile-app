@@ -62,6 +62,7 @@ export type PlayInfo = {
   title: string;
   description?: string;
   stream_url: string;
+  mp4Url?: string;
   poster?: string;
   captions?: CaptionTrack[];
   inbuiltCaptionTracks?: CaptionTrack[];

@@ -1,5 +1,5 @@
 import { apiGet } from './client';
-import { API_BASE_URL, USE_MOCK_VIDEOS } from '../../constants/config';
+import { API_BASE_URL, USE_MOCK_VIDEOS, DEFAULT_AD_TAG_URL } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchMockVideos, fetchMockVideoDetails } from './mockVideoApi';
 import type {
@@ -157,14 +157,17 @@ export async function fetchVideoPlayInfo(videoId: number) {
     ? video.playback_url
     : `${API_BASE_URL}${video.playback_url}`;
 
+  const mp4Url = (video as any).mp4_download_url || (streamUrl.includes('.m3u8') ? streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') : streamUrl);
+
   return {
     title: video.title,
     description: video.description,
     stream_url: streamUrl,
+    mp4Url,
     poster: video.main_thumbnail_url,
     captions,
     inbuiltCaptionTracks: hlsCaptionInfo.inbuiltCaptionTracks,
     hasInbuiltCaptions: hlsCaptionInfo.hasInbuiltCaptions,
-    adTagUrl: (video as any).ad_tag_url || undefined,
+    adTagUrl: (video as any).ad_tag_url || DEFAULT_AD_TAG_URL,
   };
 }

@@ -26,6 +26,7 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
                 description: data.description ?? undefined,
                 poster: data.poster ?? undefined,
                 title: data.title || video.title,
+                mp4Url: data.mp4Url,
                 captions: data.captions ?? [],
                 inbuiltCaptionTracks: data.inbuiltCaptionTracks ?? [],
                 hasInbuiltCaptions: data.hasInbuiltCaptions ?? false,
