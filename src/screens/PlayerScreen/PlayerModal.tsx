@@ -66,6 +66,7 @@ export function PlayerModal({
             <NativeVideoPlayer
               uri={playingVideo.stream_url}
               mp4Url={playingVideo.mp4Url}
+              downloadUrls={playingVideo.downloadUrls}
               title={playingVideo.title}
               autoStart={true}
               controls={true}

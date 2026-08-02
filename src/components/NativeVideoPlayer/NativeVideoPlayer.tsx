@@ -21,6 +21,7 @@ import {
   Play,
   RotateCcw,
   RotateCw,
+  Settings,
   Volume2,
   VolumeX,
 } from 'lucide-react-native';
@@ -37,9 +38,16 @@ type CaptionTrack = {
   kind?: 'subtitles' | 'captions' | 'descriptions';
 };
 
+export type DownloadItem = {
+  resolution: string;
+  label: string;
+  url: string;
+};
+
 type VideoPlayerProps = {
   uri: string;
   mp4Url?: string;
+  downloadUrls?: DownloadItem[];
   captions?: CaptionTrack[];
   inbuiltCaptionTracks?: CaptionTrack[];
   hasInbuiltCaptions?: boolean;
@@ -65,6 +73,7 @@ const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 export default function NativeVideoPlayer({
   uri,
   mp4Url,
+  downloadUrls = [],
   captions = [],
   inbuiltCaptionTracks = [],
   hasInbuiltCaptions: hasInbuiltCaptionsProp = false,
@@ -94,6 +103,8 @@ export default function NativeVideoPlayer({
   const [progressBarWidth, setProgressBarWidth] = useState(0);
   const [isMuted, setIsMuted] = useState(muted);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [rate, setRate] = useState(playbackRate);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -108,6 +119,7 @@ export default function NativeVideoPlayer({
   // MP4 Download states
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadingLabel, setDownloadingLabel] = useState('');
 
   useEffect(() => {
     setActiveCaptions(captions);
@@ -135,7 +147,9 @@ export default function NativeVideoPlayer({
         setShowControls(false);
         setShowMoreMenu(false);
         setShowCaptionMenu(false);
-      }, 3500);
+        setShowSettingsMenu(false);
+        setShowDownloadMenu(false);
+      }, 4000);
 
       return () => clearTimeout(timer);
     }
@@ -149,7 +163,7 @@ export default function NativeVideoPlayer({
   };
 
   const skipForward = () => {
-    const newTime = Math.min(currentTime + 10, duration);
+    const newTime = Math.min(currentTime + 10, duration > 0 ? duration : currentTime + 10);
     seekTo(newTime);
     setCurrentTime(newTime);
     setShowControls(true);
@@ -199,16 +213,24 @@ export default function NativeVideoPlayer({
     setRetryCount(prev => prev + 1);
   };
 
-  // MP4 Video Download Functionality
-  const handleDownloadMp4 = async () => {
+  // Download Options (240p, 480p, 720p, 1080p)
+  const availableDownloadUrls: DownloadItem[] =
+    downloadUrls.length > 0
+      ? downloadUrls
+      : uri.includes('.m3u8')
+      ? [
+          { resolution: '1080p', label: '1080p HD', url: uri.replace(/playlist\.m3u8.*$/, 'play_1080p.mp4') },
+          { resolution: '720p', label: '720p HD', url: uri.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') },
+          { resolution: '480p', label: '480p SD', url: uri.replace(/playlist\.m3u8.*$/, 'play_480p.mp4') },
+          { resolution: '240p', label: '240p SD', url: uri.replace(/playlist\.m3u8.*$/, 'play_240p.mp4') },
+        ]
+      : [{ resolution: '720p', label: 'Standard MP4', url: mp4Url || uri }];
+
+  const handleStartDownload = async (targetUrl: string, label: string) => {
+    setShowDownloadMenu(false);
     try {
-      const downloadTargetUrl =
-        mp4Url ||
-        (uri.includes('.m3u8')
-          ? uri.replace(/playlist\.m3u8.*$/, 'play_720p.mp4')
-          : uri);
       const videoTitle = title || 'video';
-      const safeTitle = videoTitle.replace(/[^a-zA-Z0-9]/g, '_');
+      const safeTitle = `${videoTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${label.replace(/\s+/g, '_')}`;
 
       if (Platform.OS === 'android' && Platform.Version < 33) {
         const granted = await PermissionsAndroid.request(
@@ -229,10 +251,11 @@ export default function NativeVideoPlayer({
           : `${RNFS.DocumentDirectoryPath}/${safeTitle}.mp4`;
 
       setIsDownloading(true);
+      setDownloadingLabel(label);
       setDownloadProgress(0);
 
       const download = RNFS.downloadFile({
-        fromUrl: downloadTargetUrl,
+        fromUrl: targetUrl,
         toFile: destPath,
         background: true,
         progress: res => {
@@ -251,7 +274,7 @@ export default function NativeVideoPlayer({
       if (res.statusCode === 200 || res.statusCode === 206) {
         Alert.alert(
           'Download Complete',
-          `Saved "${videoTitle}" to Downloads folder!`,
+          `Saved "${videoTitle}" (${label}) to Downloads folder!`,
         );
       } else {
         Alert.alert(
@@ -277,13 +300,24 @@ export default function NativeVideoPlayer({
 
   const handleLoad = (e: any) => {
     const d = e.nativeEvent.duration || 0;
-    setDuration(d);
+    if (d > 0) {
+      setDuration(d);
+    }
     setIsBuffering(false);
     setError(null);
   };
 
   const handleProgress = (e: any) => {
-    setCurrentTime(e.nativeEvent.currentTime || 0);
+    const newCurrentTime = e.nativeEvent.currentTime || 0;
+    const seekable = e.nativeEvent.seekableDuration || e.nativeEvent.duration || 0;
+    setCurrentTime(newCurrentTime);
+
+    // FIX: Fix 0:21 / 0:10 duration mismatch during dynamic HLS streaming
+    if (seekable > 0 && seekable > duration) {
+      setDuration(seekable);
+    } else if (newCurrentTime > duration && duration > 0) {
+      setDuration(newCurrentTime);
+    }
   };
 
   const handleBuffer = (e: any) => {
@@ -345,7 +379,9 @@ export default function NativeVideoPlayer({
     uri: c.uri,
   }));
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // FIX: Progress percent clamped between 0% and 100%
+  const progressPercent = duration > 0 ? Math.min(Math.max((currentTime / duration) * 100, 0), 100) : 0;
+
 
   return (
     <View style={[styles.container, style]}>
@@ -462,12 +498,28 @@ export default function NativeVideoPlayer({
               ) : null}
 
 
+              {/* Settings Gear Button */}
+              <Pressable
+                style={styles.ytIconButton}
+                onPress={() => {
+                  setShowSettingsMenu(prev => !prev);
+                  setShowMoreMenu(false);
+                  setShowCaptionMenu(false);
+                  setShowDownloadMenu(false);
+                  setShowControls(true);
+                }}
+              >
+                <Settings color="#FFFFFF" size={16} />
+              </Pressable>
+
               {/* Playback Speed Menu */}
               <Pressable
                 style={styles.ytIconButton}
                 onPress={() => {
                   setShowMoreMenu(prev => !prev);
                   setShowCaptionMenu(false);
+                  setShowSettingsMenu(false);
+                  setShowDownloadMenu(false);
                 }}
               >
                 <Text style={styles.ytSpeedText}>{rate}x</Text>
@@ -475,7 +527,7 @@ export default function NativeVideoPlayer({
             </View>
           </View>
 
-          {/* YouTube-Style Center Controls (Rewind 10s, Play/Pause, Forward 10s) */}
+          {/* Center Controls (Rewind 10s, Big Play/Pause Button, Forward 10s) */}
           <View style={styles.centerControlsRow} pointerEvents="box-none">
             {!error && !isBuffering ? (
               <>
@@ -500,7 +552,7 @@ export default function NativeVideoPlayer({
             ) : null}
           </View>
 
-          {/* YouTube-Style Bottom Control Panel */}
+          {/* Bottom Control Panel */}
           <View style={styles.bottomPanel} pointerEvents="box-none">
             <View style={styles.timeRow}>
               <Text style={styles.timeText}>
@@ -508,7 +560,7 @@ export default function NativeVideoPlayer({
               </Text>
               {isDownloading ? (
                 <Text style={styles.downloadProgressText}>
-                  Downloading MP4... {downloadProgress}%
+                  Downloading MP4 ({downloadingLabel})... {downloadProgress}%
                 </Text>
               ) : null}
             </View>
@@ -569,10 +621,15 @@ export default function NativeVideoPlayer({
                 </View>
               </View>
 
-
+              {/* Download Quality Button */}
               <Pressable
                 style={styles.actionButton}
-                onPress={handleDownloadMp4}
+                onPress={() => {
+                  setShowDownloadMenu(prev => !prev);
+                  setShowCaptionMenu(false);
+                  setShowMoreMenu(false);
+                  setShowSettingsMenu(false);
+                }}
                 disabled={isDownloading}
               >
                 {isDownloading ? (
@@ -584,10 +641,50 @@ export default function NativeVideoPlayer({
 
               {onToggleFullscreen ? (
                 <Pressable style={styles.actionButton} onPress={onToggleFullscreen}>
-                  <Maximize color="#FFFFFF" size={14} />
+                  {style && (style as any).width ? (
+                    <Minimize color="#FFFFFF" size={14} />
+                  ) : (
+                    <Maximize color="#FFFFFF" size={14} />
+                  )}
                 </Pressable>
               ) : null}
             </View>
+
+            {/* Download Quality Options Menu (1080p, 720p, 480p, 240p) */}
+            {showDownloadMenu ? (
+              <View style={styles.speedMenu}>
+                <Text style={styles.menuHeaderTitle}>Download Quality</Text>
+                {availableDownloadUrls.map((item, idx) => (
+                  <Pressable
+                    key={idx}
+                    style={styles.speedItem}
+                    onPress={() => handleStartDownload(item.url, item.label)}
+                  >
+                    <Text style={styles.speedText}>
+                      {item.label} ({item.resolution})
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {/* Settings Menu Dropdown - ONLY Captions */}
+            {showSettingsMenu ? (
+              <View style={styles.speedMenu}>
+                <Text style={styles.menuHeaderTitle}>Settings</Text>
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setShowCaptionMenu(true);
+                    setShowSettingsMenu(false);
+                  }}
+                >
+                  <Text style={styles.speedText}>Captions / Subtitles ›</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+
 
             {/* Caption Menu Dropdown */}
             {showCaptionMenu ? (
@@ -999,5 +1096,16 @@ const styles = StyleSheet.create({
   },
   speedTextActive: {
     color: '#FF0000',
+  },
+  menuHeaderTitle: {
+    color: '#FF0000',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.15)',
   },
 });

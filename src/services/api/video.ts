@@ -159,11 +159,33 @@ export async function fetchVideoPlayInfo(videoId: number) {
 
   const mp4Url = (video as any).mp4_download_url || (streamUrl.includes('.m3u8') ? streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') : streamUrl);
 
+  // Parse download options (240p, 480p, 720p, 1080p) from API or generate Bunny CDN presigned MP4 URLs
+  const rawDownloadUrls = (video as any).download_urls;
+  let downloadUrls: Array<{ resolution: string; label: string; url: string }> = [];
+
+  if (Array.isArray(rawDownloadUrls) && rawDownloadUrls.length > 0) {
+    downloadUrls = rawDownloadUrls.map((item: any) => ({
+      resolution: item.resolution || '720p',
+      label: item.label || `${item.resolution || '720p'} quality`,
+      url: item.url,
+    }));
+  } else if (streamUrl.includes('.m3u8')) {
+    downloadUrls = [
+      { resolution: '1080p', label: '1080p HD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_1080p.mp4') },
+      { resolution: '720p', label: '720p HD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') },
+      { resolution: '480p', label: '480p SD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_480p.mp4') },
+      { resolution: '240p', label: '240p SD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_240p.mp4') },
+    ];
+  } else {
+    downloadUrls = [{ resolution: '720p', label: 'Standard MP4', url: streamUrl }];
+  }
+
   return {
     title: video.title,
     description: video.description,
     stream_url: streamUrl,
     mp4Url,
+    downloadUrls,
     poster: video.main_thumbnail_url,
     captions,
     inbuiltCaptionTracks: hlsCaptionInfo.inbuiltCaptionTracks,

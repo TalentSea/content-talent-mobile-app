@@ -58,11 +58,18 @@ export type PaginatedVideosResponse = {
   items: ApiVideo[];
 };
 
+export type DownloadItem = {
+  resolution: string;
+  label: string;
+  url: string;
+};
+
 export type PlayInfo = {
   title: string;
   description?: string;
   stream_url: string;
   mp4Url?: string;
+  downloadUrls?: DownloadItem[];
   poster?: string;
   captions?: CaptionTrack[];
   inbuiltCaptionTracks?: CaptionTrack[];
@@ -70,4 +77,4 @@ export type PlayInfo = {
   adTagUrl?: string;
 };
 
-export type VideoSectionKey = 'popular' | 'processing';
+export type VideoSectionKey = 'popular' | 'processing';
