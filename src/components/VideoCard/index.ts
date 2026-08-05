@@ -1,2 +1,3 @@
-export { CardType1 } from './CardType1';
-export { CardType2 } from './CardType2';
+export * from './VideoCard';
+export * from './CardType1/CardType1';
+export * from './CardType2/CardType2';

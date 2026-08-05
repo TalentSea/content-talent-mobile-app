@@ -1,156 +1,189 @@
-import React from 'react';
-import { View, Text, ScrollView, StatusBar } from 'react-native';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  Text,
+  StatusBar,
+  View,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { HorizontalList } from '../../components/HorizontalList';
-import { FeedItem } from '../../components/HorizontalList/types';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+// Styles import
 import { styles } from './styles';
 
-const CONTINUE_WATCHING_DATA: FeedItem[] = [
+// Custom Components
+import { CustomTabs } from '../../components/CustomTabs/CustomTabs';
+
+import { GridList } from '../../components/GridList/GridList';
+
+
+const CITY_IMG = require('../../assets/images/city.jpg');
+const MOUNTAIN_IMG = require('../../assets/images/mountain.jpg');
+const COAST_IMG = require('../../assets/coast.jpg');
+const FOREST_IMG = require('../../assets/forest.jpg');
+const IMAGE1_IMG = require('../../assets/image1.jpg');
+const IMAGE2_IMG = require('../../assets/image2.jpg');
+
+// ----------------------------------------------------
+// Mock Data
+// ----------------------------------------------------
+const CATEGORY_TABS = ['All', 'Trending', 'Gaming', 'Technology', 'Documentary', 'Music'];
+
+const MOCK_HORIZONTAL_VIDEOS = [
   {
-    id: 'cw-1',
-    thumbnailUrl: require('../../assets/images/city.jpg'),
-    title: 'Planet Earth II: Wilderness',
-    category: 'Documentary',
-    durationText: '15:02',
-    progressPercent: 65,
-    metaString: 'S1 E3 • Nature',
+    id: 'h1',
+    title: 'Top 10 Mobile App Development Tips 2026',
+    channelName: 'Tech Insider',
+    views: '150K views',
+    uploadedAt: '2 days ago',
+    duration: '12:40',
+    thumbnail: MOUNTAIN_IMG,
   },
   {
-    id: 'cw-2',
-    thumbnailUrl: require('../../assets/images/mountain.jpg'),
-    title: 'Formula 1: Drive to Survive S5',
-    category: 'Sports',
-    durationText: '32:15',
-    progressPercent: 40,
-    metaString: 'S5 E8 • Racing',
+    id: 'h2',
+    title: 'Mastering React Native UI Design',
+    channelName: 'Code With Me',
+    views: '320K views',
+    uploadedAt: '1 week ago',
+    duration: '08:15',
+    thumbnail: CITY_IMG,
   },
   {
-    id: 'cw-3',
-    thumbnailUrl: require('../../assets/coast.jpg'),
-    title: 'Silicon Valley AI Breakthroughs',
-    category: 'Technology',
-    durationText: '08:45',
-    progressPercent: 85,
-    metaString: 'S2 E1 • Tech',
+    id: 'h3',
+    title: 'TypeScript Best Practices for Beginners',
+    channelName: 'Dev Academy',
+    views: '95K views',
+    uploadedAt: '3 days ago',
+    duration: '15:20',
+    thumbnail: FOREST_IMG,
   },
 ];
 
-const POPULAR_VIDEOS_DATA: FeedItem[] = [
+const MOCK_VERTICAL_VIDEOS = [
   {
-    id: 'pop-1',
-    thumbnailUrl: require('../../assets/forest.jpg'),
-    title: "World's Fastest Bullet Trains",
-    category: 'Engineering',
-    durationText: '1:45:20',
-    metaString: '2.4M views • 3 weeks ago',
+    id: 'v1',
+    title: 'How CJP defeated BJP at Jantar Mantar Protests? | Detailed Analysis',
+    channelName: 'Dhruv Rathee',
+    views: '8.6M views',
+    uploadedAt: '6 days ago',
+    duration: '17:51',
+    thumbnail: COAST_IMG,
   },
   {
-    id: 'pop-2',
-    thumbnailUrl: require('../../assets/image1.jpg'),
-    title: 'Deep Ocean Trench Exploration',
-    category: 'Science',
-    durationText: '52:10',
-    metaString: '890K views • 1 month ago',
+    id: 'v2',
+    title: 'What Happens After Death? | Does Aatma really Exist?',
+    channelName: 'Dhruv Rathee',
+    views: '9.7M views',
+    uploadedAt: '11 days ago',
+    duration: '24:51',
+    thumbnail: IMAGE1_IMG,
   },
   {
-    id: 'pop-3',
-    thumbnailUrl: require('../../assets/image2.jpg'),
-    title: 'Mastering Italian Culinary Arts',
-    category: 'Food',
-    durationText: '2:15:00',
-    metaString: '1.2M views • 2 months ago',
-  },
-];
-
-const REGIONAL_POSTERS_DATA: FeedItem[] = [
-  {
-    id: 'post-1',
-    thumbnailUrl: require('../../assets/images/city.jpg'),
-    title: 'RRR (Rise Roar Revolt)',
-    category: 'Action / Drama',
-    durationText: '3:07:00',
-    metaString: '2022',
-    overlayBadgeText: 'NEW',
-  },
-  {
-    id: 'post-2',
-    thumbnailUrl: require('../../assets/images/mountain.jpg'),
-    title: 'Kantara',
-    category: 'Action / Thriller',
-    durationText: '2:28:15',
-    metaString: '2022',
-    overlayBadgeText: 'NEW',
-  },
-  {
-    id: 'post-3',
-    thumbnailUrl: require('../../assets/coast.jpg'),
-    title: 'Pushpa 2: The Rule',
-    category: 'Action / Crime',
-    durationText: '3:20:00',
-    metaString: '2024',
-    overlayBadgeText: 'TOP 10',
-  },
-  {
-    id: 'post-4',
-    thumbnailUrl: require('../../assets/forest.jpg'),
-    title: 'Kalki 2898 AD',
-    category: 'Sci-Fi / Action',
-    durationText: '3:01:00',
-    metaString: '2024',
-    overlayBadgeText: 'NEW',
+    id: 'v3',
+    title: 'React Native Mobile App Development Full Course',
+    channelName: 'Tech Academy',
+    views: '1.2M views',
+    uploadedAt: '2 weeks ago',
+    duration: '45:10',
+    thumbnail: IMAGE2_IMG,
   },
 ];
 
-const HomeScreen: React.FC = () => {
-  const handleItemPress = (item: FeedItem) => {
-    console.log('Selected item:', item.title);
+// HomeScreen Component
+
+export const HomeScreen: React.FC = () => {
+  const [selectedTab, setSelectedTab] = useState('All');
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const handleVideoPress = (videoItem: GridListItem) => {
+    navigation.navigate('PlayerScreen', { video: videoItem });
   };
-
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#121212" />
-
-      {/* Header Bar */}
-      <View style={styles.header}>
-        <Text style={styles.logoText}>
-          STREAM<Text style={styles.logoHighlight}>FLIX</Text>
-        </Text>
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
       >
-        {/* Row 1: Continue Watching */}
-        <HorizontalList
-          sectionTitle="Continue Watching"
-          data={CONTINUE_WATCHING_DATA}
-          aspectRatio="16:9"
-          cardWidth={220}
-          onItemPress={handleItemPress}
+        {/* Category Tabs Section */}
+        <CustomTabs
+          tabs={CATEGORY_TABS}
+          activeTab={selectedTab}
+          onSelectTab={(tabName) => setSelectedTab(tabName)}
         />
 
-        {/* Row 2: Popular Videos */}
-        <HorizontalList
-          sectionTitle="Popular Videos"
-          data={POPULAR_VIDEOS_DATA}
-          aspectRatio="16:9"
-          cardWidth={200}
-          onItemPress={handleItemPress}
+        <GridList
+            data={[...MOCK_HORIZONTAL_VIDEOS, ...MOCK_VERTICAL_VIDEOS]} 
+            numColumns={2}
+            onItemPress={handleVideoPress}
         />
+        {/* 1. SECTION 1: Horizontal Carousel */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Trending Videos</Text>
+        </View>
 
-        {/* Row 3: Regional Blockbusters */}
-        <HorizontalList
-          sectionTitle="Regional Blockbusters"
-          data={REGIONAL_POSTERS_DATA}
-          aspectRatio="2:3"
-          cardWidth={130}
-          onItemPress={handleItemPress}
-        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalContainer}
+        >
+          {MOCK_HORIZONTAL_VIDEOS.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.8}
+              style={styles.cardType1}
+              onPress={() => handleVideoPress(item)}
+            >
+              <View style={styles.thumbnailWrapper}>
+                <Image source={item.thumbnail} style={styles.thumbnail} />
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.duration}</Text>
+                </View>
+              </View>
+              <Text style={styles.cardTitle} numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text style={styles.cardMeta} numberOfLines={1}>
+                {item.channelName} • {item.views}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* 2. SECTION 2: Vertical Feed Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Latest Videos</Text>
+        </View>
+
+        {/* 3. SECTION 3: Vertical Feed */}
+        <View style={styles.verticalContainer}>
+          {MOCK_VERTICAL_VIDEOS.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.8}
+              style={styles.cardType2}
+              onPress={() => handleVideoPress(item)}>
+              <View style={styles.thumbnailWrapperLarge}>
+                <Image source={item.thumbnail} style={styles.thumbnail} />
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.duration}</Text>
+                </View>
+              </View>
+              <View style={styles.cardMetaContainer}>
+                <Text style={styles.cardTitleLarge} numberOfLines={2}>
+                  {item.title}
+                </Text>
+                <Text style={styles.cardMeta}>
+                  {item.channelName} • {item.views} • {item.uploadedAt}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-export default HomeScreen;

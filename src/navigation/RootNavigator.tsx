@@ -1,11 +1,22 @@
-import HomeScreen from '../screens/HomeScreen/HomeScreen';
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { HomeScreen } from '../screens/HomeScreen/HomeScreen';
+import { PlayerScreen } from '../screens/PlayerScreen/PlayerModal';
+const Stack = createNativeStackNavigator();
 
-// ... inside your Stack.Navigator:
-<Stack.Navigator initialRouteName="Home">
-  <Stack.Screen 
-    name="Home" 
-    component={HomeScreen} 
-    options={{ headerShown: false }} 
-  />
-  {/* Other screens */}
-</Stack.Navigator>
+export const RootNavigator = () => {
+  return (
+    <Stack.Navigator initialRouteName="Home">
+      <Stack.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="PlayerScreen" 
+        component={PlayerScreen} 
+        options={{ headerShown: false }}
+     />
+    </Stack.Navigator>
+  );
+};

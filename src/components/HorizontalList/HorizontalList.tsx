@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { FeedItem } from './types';
-import CardType1 from '../VideoCard/CardType1';
-
+import CardType1 from '../VideoCard/CardType1/CardType1';
+import { styles } from './styles';
 interface HorizontalListProps {
   sectionTitle: string;
   data: FeedItem[];
@@ -42,18 +42,3 @@ export const HorizontalList: React.FC<HorizontalListProps> = ({
 
 export default HorizontalList;
 
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginVertical: 12,
-  },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    paddingHorizontal: 16,
-  },
-  listPadding: {
-    paddingHorizontal: 16,
-  },
-});

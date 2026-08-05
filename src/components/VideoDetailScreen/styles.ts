@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions, Platform, StatusBar } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -7,86 +7,82 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0F0F0F',
   },
-  // --- Video Poster Region ---
-  posterContainer: {
+  playerContainer: {
     width: width,
-    height: width * (9 / 16),
+    height: (width * 9) / 16, // 16:9 Aspect Ratio
     backgroundColor: '#000000',
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  posterImage: {
+  playerImage: {
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
-  backButton: {
+  playButtonOverlay: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    zIndex: 10,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  backIconText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: -2,
-  },
-  playIconOverlay: {
-    position: 'absolute',
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
   },
   playIconText: {
     color: '#FFFFFF',
     fontSize: 20,
     marginLeft: 3,
   },
-  // --- Scrollable Details ---
-  scrollContent: {
-    flex: 1,
+  backButton: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    zIndex: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  metaContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#272727',
+  backIconText: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    lineHeight: 30,
+    marginTop: -2,
+  },
+  contentScroll: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  metaSection: {
+    marginTop: 14,
+    marginBottom: 16,
   },
   videoTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     lineHeight: 22,
   },
   metaSubtext: {
     color: '#AAAAAA',
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 6,
   },
-  // --- Action Bar ---
   actionsBar: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 14,
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderBottomColor: '#272727',
+    borderColor: '#272727',
+    marginBottom: 16,
   },
   actionItem: {
     alignItems: 'center',
+    flex: 1,
   },
   actionIconText: {
     fontSize: 18,
@@ -97,12 +93,11 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
-  // --- Comments Preview Box ---
   commentsPreviewBox: {
     backgroundColor: '#1F1F1F',
-    margin: 16,
-    padding: 12,
     borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
   },
   commentsHeader: {
     flexDirection: 'row',
@@ -112,7 +107,7 @@ export const styles = StyleSheet.create({
   },
   commentsTitle: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
   commentsCount: {
@@ -121,17 +116,14 @@ export const styles = StyleSheet.create({
   },
   commentSnippet: {
     color: '#DDDDDD',
-    fontSize: 12,
+    fontSize: 13,
   },
-  // --- Related Section ---
   relatedHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 10,
+    marginBottom: 12,
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
   },
 });

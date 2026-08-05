@@ -1,1 +1,1 @@
-export { VideoSection } from './VideoSection';
+export * from './VideoSection';

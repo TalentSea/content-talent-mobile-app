@@ -8,57 +8,67 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { HorizontalCard } from '../HorizontalCard'; // Adjust path if needed
 import { styles } from './styles';
 
-const MOUNTAIN_IMG = require('../../assets/images/mountain.jpg');
+export interface VideoItem {
+  id?: string;
+  title: string;
+  views: string;
+  uploadedAt?: string;
+  duration?: string;
+  thumbnail: any;
+}
 
-export const PlayerScreen: React.FC<any> = ({ route }) => {
-  const navigation = useNavigation();
+export interface VideoDetailScreenProps {
+  video: VideoItem;
+  relatedVideos: VideoItem[];
+  onBackPress?: () => void;
+  onRelatedVideoPress?: (item: VideoItem) => void;
+}
+
+export const VideoDetailScreen: React.FC<VideoDetailScreenProps> = ({
+  video,
+  relatedVideos,
+  onBackPress,
+  onRelatedVideoPress,
+}) => {
   const [liked, setLiked] = useState(false);
-
-  const video = route?.params?.video || {
-    title: 'Top 10 Mobile App Development Tips 2026',
-    views: '150K views',
-    uploadedAt: '2 days ago',
-    thumbnail: MOUNTAIN_IMG,
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-      {/* 1. HERO VIDEO POSTER REGION */}
-      <View style={styles.posterContainer}>
-        {/* Floating Back Button */}
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backIconText}>‹</Text>
-        </TouchableOpacity>
+      {/* 1. Video Player Region */}
+      <View style={styles.playerContainer}>
+        {onBackPress && (
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.backButton}
+            onPress={onBackPress}
+          >
+            <Text style={styles.backIconText}>‹</Text>
+          </TouchableOpacity>
+        )}
 
-        {/* Poster Image */}
-        <Image source={video.thumbnail} style={styles.posterImage} />
+        <Image source={video.thumbnail} style={styles.playerImage} />
 
-        {/* Center Play Overlay */}
-        <TouchableOpacity activeOpacity={0.8} style={styles.playIconOverlay}>
+        <TouchableOpacity activeOpacity={0.8} style={styles.playButtonOverlay}>
           <Text style={styles.playIconText}>▶</Text>
         </TouchableOpacity>
       </View>
 
-      {/* 2. SCROLLABLE DETAILS BELOW */}
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* 2. Scrollable Detail & Content Area */}
+      <ScrollView style={styles.contentScroll} showsVerticalScrollIndicator={false}>
         {/* Title & Metadata */}
-        <View style={styles.metaContainer}>
+        <View style={styles.metaSection}>
           <Text style={styles.videoTitle}>{video.title}</Text>
           <Text style={styles.metaSubtext}>
-            {video.views} • {video.uploadedAt || 'Recently uploaded'}
+            {video.views} {video.uploadedAt ? `• ${video.uploadedAt}` : ''}
           </Text>
         </View>
 
-        {/* Action Controls Bar */}
+        {/* Action Buttons */}
         <View style={styles.actionsBar}>
           <TouchableOpacity style={styles.actionItem} onPress={() => setLiked(!liked)}>
             <Text style={styles.actionIconText}>👍</Text>
@@ -94,10 +104,22 @@ export const PlayerScreen: React.FC<any> = ({ route }) => {
           </Text>
         </TouchableOpacity>
 
-        {/* Up Next List Header */}
+        {/* Up Next / Related Videos Section */}
         <View style={styles.relatedHeader}>
-          <Text style={styles.sectionTitle}>Related Videos</Text>
+          <Text style={styles.sectionTitle}>Up Next</Text>
         </View>
+
+        {/* Using .map() instead of FlatList prevents VirtualizedLists error */}
+        {relatedVideos.map((item) => (
+          <HorizontalCard
+            key={item.id || item.title}
+            title={item.title}
+            views={item.views}
+            duration={item.duration}
+            thumbnail={item.thumbnail}
+            onPress={() => onRelatedVideoPress?.(item)}
+          />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
