@@ -1,56 +1,32 @@
 import React from 'react';
-import { FlatList, Pressable, StatusBar, Text, View } from 'react-native';
+import { View, Text, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { VideoCard } from '../../components/VideoCard/VideoCard';
-import { PlayerModal } from '../PlayerScreen/PlayerModal';
-import { useVideos } from '../../hooks/useVideo';
-import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+import { GridList, GridItem } from '../../components/GridList/GridList';
 import { styles } from './styles';
 
-export function VideoGridScreen({ route, navigation }: any) {
-    const { section } = route.params;
+export const VideoGridScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-    const { popularVideos, processingVideos } = useVideos();
-    const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
+  // When any card in GridList is pressed:
+  const handleVideoPress = (videoItem: GridItem) => {
+    navigation.navigate('PlayerScreen', { video: videoItem });
+  };
 
-    const isPopular = section === 'popular';
-    const title = isPopular ? 'Popular Videos' : 'Processing';
-    const videos = isPopular ? popularVideos : processingVideos;
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F0F" />
+      
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>All Videos</Text>
+      </View>
 
-    return (
-        <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="light-content" />
-
-            <View style={styles.expandedHeader}>
-                <Pressable
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                    hitSlop={10}
-                >
-                    <Text style={styles.backIcon}>‹</Text>
-                </Pressable>
-
-                <Text style={styles.expandedTitle}>{title}</Text>
-                <View style={styles.backButtonSpacer} />
-            </View>
-
-            {videos.length === 0 ? (
-                <Text style={styles.emptyText}>No videos found.</Text>
-            ) : (
-                <FlatList
-                    data={videos}
-                    keyExtractor={item => String(item.id)}
-                    numColumns={2}
-                    columnWrapperStyle={styles.gridRow}
-                    contentContainerStyle={styles.gridContent}
-                    renderItem={({ item }) => (
-                        <VideoCard video={item} onPress={() => playVideo(item)} fullWidth />
-                    )}
-                />
-            )}
-
-            <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
-        </SafeAreaView>
-    );
-}
+      <GridList
+        onItemPress={handleVideoPress}
+        numColumns={2}
+      />
+    </SafeAreaView>
+  );
+};

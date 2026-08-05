@@ -1,73 +1,56 @@
-import { apiGet } from './client';
-import type {
-  ApiVideo,
-  PaginatedVideosResponse,
-  VideoDetails,
-} from '../../../types/video';
+import { VideoCardProps } from '../types/video';
 
-export type FetchVideosParams = {
-  search?: string;
-  status?: string;
-  category?: string;
-  sort?: 'newest' | 'oldest' | 'views' | 'title';
-  page?: number;
-  limit?: number;
+const API_BASE_URL = 'http://138.68.140.83:8000';
+
+const DEFAULT_VIDEOS: VideoCardProps[] = [
+  {
+    id: '1',
+    title: 'Content Talent Performance Showcase 1',
+    category: 'POP',
+    views: '1.2M views',
+    uploadedAt: '2 days ago',
+    durationText: '03:45',
+    progressPercent: 70,
+    isFavorite: true,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800',
+  },
+  {
+    id: '2',
+    title: 'Content Talent Performance Showcase 2',
+    category: 'TALENT',
+    views: '850K views',
+    uploadedAt: '5 days ago',
+    durationText: '05:12',
+    progressPercent: 30,
+    isFavorite: false,
+    thumbnailUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800',
+  },
+];
+
+export const fetchBackendVideos = async (): Promise<VideoCardProps[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/videos/`);
+    if (!response.ok) {
+      return DEFAULT_VIDEOS;
+    }
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      return DEFAULT_VIDEOS;
+    }
+
+    return data.map((item: any, index: number) => ({
+      id: String(item.id || index),
+      title: item.title || item.name || 'Untitled Video',
+      category: item.category || 'TALENT',
+      views: item.views ? `${item.views}` : '1K views',
+      uploadedAt: item.uploaded_at || 'Recently',
+      durationText: item.duration || '03:00',
+      progressPercent: item.progress || 0,
+      isFavorite: Boolean(item.is_favorite),
+      thumbnailUrl: item.thumbnail_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800',
+    }));
+  } catch (error) {
+    console.warn('Backend fetch failed, using default video list:', error);
+    return DEFAULT_VIDEOS;
+  }
 };
-
-export async function fetchVideos(
-  params: FetchVideosParams = {},
-): Promise<PaginatedVideosResponse> {
-  const query = new URLSearchParams();
-
-  if (params.search !== undefined) {
-    query.set('search', params.search);
-  }
-
-  if (params.status) {
-    query.set('status', params.status);
-  }
-
-  if (params.category) {
-    query.set('category', params.category);
-  }
-
-  query.set('sort', params.sort ?? 'newest');
-  query.set('page', String(params.page ?? 1));
-  query.set('limit', String(params.limit ?? 50));
-
-  return apiGet<PaginatedVideosResponse>(
-    `/api/v1/admin/videos?${query.toString()}`,
-  );
-}
-
-export function fetchVideoDetails(
-  videoId: number,
-): Promise<VideoDetails> {
-  return apiGet<VideoDetails>(
-    `/api/v1/admin/videos/${videoId}`,
-  );
-}
-
-/**
- * Backend currently has no /play endpoint.
- * Playback URL comes from GET /api/v1/admin/videos/{id}.
- */
-export async function fetchVideoPlayInfo(videoId: number) {
-  const video = await fetchVideoDetails(videoId);
-
-  if (!video.playback_url) {
-    throw new Error(
-      video.is_playable
-        ? 'Playback URL is unavailable'
-        : 'Video is not playable yet',
-    );
-  }
-
-  return {
-    title: video.title,
-    description: video.description,
-    stream_url: video.playback_url,
-    poster: video.main_thumbnail_url,
-    captions: [],
-  };
-}

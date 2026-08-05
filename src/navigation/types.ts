@@ -1,10 +1,12 @@
-export type VideoSectionKey = 'popular' | 'processing';
-
 export type RootStackParamList = {
-    Login: undefined;
-    Home: undefined;
-    VideoGrid: {
-        section: VideoSectionKey;
+  HomeScreen: undefined;
+  PlayerScreen: {
+    video: {
+      title: string;
+      channelName: string;
+      views: string;
+      uploadedAt: string;
+      thumbnail: any;
     };
-    Profile: undefined;
+  };
 };

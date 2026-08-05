@@ -1,49 +1,38 @@
 import React from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
-
-import { VideoCard } from '../VideoCard';
-import type { ApiVideo } from '../../../types/video';
+import { View, Text, ScrollView } from 'react-native';
+import { CardType1 } from '../VideoCard/CardType1/CardType1';
 import { styles } from './styles';
 
-export function VideoSection({
-    title,
-    videos,
-    onPressVideo,
-    onSeeAll,
-    emptyText = 'No videos found.',
-}: {
-    title: string;
-    videos: ApiVideo[];
-    onPressVideo: (video: ApiVideo) => void;
-    onSeeAll: () => void;
-    emptyText?: string;
-}) {
-    return (
-        <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{title}</Text>
-
-                {videos.length > 0 ? (
-                    <Pressable onPress={onSeeAll} hitSlop={8}>
-                        <Text style={styles.seeAll}>See all</Text>
-                    </Pressable>
-                ) : null}
-            </View>
-
-            {videos.length === 0 ? (
-                <Text style={styles.emptyText}>{emptyText}</Text>
-            ) : (
-                <FlatList
-                    horizontal
-                    data={videos}
-                    keyExtractor={item => String(item.id)}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.row}
-                    renderItem={({ item }) => (
-                        <VideoCard video={item} onPress={() => onPressVideo(item)} />
-                    )}
-                />
-            )}
-        </View>
-    );
+interface VideoSectionProps {
+  title?: string;
+  videos?: any[];
+  onPressVideo?: (video: any) => void;
 }
+
+export const VideoSection: React.FC<VideoSectionProps> = ({
+  title = 'Trending Videos',
+  videos = [], // Fallback default value prevents "length of undefined" crash
+  onPressVideo,
+}) => {
+  return (
+    <View style={styles.container}>
+      {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
+
+      {videos?.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContainer}
+        >
+          {videos.map((item) => (
+            <CardType1
+              key={item.id}
+              data={item}
+              onPress={() => onPressVideo && onPressVideo(item)}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+};
