@@ -3,7 +3,7 @@ import { colors } from '../../constants/colors';
 
 export const styles = StyleSheet.create({
     card: {
-        width: 132,
+        width: 140,
         marginRight: 12,
     },
     cardFullWidth: {
@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     },
     thumbnailWrap: {
         width: '100%',
-        height: 82,
+        height: 90,
         borderRadius: 10,
         overflow: 'hidden',
         backgroundColor: colors.surface,
@@ -42,6 +42,20 @@ export const styles = StyleSheet.create({
         fontWeight: '900',
         marginLeft: 1,
     },
+    durationBadge: {
+        position: 'absolute',
+        right: 6,
+        bottom: 6,
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        paddingHorizontal: 5,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    durationText: {
+        color: '#FFFFFF',
+        fontSize: 9,
+        fontWeight: '700',
+    },
     statusBadge: {
         position: 'absolute',
         left: 7,
@@ -58,8 +72,8 @@ export const styles = StyleSheet.create({
     },
     videoTitle: {
         color: colors.text,
-        fontSize: 10,
-        fontWeight: '900',
+        fontSize: 12,
+        fontWeight: '700',
         marginTop: 7,
     },
     metaRow: {
@@ -68,10 +82,9 @@ export const styles = StyleSheet.create({
         marginTop: 3,
     },
     category: {
-        color: colors.primary,
-        fontSize: 8,
-        fontWeight: '900',
-        maxWidth: 54,
+        color: colors.primary || '#6366F1',
+        fontSize: 10,
+        fontWeight: '700',
     },
     dot: {
         color: '#777',
@@ -80,9 +93,8 @@ export const styles = StyleSheet.create({
     },
     meta: {
         color: colors.muted,
-        fontSize: 8,
-        fontWeight: '600',
-        maxWidth: 65,
+        fontSize: 10,
+        fontWeight: '500',
     },
     encodeProgressWrap: {
         position: 'absolute',

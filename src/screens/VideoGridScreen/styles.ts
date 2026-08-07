@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     expandedHeader: {
-        paddingHorizontal: 10,
+        paddingHorizontal: 14,
         paddingTop: 10,
         paddingBottom: 12,
         flexDirection: 'row',
@@ -33,8 +33,28 @@ export const styles = StyleSheet.create({
     },
     expandedTitle: {
         color: colors.text,
-        fontSize: 15,
+        fontSize: 16,
         fontWeight: '900',
+    },
+    searchBarContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#161622',
+        marginHorizontal: 14,
+        marginVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#2A2A3C',
+    },
+    searchIcon: {
+        marginRight: 8,
+    },
+    searchInput: {
+        flex: 1,
+        color: '#FFFFFF',
+        fontSize: 13,
+        paddingVertical: 10,
     },
     gridContent: {
         paddingHorizontal: 14,
