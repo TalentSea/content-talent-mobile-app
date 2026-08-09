@@ -1,9 +1,9 @@
 export const API_BASE_URL = 'http://138.68.140.83:8000';
-export const DEFAULT_AUTH_TOKEN = 'test_token';
+export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
 
 /**
  * Flags to enable mock API for videos and HLS inbuilt captions.
- * Set to `false` to query live server http://138.68.140.83:8000 with test_token credentials.
+ * Set to `false` to query live server http://138.68.140.83:8000 with talentsea_secret_api_key_2026 credentials.
  */
 export const USE_MOCK_VIDEOS = false;
 export const USE_MOCK_CAPTIONS = false;

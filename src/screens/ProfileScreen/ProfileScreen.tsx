@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
     Image,
     Pressable,
     StatusBar,
@@ -8,28 +7,30 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth0 } from 'react-native-auth0';
-import { ChevronLeft, LogOut, CheckCircle, AlertCircle, User as UserIcon } from 'lucide-react-native';
+import { ChevronLeft, LogOut, LogIn, CheckCircle, User as UserIcon } from 'lucide-react-native';
 import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { getCurrentUser, clearSessionTokens } from '../../services/api/authService';
 import { styles } from './styles';
 import { colors } from '../../constants/colors';
 
 export function ProfileScreen({ navigation }: any) {
-    const { user, clearSession, isLoading } = useAuth0();
+    const user = getCurrentUser();
     const [activeTab, setActiveTab] = useState<'liked' | 'saved' | 'favourited'>('liked');
 
     const { popularVideos, loading, reload } = useVideos();
     const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
 
+    const isLoggedIn = !!user;
+
     const currentUser = user || {
-        name: 'Streamr Creator',
-        email: 'creator@streamr.app',
-        picture: null,
-        email_verified: true,
+        name: 'User',
+        email: 'user@streamr.app',
+        avatar_url: undefined,
+        role: 'guest',
     };
 
     const userVideos =
@@ -40,14 +41,15 @@ export function ProfileScreen({ navigation }: any) {
             : popularVideos.slice(2);
 
     const handleLogout = async () => {
-        try {
-            if (user) {
-                await clearSession();
-            } else {
-                navigation.goBack();
-            }
-        } catch (error) {
-            console.warn('Logout failed:', error);
+        await clearSessionTokens();
+        if (navigation) {
+            navigation.navigate('Login');
+        }
+    };
+
+    const handleLoginRedirect = () => {
+        if (navigation) {
+            navigation.navigate('Login');
         }
     };
 
@@ -55,7 +57,7 @@ export function ProfileScreen({ navigation }: any) {
         <SafeAreaView style={styles.screen}>
             <StatusBar barStyle="light-content" />
 
-            {/* Header */}
+            {/* Header: Clean title with back button, no top logout button */}
             <View style={styles.header}>
                 <Pressable
                     style={styles.backButton}
@@ -69,8 +71,8 @@ export function ProfileScreen({ navigation }: any) {
 
             <View style={styles.content}>
                 <View style={styles.avatarContainer}>
-                    {currentUser.picture ? (
-                        <Image source={{ uri: currentUser.picture }} style={styles.avatar} />
+                    {currentUser.avatar_url ? (
+                        <Image source={{ uri: currentUser.avatar_url }} style={styles.avatar} />
                     ) : (
                         <View style={styles.avatarFallback}>
                             <UserIcon color="#FFFFFF" size={32} />
@@ -96,19 +98,59 @@ export function ProfileScreen({ navigation }: any) {
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Status</Text>
                         <View style={styles.badgeRow}>
-                            {currentUser.email_verified ? (
-                                <View style={[styles.badge, styles.badgeVerified]}>
-                                    <CheckCircle color="#10B981" size={14} style={styles.badgeIcon} />
-                                    <Text style={styles.badgeTextVerified}>Verified Creator</Text>
-                                </View>
-                            ) : (
-                                <View style={[styles.badge, styles.badgePending]}>
-                                    <AlertCircle color="#F59E0B" size={14} style={styles.badgeIcon} />
-                                    <Text style={styles.badgeTextPending}>Pending Verification</Text>
-                                </View>
-                            )}
+                            <View style={[styles.badge, isLoggedIn ? styles.badgeVerified : { backgroundColor: 'rgba(107, 114, 128, 0.2)' }]}>
+                                <CheckCircle color={isLoggedIn ? '#10B981' : '#9CA3AF'} size={14} style={styles.badgeIcon} />
+                                <Text style={isLoggedIn ? styles.badgeTextVerified : { color: '#9CA3AF', fontSize: 12, fontWeight: '600' }}>
+                                    {isLoggedIn ? `Verified ${currentUser.role}` : 'Guest Visitor'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
+                </View>
+
+                {/* Login or Logout Action Button */}
+                <View style={{ marginTop: 14, marginBottom: 6, width: '100%' }}>
+                    {isLoggedIn ? (
+                        <Pressable
+                            style={({ pressed }) => [{
+                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                borderColor: '#EF4444',
+                                borderWidth: 1,
+                                borderRadius: 12,
+                                paddingVertical: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                opacity: pressed ? 0.8 : 1,
+                            }]}
+                            onPress={handleLogout}
+                        >
+                            <LogOut color="#EF4444" size={18} />
+                            <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>
+                                Log Out
+                            </Text>
+                        </Pressable>
+                    ) : (
+                        <Pressable
+                            style={({ pressed }) => [{
+                                backgroundColor: '#6366F1',
+                                borderRadius: 12,
+                                paddingVertical: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                opacity: pressed ? 0.8 : 1,
+                            }]}
+                            onPress={handleLoginRedirect}
+                        >
+                            <LogIn color="#FFFFFF" size={18} />
+                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                                Log In with Google or Facebook
+                            </Text>
+                        </Pressable>
+                    )}
                 </View>
 
                 {/* User Activity Tab Switcher: Liked | Saved | Favourited */}

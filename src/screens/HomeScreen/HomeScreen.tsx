@@ -10,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth0 } from 'react-native-auth0';
 import { User, Search } from 'lucide-react-native';
 
 import { HeroBanner } from '../../components/HeroBanner';
@@ -20,10 +19,11 @@ import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
+import { getCurrentUser } from '../../services/api/authService';
 import { styles } from './styles';
 
 export function HomeScreen({ navigation }: any) {
-  const { user } = useAuth0();
+  const user = getCurrentUser();
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [playlistsLoading, setPlaylistsLoading] = useState(true);
 
@@ -70,7 +70,7 @@ export function HomeScreen({ navigation }: any) {
       <StatusBar barStyle="light-content" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Streamlined Top Header: Logo + Search + Profile strictly */}
+        {/* Top Header: Logo + Search + Profile */}
         <View style={styles.header}>
           <Text style={styles.appTitle}>Streamr</Text>
 
@@ -86,8 +86,8 @@ export function HomeScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Profile')}
               style={styles.profileButton}
             >
-              {user?.picture ? (
-                <Image source={{ uri: user.picture }} style={styles.avatarMini} />
+              {user?.avatar_url ? (
+                <Image source={{ uri: user.avatar_url }} style={styles.avatarMini} />
               ) : (
                 <User color="#FFFFFF" size={18} />
               )}
@@ -95,124 +95,92 @@ export function HomeScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Hero Featured Video Banner */}
-        {featuredVideo ? (
-          <HeroBanner video={featuredVideo} onPlay={playVideo} />
-        ) : null}
-
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color="#FFFFFF" />
-            <Text style={styles.loadingText}>Loading videos...</Text>
+        {/* Loading Indicator */}
+        {loading && (
+          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#E50914" />
           </View>
-        ) : null}
+        )}
 
-        {error || playbackError ? (
-          <Text style={styles.errorText}>{error || playbackError}</Text>
-        ) : null}
+        {/* Hero Banner Section */}
+        {featuredVideo && !loading && (
+          <HeroBanner
+            video={featuredVideo}
+            onPlay={() => playVideo(featuredVideo)}
+          />
+        )}
 
-        {/* Row 1: Continue Watching */}
-        <HorizontalList
-          title="Continue Watching"
-          videos={continueWatchingVideos}
-          onPressVideo={playVideo}
-          onSeeAll={() =>
-            navigation.navigate('VideoGrid', { section: 'continue' })
-          }
-        />
+        {/* Video Horizontal Carousels */}
+        {!loading && (
+          <View style={{ marginTop: 12 }}>
+            {/* Live Playlists Carousel */}
+            <View style={{ marginBottom: 20 }}>
+              <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Featured Playlists</Text>
+              </View>
 
-        {/* Row 2: Popular Videos */}
-        <HorizontalList
-          title="Popular Videos"
-          videos={popularVideos}
-          onPressVideo={playVideo}
-          onSeeAll={() =>
-            navigation.navigate('VideoGrid', { section: 'popular' })
-          }
-        />
-
-        {/* Row 3: Playlists (Horizontal HL Row) */}
-        <View style={styles.playlistsRowContainer}>
-          <View style={styles.playlistsRowHeader}>
-            <Text style={styles.playlistsRowTitle}>Playlists</Text>
-            <Pressable
-              onPress={() => navigation.navigate('Playlist')}
-              style={styles.seeAllButton}
-            >
-              <Text style={styles.seeAllText}>See all</Text>
-            </Pressable>
-          </View>
-
-          {playlistsLoading ? (
-            <ActivityIndicator color="#FFFFFF" style={{ marginVertical: 10 }} />
-          ) : (
-            <FlatList
-              data={playlists}
-              keyExtractor={item => String(item.id)}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.playlistsListContent}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.playlistCard}
-                  onPress={() =>
-                    navigation.navigate('CategoryDetail', {
-                      category: item.name,
-                      playlistId: item.id,
-                    })
-                  }
-                >
-                  <Image
-                    source={{
-                      uri:
-                        item.thumbnail_url ||
-                        'https://via.placeholder.com/400x200/1E1E2E/FFFFFF?text=Playlist',
-                    }}
-                    style={styles.playlistCardImage}
-                  />
-                  <View style={styles.playlistCardOverlay}>
-                    <Text style={styles.playlistCardTitle} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.playlistCardMeta}>
-                      {item.video_count} Videos
-                    </Text>
-                  </View>
-                </Pressable>
+              {playlistsLoading ? (
+                <ActivityIndicator color="#E50914" style={{ marginVertical: 20 }} />
+              ) : playlists.length > 0 ? (
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={playlists}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={styles.playlistCard}
+                      onPress={() => navigation.navigate('Playlist', { playlistId: item.id, playlistTitle: item.name || item.description || 'Playlist' })}
+                    >
+                      <Image
+                        source={{ uri: item.thumbnail_url || 'https://via.placeholder.com/300x160/1E1E2E/FFFFFF?text=Playlist' }}
+                        style={{ width: 140, height: 80, borderRadius: 8, backgroundColor: '#1E1E2E' }}
+                      />
+                      <Text style={styles.playlistsRowTitle} numberOfLines={1}>
+                        {item.name || item.description || `Playlist #${item.id}`}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                        {item.video_count || 0} Videos
+                      </Text>
+                    </Pressable>
+                  )}
+                  contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+                />
+              ) : (
+                <Text style={{ color: '#9CA3AF', fontSize: 13, paddingHorizontal: 16 }}>No playlists available</Text>
               )}
-            />
-          )}
-        </View>
+            </View>
 
-        {/* Row 4: Recently Added */}
-        <HorizontalList
-          title="Recently Added"
-          videos={recentlyAddedVideos}
-          onPressVideo={playVideo}
-          onSeeAll={() =>
-            navigation.navigate('VideoGrid', { section: 'recent' })
-          }
-        />
+            {/* Continue Watching Section */}
+            {continueWatchingVideos.length > 0 && (
+              <HorizontalList
+                title="Continue Watching"
+                videos={continueWatchingVideos}
+                onPressVideo={playVideo}
+              />
+            )}
+
+            {/* Recently Added Section */}
+            {recentlyAddedVideos.length > 0 && (
+              <HorizontalList
+                title="Recently Added"
+                videos={recentlyAddedVideos}
+                onPressVideo={playVideo}
+                onSeeAll={() => navigation.navigate('Categories')}
+              />
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* Permanent Bottom Navigation Bar */}
       <BottomNavBar activeTab="Home" navigation={navigation} />
 
-      {/* Video Details Player Modal */}
+      {/* Embedded HLS Video Player Modal */}
       <PlayerModal
         playingVideo={playingVideo}
-        autoplay={autoplay}
-        hasNextVideo={hasNextVideo}
-        onToggleAutoplay={() => setAutoplay(prev => !prev)}
-        onVideoEnd={handleVideoEnd}
         onClose={closePlayer}
       />
-
-      {playerLoading ? (
-        <View style={styles.playerLoading}>
-          <ActivityIndicator color="#FFFFFF" />
-        </View>
-      ) : null}
     </SafeAreaView>
   );
 }

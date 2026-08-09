@@ -42,7 +42,11 @@ export function PlayerModal({
   const { width, height } = useWindowDimensions();
 
   function handleClose() {
-    Orientation.lockToPortrait();
+    try {
+      Orientation.lockToPortrait();
+    } catch (e) {
+      // Safe catch for orientation locker on dev devices
+    }
     setShowComments(false);
     onClose();
   }
@@ -51,10 +55,14 @@ export function PlayerModal({
     setIsFullscreen(prev => {
       const next = !prev;
 
-      if (next) {
-        Orientation.lockToLandscape();
-      } else {
-        Orientation.lockToPortrait();
+      try {
+        if (next) {
+          Orientation.lockToLandscape();
+        } else {
+          Orientation.lockToPortrait();
+        }
+      } catch (e) {
+        // Safe catch for orientation locker on dev devices
       }
 
       return next;

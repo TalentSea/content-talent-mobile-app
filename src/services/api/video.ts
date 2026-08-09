@@ -43,9 +43,16 @@ export async function fetchVideos(
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 50));
 
-    return await apiGet<PaginatedVideosResponse>(
+    const response = await apiGet<PaginatedVideosResponse>(
       `/api/v1/admin/videos?${query.toString()}`,
     );
+
+    // If live backend has 0 videos published yet, fallback to rich sample video feed
+    if (!response || !response.items || response.items.length === 0) {
+      return fetchMockVideos();
+    }
+
+    return response;
   } catch (error) {
     console.warn('[fetchVideos] Real API error, using mock videos fallback:', error);
     return fetchMockVideos();
@@ -128,7 +135,6 @@ export async function fetchVideoPlayInfo(videoId: number) {
       }
     }
   } else if (video.caption_url) {
-    // Legacy single caption fallback
     let captionUri = video.caption_url.startsWith('http')
       ? video.caption_url
       : video.main_thumbnail_url
@@ -150,7 +156,6 @@ export async function fetchVideoPlayInfo(videoId: number) {
     });
   }
 
-  // Fetch HLS caption metadata via mock / real API service
   const hlsCaptionInfo = await fetchHLSCaptions(videoId);
 
   const streamUrl = video.playback_url.startsWith('http')
@@ -159,7 +164,6 @@ export async function fetchVideoPlayInfo(videoId: number) {
 
   const mp4Url = (video as any).mp4_download_url || (streamUrl.includes('.m3u8') ? streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') : streamUrl);
 
-  // Parse download options (240p, 480p, 720p, 1080p) from API or generate Bunny CDN presigned MP4 URLs
   const rawDownloadUrls = (video as any).download_urls;
   let downloadUrls: Array<{ resolution: string; label: string; url: string }> = [];
 

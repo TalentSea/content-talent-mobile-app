@@ -2,6 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { LoginScreen } from '../screens/LoginScreen/LoginScreen';
 import { HomeScreen } from '../screens/HomeScreen/HomeScreen';
 import { CategoryVideosScreen } from '../screens/CategoryVideosScreen/CategoryVideosScreen';
 import { PlaylistScreen } from '../screens/PlaylistScreen/PlaylistScreen';
@@ -18,11 +19,13 @@ export function RootNavigator() {
     return (
         <NavigationContainer>
             <Stack.Navigator
+                initialRouteName="Login"
                 screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: '#05050A' },
                 }}
             >
+                <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="Home" component={HomeScreen} />
                 <Stack.Screen name="CategoryVideos" component={CategoryVideosScreen} />
                 <Stack.Screen name="Playlist" component={PlaylistScreen} />
