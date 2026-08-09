@@ -21,6 +21,7 @@ export function LoginScreen({ navigation }: any) {
     // Facebook Dedicated Login Modal State
     const [showFacebookModal, setShowFacebookModal] = useState(false);
     const [fbEmailOrPhone, setFbEmailOrPhone] = useState('');
+    const [fbUsername, setFbUsername] = useState('');
     const [fbPassword, setFbPassword] = useState('');
     const [fbLoggingIn, setFbLoggingIn] = useState(false);
 
@@ -58,6 +59,7 @@ export function LoginScreen({ navigation }: any) {
 
                     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
                     const response = await GoogleSignin.signIn();
+                    console.log('[GoogleSignin] Complete response:', JSON.stringify(response));
 
                     realToken =
                         response?.data?.idToken ||
@@ -68,12 +70,25 @@ export function LoginScreen({ navigation }: any) {
                         '';
 
                     const rawUser = response?.data?.user || (response as any)?.user || response;
-                    if (rawUser?.email) {
+                    const googleEmail = rawUser?.email || (response as any)?.email;
+
+                    let googleName =
+                        rawUser?.name ||
+                        (response as any)?.name ||
+                        (response as any)?.data?.user?.name ||
+                        (rawUser?.givenName ? `${rawUser.givenName} ${rawUser.familyName || ''}`.trim() : '');
+
+                    if (!googleName && googleEmail) {
+                        googleName = googleEmail.split('@')[0];
+                        googleName = googleName.charAt(0).toUpperCase() + googleName.slice(1);
+                    }
+
+                    if (googleEmail) {
                         realProfile = {
                             id: Date.now(),
-                            name: rawUser.name || rawUser.givenName || rawUser.email.split('@')[0],
-                            email: rawUser.email,
-                            avatar_url: rawUser.photo || undefined,
+                            name: googleName || 'Google User',
+                            email: googleEmail,
+                            avatar_url: rawUser?.photo || (response as any)?.photo || undefined,
                             provider: 'google',
                             role: 'subscriber',
                         };
@@ -91,9 +106,10 @@ export function LoginScreen({ navigation }: any) {
                         const currentUser = await GoogleSignin.getCurrentUser();
                         const u = currentUser?.user || (currentUser as any)?.data?.user;
                         if (u?.email) {
+                            const fullName = u.name || (u.givenName ? `${u.givenName} ${u.familyName || ''}`.trim() : u.email.split('@')[0]);
                             realProfile = {
                                 id: Date.now(),
-                                name: u.name || u.givenName || u.email.split('@')[0],
+                                name: fullName,
                                 email: u.email,
                                 avatar_url: u.photo || undefined,
                                 provider: 'google',
@@ -137,14 +153,16 @@ export function LoginScreen({ navigation }: any) {
         try {
             setFbLoggingIn(true);
 
-            let cleanName = input;
-            if (input.includes('@')) {
-                const prefix = input.split('@')[0];
-                cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-            } else if (/^\d+$/.test(input)) {
-                cleanName = `Facebook User ${input.slice(-4)}`;
-            } else {
-                cleanName = input;
+            let cleanName = fbUsername.trim();
+            if (!cleanName) {
+                if (input.includes('@')) {
+                    const prefix = input.split('@')[0];
+                    cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+                } else if (/^\d+$/.test(input)) {
+                    cleanName = `Facebook User ${input.slice(-4)}`;
+                } else {
+                    cleanName = input;
+                }
             }
 
             const email = input.includes('@') ? input : `${input}@facebook.com`;
@@ -294,7 +312,7 @@ export function LoginScreen({ navigation }: any) {
 
                     <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 16 }}>
                         {/* Header: < Log in to Facebook */}
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 36 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28 }}>
                             <Pressable
                                 onPress={() => setShowFacebookModal(false)}
                                 style={{ padding: 8, marginLeft: -8, marginRight: 12 }}
@@ -307,7 +325,7 @@ export function LoginScreen({ navigation }: any) {
                         </View>
 
                         {/* Form Inputs */}
-                        <View style={{ gap: 16 }}>
+                        <View style={{ gap: 14 }}>
                             <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
                                 <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Email address or mobile number</Text>
                                 <TextInput
@@ -318,6 +336,17 @@ export function LoginScreen({ navigation }: any) {
                                     autoCapitalize="none"
                                     value={fbEmailOrPhone}
                                     onChangeText={setFbEmailOrPhone}
+                                />
+                            </View>
+
+                            <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
+                                <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Facebook Username / Account Name (optional)</Text>
+                                <TextInput
+                                    style={{ fontSize: 16, color: '#050505', paddingVertical: 8 }}
+                                    placeholder="e.g. Prathi Nagalakshmi"
+                                    placeholderTextColor="#8A8D91"
+                                    value={fbUsername}
+                                    onChangeText={setFbUsername}
                                 />
                             </View>
 
