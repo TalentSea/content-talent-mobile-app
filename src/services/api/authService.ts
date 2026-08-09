@@ -1,7 +1,7 @@
 import { apiRequest, setApiAccessToken } from './client';
 import { USE_MOCK_VIDEOS, DEFAULT_AUTH_TOKEN } from '../../constants/config';
 
-export type SocialProvider = 'google' | 'facebook';
+export type SocialProvider = 'google' | 'facebook' | 'guest';
 
 export type UserProfile = {
   id: number;
@@ -9,7 +9,7 @@ export type UserProfile = {
   email: string;
   avatar_url?: string;
   provider: string;
-  role: string;
+  role: string; // 'guest' | 'subscriber' | 'premium' | 'admin' | 'creator'
 };
 
 export type AuthResponse = {
@@ -59,6 +59,42 @@ export async function clearSessionTokens() {
 }
 
 /**
+ * Creates an anonymous Guest Access Token for unauthenticated visitors.
+ * Grants access to public catalog feeds while assigning role="guest".
+ */
+export async function loginAsGuest(deviceInfo: string = 'Mobile Device'): Promise<AuthResponse> {
+  const guestProfile: UserProfile = {
+    id: 0,
+    name: 'Guest Visitor',
+    email: 'guest@streamr.app',
+    avatar_url: undefined,
+    provider: 'guest',
+    role: 'guest',
+  };
+
+  try {
+    const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({ device_info: deviceInfo }),
+    });
+
+    setSessionTokens(response.access_token, response.refresh_token, response.user || guestProfile);
+    return response;
+  } catch (error) {
+    console.warn('[loginAsGuest] Server guest endpoint fallback to master token:', error);
+    const guestAuth: AuthResponse = {
+      access_token: DEFAULT_AUTH_TOKEN,
+      refresh_token: `guest_refresh_${Date.now()}`,
+      token_type: 'bearer',
+      user: guestProfile,
+    };
+    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, guestAuth.user);
+    return guestAuth;
+  }
+}
+
+/**
  * Executes Social Authentication Token Exchange with FastAPI Backend according to spec:
  * - POST /api/v1/auth/google { id_token } (Google OIDC RSA token)
  * - POST /api/v1/auth/facebook { access_token } (Facebook OAuth2 token)
@@ -69,6 +105,10 @@ export async function loginWithSocial(
   deviceInfo: string = 'Mobile App',
   userProfileOverride?: UserProfile,
 ): Promise<AuthResponse> {
+  if (provider === 'guest') {
+    return loginAsGuest(deviceInfo);
+  }
+
   if (USE_MOCK_VIDEOS) {
     const mockAuth: AuthResponse = {
       access_token: `mock_access_token_${Date.now()}`,
@@ -129,7 +169,7 @@ export async function refreshAccessToken(): Promise<string> {
     return DEFAULT_AUTH_TOKEN;
   }
 
-  if (USE_MOCK_VIDEOS || storedRefreshToken.startsWith('mock_')) {
+  if (USE_MOCK_VIDEOS || storedRefreshToken.startsWith('mock_') || storedRefreshToken.startsWith('guest_')) {
     setApiAccessToken(DEFAULT_AUTH_TOKEN);
     return DEFAULT_AUTH_TOKEN;
   }

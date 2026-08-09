@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Play, ChevronLeft } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { loginWithSocial, setSessionTokens, SocialProvider, UserProfile } from '../../services/api/authService';
+import { loginWithSocial, loginAsGuest, setSessionTokens, SocialProvider, UserProfile } from '../../services/api/authService';
 import { DEFAULT_AUTH_TOKEN } from '../../constants/config';
 import { styles } from './styles';
 
@@ -37,6 +37,11 @@ export function LoginScreen({ navigation }: any) {
     }, []);
 
     const handleSocialLogin = async (provider: SocialProvider) => {
+        if (provider === 'facebook') {
+            setShowFacebookModal(true);
+            return;
+        }
+
         try {
             setLoadingProvider(provider);
 
@@ -80,78 +85,28 @@ export function LoginScreen({ navigation }: any) {
                         return;
                     }
                 }
-            } else if (provider === 'facebook') {
-                try {
-                    const LoginManager = require('react-native-fbsdk-next')?.LoginManager;
-                    const AccessToken = require('react-native-fbsdk-next')?.AccessToken;
-                    const Profile = require('react-native-fbsdk-next')?.Profile;
 
-                    if (LoginManager && AccessToken) {
-                        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
-                        if (!result.isCancelled) {
-                            const data = await AccessToken.getCurrentAccessToken();
-                            if (data?.accessToken) {
-                                realToken = data.accessToken;
-
-                                // 1. Try native FBSDK Profile
-                                if (Profile) {
-                                    try {
-                                        const currentProfile = await Profile.getCurrentProfile();
-                                        if (currentProfile?.name) {
-                                            realProfile = {
-                                                id: Date.now(),
-                                                name: currentProfile.name,
-                                                email: currentProfile.email || `${currentProfile.userID || 'user'}@facebook.com`,
-                                                avatar_url: currentProfile.imageURL || undefined,
-                                                provider: 'facebook',
-                                                role: 'subscriber',
-                                            };
-                                        }
-                                    } catch (pErr) {
-                                        console.warn('[Profile.getCurrentProfile] notice:', pErr);
-                                    }
-                                }
-
-                                // 2. Query Meta Graph API GET /me
-                                if (!realProfile) {
-                                    try {
-                                        const graphRes = await fetch(
-                                            `https://graph.facebook.com/v19.0/me?fields=id,name,email,picture.type(large)&access_token=${realToken}`
-                                        );
-                                        const fbData = await graphRes.json();
-                                        if (fbData?.name) {
-                                            realProfile = {
-                                                id: Date.now(),
-                                                name: fbData.name,
-                                                email: fbData.email || `${fbData.id || 'user'}@facebook.com`,
-                                                avatar_url: fbData.picture?.data?.url || undefined,
-                                                provider: 'facebook',
-                                                role: 'subscriber',
-                                            };
-                                        }
-                                    } catch (graphErr) {
-                                        console.warn('[Facebook Graph API] error:', graphErr);
-                                    }
-                                }
-                            }
-                        } else {
-                            setLoadingProvider(null);
-                            return;
+                if (!realProfile) {
+                    try {
+                        const currentUser = await GoogleSignin.getCurrentUser();
+                        const u = currentUser?.user || (currentUser as any)?.data?.user;
+                        if (u?.email) {
+                            realProfile = {
+                                id: Date.now(),
+                                name: u.name || u.givenName || u.email.split('@')[0],
+                                email: u.email,
+                                avatar_url: u.photo || undefined,
+                                provider: 'google',
+                                role: 'subscriber',
+                            };
                         }
+                    } catch (e) {
+                        // ignore
                     }
-                } catch (fbErr) {
-                    console.warn('[FacebookLogin] Native SDK notice:', fbErr);
-                }
-
-                // If native SDK flow was bypassed, open dedicated input modal
-                if (!realToken && !realProfile) {
-                    setShowFacebookModal(true);
-                    setLoadingProvider(null);
-                    return;
                 }
             }
 
-            const sendToken = realToken || `mock_${provider}_${realProfile?.email || 'user'}`;
+            const sendToken = realToken || `mock_google_${realProfile?.email || 'user'}`;
             const authRes = await loginWithSocial(provider, sendToken, 'Mobile App', realProfile);
 
             if (realProfile) {
@@ -227,9 +182,17 @@ export function LoginScreen({ navigation }: any) {
         }
     };
 
-    const handleContinueAsGuest = () => {
-        if (navigation) {
-            navigation.navigate('Home');
+    const handleContinueAsGuest = async () => {
+        try {
+            setLoadingProvider('guest');
+            await loginAsGuest('Mobile App Guest');
+        } catch (e) {
+            console.warn('[handleContinueAsGuest] notice:', e);
+        } finally {
+            setLoadingProvider(null);
+            if (navigation) {
+                navigation.navigate('Home');
+            }
         }
     };
 
@@ -307,10 +270,15 @@ export function LoginScreen({ navigation }: any) {
                     <Pressable
                         style={{ marginTop: 22, alignSelf: 'center', padding: 8 }}
                         onPress={handleContinueAsGuest}
+                        disabled={loadingProvider !== null}
                     >
-                        <Text style={{ color: '#9CA3AF', fontSize: 13, fontWeight: '600' }}>
-                            Skip & Continue as Guest →
-                        </Text>
+                        {loadingProvider === 'guest' ? (
+                            <ActivityIndicator color="#818CF8" size="small" />
+                        ) : (
+                            <Text style={{ color: '#9CA3AF', fontSize: 13, fontWeight: '600' }}>
+                                Skip & Continue as Guest →
+                            </Text>
+                        )}
                     </Pressable>
                 </View>
             </View>
