@@ -66,6 +66,7 @@ export type DownloadItem = {
 
 export type PlayInfo = {
   title: string;
+  category?: string;
   description?: string;
   stream_url: string;
   mp4Url?: string;

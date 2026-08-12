@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.media3.common.C
@@ -69,35 +70,66 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
             .build()
 
         playerView.player = player
+        playerView.subtitleView?.apply {
+            setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 14f)
+            setStyle(
+                androidx.media3.ui.CaptionStyleCompat(
+                    android.graphics.Color.WHITE,
+                    android.graphics.Color.argb(160, 0, 0, 0),
+                    android.graphics.Color.TRANSPARENT,
+                    androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                    android.graphics.Color.BLACK,
+                    null
+                )
+            )
+        }
         imaAdsLoader?.setPlayer(player)
         addView(playerView)
 
         player.addListener(object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    val event = Arguments.createMap().apply {
+                        putInt("width", videoSize.width)
+                        putInt("height", videoSize.height)
+                        putDouble("duration", player.duration.toDouble() / 1000.0)
+                    }
+                    sendEvent("onLoad", event)
+                }
+            }
+
             override fun onPlaybackStateChanged(state: Int) {
                 when (state) {
                     Player.STATE_READY -> {
-                        if (!hasSentLoadEvent) {
-                            hasSentLoadEvent = true
+                        if (!player.isPlayingAd) {
+                            if (!hasSentLoadEvent) {
+                                hasSentLoadEvent = true
 
-                            val event = Arguments.createMap().apply {
-                                putDouble("duration", player.duration.toDouble() / 1000.0)
+                                val event = Arguments.createMap().apply {
+                                    putDouble("duration", player.duration.toDouble() / 1000.0)
+                                    val format = player.videoFormat
+                                    if (format != null && format.width > 0 && format.height > 0) {
+                                        putInt("width", format.width)
+                                        putInt("height", format.height)
+                                    }
+                                }
+
+                                Log.d("NativeVideoPlayer", "STATE_READY duration=${player.duration}")
+
+                                sendEvent("onLoad", event)
                             }
 
-                            Log.d("NativeVideoPlayer", "STATE_READY duration=${player.duration}")
+                            // Detect embedded subtitle tracks from HLS manifest
+                            if (!hasSentTracksEvent) {
+                                hasSentTracksEvent = true
+                                sendTracksEvent()
+                            }
 
-                            sendEvent("onLoad", event)
+                            val bufferEvent = Arguments.createMap().apply {
+                                putBoolean("isBuffering", false)
+                            }
+                            sendEvent("onBuffer", bufferEvent)
                         }
-
-                        // Detect embedded subtitle tracks from HLS manifest
-                        if (!hasSentTracksEvent) {
-                            hasSentTracksEvent = true
-                            sendTracksEvent()
-                        }
-
-                        val bufferEvent = Arguments.createMap().apply {
-                            putBoolean("isBuffering", false)
-                        }
-                        sendEvent("onBuffer", bufferEvent)
                     }
 
                     Player.STATE_BUFFERING -> {
@@ -108,7 +140,9 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                     }
 
                     Player.STATE_ENDED -> {
-                        sendEvent("onEnd", Arguments.createMap())
+                        if (!player.isPlayingAd) {
+                            sendEvent("onEnd", Arguments.createMap())
+                        }
                     }
                 }
             }
@@ -323,10 +357,15 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
             builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
             builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
             player.trackSelectionParameters = builder.build()
+            playerView.subtitleView?.visibility = View.GONE
             return
         }
 
         captionsEnabled = true
+        playerView.subtitleView?.apply {
+            visibility = View.VISIBLE
+            bringToFront()
+        }
         builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
         builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
 
@@ -371,8 +410,8 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
         player.trackSelectionParameters = builder.build()
         playerView.subtitleView?.let { subView ->
-            subView.visibility = android.view.View.VISIBLE
-            subView.setPadding(0, 0, 0, 100)
+            subView.visibility = View.VISIBLE
+            subView.setPadding(0, 0, 0, 20)
         }
         Log.d("NativeVideoPlayer", "applySelectedTextTrack finished: targetIndex=$targetIndex, matched=$matched, textGroups=${player.currentTracks.groups.count { it.type == C.TRACK_TYPE_TEXT }}")
     }

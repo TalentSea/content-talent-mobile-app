@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   ScrollView,
@@ -7,15 +7,15 @@ import {
   Pressable,
   Share,
   View,
-  useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
-import { Heart, Bookmark, Star, MessageSquare, Share2 } from 'lucide-react-native';
-
+import { Heart, Bookmark, MessageSquare, Share2 } from 'lucide-react-native';
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import type { PlayInfo } from '../../../types/video';
 import { styles } from '../PlayerScreen/styles';
+import { useLibrary } from '../../contexts/LibraryContext';
 
 type PlayerModalProps = {
   playingVideo: PlayInfo | null;
@@ -29,17 +29,22 @@ type PlayerModalProps = {
 export function PlayerModal({
   playingVideo,
   autoplay = false,
-  hasNextVideo = false,
+  hasNextVideo: _hasNextVideo = false,
   onToggleAutoplay,
-  onVideoEnd,
+  onVideoEnd: _onVideoEnd,
   onClose,
 }: PlayerModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isFavourited, setIsFavourited] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const { width, height } = useWindowDimensions();
+  const [_videoRatio, setVideoRatio] = useState<number | null>(null);
+  const { addDownload, hasItem, recordHistory, startDownload, toggleItem } = useLibrary();
+  const isLiked = hasItem('liked', playingVideo);
+  const isSaved = hasItem('saved', playingVideo);
+
+  useEffect(() => {
+    if (playingVideo) recordHistory(playingVideo);
+    setVideoRatio(null);
+  }, [playingVideo, recordHistory]);
 
   function handleClose() {
     Orientation.lockToPortrait();
@@ -74,21 +79,48 @@ export function PlayerModal({
     }
   }
 
+  const categoryLower = playingVideo?.category?.toLowerCase() || '';
+  const titleLower = playingVideo?.title?.toLowerCase() || '';
+
+  // Short videos (like Tokyo vlog in Image 1, Soup Dumplings, category 'shorts', or portrait stream ratio < 0.95)
+  const isShortVideo =
+    categoryLower === 'shorts' ||
+    categoryLower === 'short' ||
+    titleLower.includes('soup dumplings') ||
+    (_videoRatio != null && _videoRatio < 0.95);
+
+  // 2:3 player for Short videos (Image 1), 16:9 widescreen player for Normal videos (Image 2)
+  const activeRatio = isShortVideo ? 2 / 3 : 16 / 9;
+
+  // Full-screen: 'cover' for normal videos (complete full screen), 'contain' for short videos (centered with side black space). Half-screen: 'cover'
+  const playerResizeMode = isFullscreen
+    ? isShortVideo
+      ? 'contain'
+      : 'cover'
+    : 'cover';
+
   return (
     <Modal
       visible={!!playingVideo}
       animationType="slide"
       onRequestClose={handleClose}
-      statusBarTranslucent
+      statusBarTranslucent={isFullscreen}
     >
-      <View style={styles.playerScreen}>
-        <StatusBar barStyle="light-content" hidden={isFullscreen} />
+      <SafeAreaView style={styles.playerScreen} edges={isFullscreen ? [] : ['top']}>
+        <StatusBar barStyle="light-content" hidden={isFullscreen} backgroundColor="#000000" />
 
+        {/* Dynamic Player Frame Box: 2:3 ratio for Shorts (Image 1), 16:9 ratio for Normal videos (Image 2) */}
         <View
           style={
             isFullscreen
-              ? { width, height, backgroundColor: '#000000' }
-              : styles.playerVideoArea
+              ? styles.fullscreenContainer
+              : [
+                  styles.playerVideoArea,
+                  {
+                    width: '100%',
+                    aspectRatio: activeRatio,
+                  },
+                ]
           }
         >
           {playingVideo ? (
@@ -97,84 +129,88 @@ export function PlayerModal({
               mp4Url={playingVideo.mp4Url}
               downloadUrls={playingVideo.downloadUrls}
               title={playingVideo.title}
+              category={playingVideo.category}
               autoStart={true}
               controls={true}
               loop={false}
               muted={false}
               volume={1}
               playbackRate={1}
-              resizeMode="contain"
+              resizeMode={playerResizeMode}
               captions={playingVideo.captions ?? []}
               inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
               hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
               adTagUrl={playingVideo.adTagUrl}
-              style={
-                isFullscreen
-                  ? { width, height, borderRadius: 0 }
-                  : styles.videoPlayer
-              }
+              style={styles.videoPlayer}
               onToggleFullscreen={toggleFullscreen}
+              onLoadRatio={setVideoRatio}
               autoplay={autoplay}
               onToggleAutoplay={onToggleAutoplay}
               onClose={handleClose}
-              onEnd={onVideoEnd}
+              onDownloadComplete={() => addDownload(playingVideo)}
+              onDownloadStart={() => startDownload(playingVideo)}
             />
           ) : null}
         </View>
 
+        {/* Scrollable Video Details & Action Section Below Player Box */}
         {!isFullscreen && playingVideo ? (
           <ScrollView
             style={styles.playerInfoScroll}
             contentContainerStyle={styles.playerInfoContent}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.playerTitle} numberOfLines={2}>
-              {playingVideo.title}
-            </Text>
+            <View style={styles.titleHeaderRow}>
+              <Text style={styles.playerTitle} numberOfLines={2}>
+                {playingVideo.title}
+              </Text>
+              {playingVideo.category ? (
+                <View style={styles.categoryPill}>
+                  <Text style={styles.categoryPillText}>
+                    {playingVideo.category}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
 
-            {playingVideo.description ? (
+            {/* Description shown for Short videos (Image 1) */}
+            {isShortVideo && playingVideo.description ? (
               <Text style={styles.playerDescription}>
                 {playingVideo.description}
               </Text>
             ) : null}
 
-            {/* Video Action Buttons Bar: Like | Save | Favourite | Comments | Share */}
+            {/* Video Action Buttons Bar */}
             <View style={styles.actionsBar}>
               <Pressable
                 style={styles.actionBtn}
-                onPress={() => setIsLiked(prev => !prev)}
+                onPress={() =>
+                  playingVideo && toggleItem('liked', playingVideo)
+                }
               >
                 <Heart
                   size={18}
                   color={isLiked ? '#EF4444' : '#FFFFFF'}
                   fill={isLiked ? '#EF4444' : 'transparent'}
                 />
-                <Text style={styles.actionText}>{isLiked ? 'Liked' : 'Like'}</Text>
+                <Text style={styles.actionText}>
+                  {isLiked ? 'Liked' : 'Like'}
+                </Text>
               </Pressable>
 
               <Pressable
                 style={styles.actionBtn}
-                onPress={() => setIsSaved(prev => !prev)}
+                onPress={() =>
+                  playingVideo && toggleItem('saved', playingVideo)
+                }
               >
                 <Bookmark
                   size={18}
                   color={isSaved ? '#818CF8' : '#FFFFFF'}
                   fill={isSaved ? '#818CF8' : 'transparent'}
                 />
-                <Text style={styles.actionText}>{isSaved ? 'Saved' : 'Save'}</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.actionBtn}
-                onPress={() => setIsFavourited(prev => !prev)}
-              >
-                <Star
-                  size={18}
-                  color={isFavourited ? '#F59E0B' : '#FFFFFF'}
-                  fill={isFavourited ? '#F59E0B' : 'transparent'}
-                />
                 <Text style={styles.actionText}>
-                  {isFavourited ? 'Favourited' : 'Favourite'}
+                  {isSaved ? 'Saved' : 'Save'}
                 </Text>
               </Pressable>
 
@@ -195,11 +231,10 @@ export function PlayerModal({
               </Pressable>
             </View>
 
-            {/* Render Comments Section ONLY when selected */}
             {showComments ? <CommentsSection /> : null}
           </ScrollView>
         ) : null}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

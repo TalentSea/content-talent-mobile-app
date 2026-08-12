@@ -54,6 +54,7 @@ export function VerticalList({
           views={item.views ? `${item.views} views` : undefined}
           durationText={item.duration || undefined}
           badgeText={item.status}
+          fullWidth={numColumns > 1}
           onPress={() => onPressVideo && onPressVideo(item)}
         />
       )}

@@ -3,7 +3,6 @@ import { API_BASE_URL, USE_MOCK_VIDEOS, DEFAULT_AD_TAG_URL } from '../../constan
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchMockVideos, fetchMockVideoDetails } from './mockVideoApi';
 import type {
-  ApiVideo,
   PaginatedVideosResponse,
   VideoDetails,
 } from '../../../types/video';

@@ -29,10 +29,8 @@ export function HomeScreen({ navigation }: any) {
 
   const {
     popularVideos,
-    processingVideos,
     loading,
     error,
-    reload,
   } = useVideos();
 
   const {

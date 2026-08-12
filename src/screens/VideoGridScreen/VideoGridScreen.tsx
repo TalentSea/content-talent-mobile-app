@@ -26,9 +26,20 @@ export function VideoGridScreen({ route, navigation }: any) {
   const { popularVideos, processingVideos, loading, reload } = useVideos();
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
 
-  const isPopular = section === 'popular';
-  const title = isPopular ? 'Popular Videos' : 'Processing Videos';
-  const baseVideos = isPopular ? popularVideos : processingVideos;
+  const sectionConfig = {
+    popular: { title: 'Popular Videos', videos: popularVideos },
+    processing: { title: 'Processing Videos', videos: processingVideos },
+    continue: {
+      title: 'Continue Watching',
+      videos: popularVideos.slice(0, 3),
+    },
+    recent: {
+      title: 'Recently Added',
+      videos: popularVideos.slice(1),
+    },
+  };
+  const { title, videos: baseVideos } =
+    sectionConfig[section as keyof typeof sectionConfig] ?? sectionConfig.popular;
 
   const filteredVideos = baseVideos.filter(v => {
     const matchesSearch = searchQuery

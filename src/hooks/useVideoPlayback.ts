@@ -23,6 +23,7 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             setCurrentVideoId(video.id);
             setPlayingVideo({
                 ...data,
+                category: (data as any).category || video.category || undefined,
                 description: data.description ?? undefined,
                 poster: data.poster ?? undefined,
                 title: data.title || video.title,
