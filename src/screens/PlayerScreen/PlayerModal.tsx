@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { Modal, StatusBar, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Modal,
+  ScrollView,
+  StatusBar,
+  Text,
+  Pressable,
+  Share,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import Orientation from 'react-native-orientation-locker';
+import { Heart, Bookmark, Star, MessageSquare, Share2 } from 'lucide-react-native';
 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
+import { CommentsSection } from '../../components/CommentsSection';
 import type { PlayInfo } from '../../../types/video';
 import { styles } from '../PlayerScreen/styles';
 
@@ -24,10 +35,19 @@ export function PlayerModal({
   onClose,
 }: PlayerModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isFavourited, setIsFavourited] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const { width, height } = useWindowDimensions();
 
   function handleClose() {
-    Orientation.lockToPortrait();
+    try {
+      Orientation.lockToPortrait();
+    } catch (e) {
+      // Safe catch for orientation locker on dev devices
+    }
+    setShowComments(false);
     onClose();
   }
 
@@ -35,14 +55,31 @@ export function PlayerModal({
     setIsFullscreen(prev => {
       const next = !prev;
 
-      if (next) {
-        Orientation.lockToLandscape();
-      } else {
-        Orientation.lockToPortrait();
+      try {
+        if (next) {
+          Orientation.lockToLandscape();
+        } else {
+          Orientation.lockToPortrait();
+        }
+      } catch (e) {
+        // Safe catch for orientation locker on dev devices
       }
 
       return next;
     });
+  }
+
+  async function handleShare() {
+    if (!playingVideo?.stream_url) return;
+    try {
+      await Share.share({
+        title: playingVideo.title,
+        message: `Watch "${playingVideo.title}" on Streamr: ${playingVideo.stream_url}`,
+        url: playingVideo.stream_url,
+      });
+    } catch (error) {
+      console.warn('Share error:', error);
+    }
   }
 
   return (
@@ -53,7 +90,7 @@ export function PlayerModal({
       statusBarTranslucent
     >
       <View style={styles.playerScreen}>
-        <StatusBar barStyle="light-content" hidden />
+        <StatusBar barStyle="light-content" hidden={isFullscreen} />
 
         <View
           style={
@@ -65,6 +102,8 @@ export function PlayerModal({
           {playingVideo ? (
             <NativeVideoPlayer
               uri={playingVideo.stream_url}
+              mp4Url={playingVideo.mp4Url}
+              downloadUrls={playingVideo.downloadUrls}
               title={playingVideo.title}
               autoStart={true}
               controls={true}
@@ -74,6 +113,9 @@ export function PlayerModal({
               playbackRate={1}
               resizeMode="contain"
               captions={playingVideo.captions ?? []}
+              inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
+              hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
+              adTagUrl={playingVideo.adTagUrl}
               style={
                 isFullscreen
                   ? { width, height, borderRadius: 0 }
@@ -89,19 +131,83 @@ export function PlayerModal({
         </View>
 
         {!isFullscreen && playingVideo ? (
-          <View style={styles.playerInfo}>
+          <ScrollView
+            style={styles.playerInfoScroll}
+            contentContainerStyle={styles.playerInfoContent}
+            showsVerticalScrollIndicator={false}
+          >
             <Text style={styles.playerTitle} numberOfLines={2}>
               {playingVideo.title}
             </Text>
 
             {playingVideo.description ? (
-              <Text style={styles.playerDescription} numberOfLines={4}>
+              <Text style={styles.playerDescription}>
                 {playingVideo.description}
               </Text>
             ) : null}
-          </View>
+
+            {/* Video Action Buttons Bar: Like | Save | Favourite | Comments | Share */}
+            <View style={styles.actionsBar}>
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => setIsLiked(prev => !prev)}
+              >
+                <Heart
+                  size={18}
+                  color={isLiked ? '#EF4444' : '#FFFFFF'}
+                  fill={isLiked ? '#EF4444' : 'transparent'}
+                />
+                <Text style={styles.actionText}>{isLiked ? 'Liked' : 'Like'}</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => setIsSaved(prev => !prev)}
+              >
+                <Bookmark
+                  size={18}
+                  color={isSaved ? '#818CF8' : '#FFFFFF'}
+                  fill={isSaved ? '#818CF8' : 'transparent'}
+                />
+                <Text style={styles.actionText}>{isSaved ? 'Saved' : 'Save'}</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => setIsFavourited(prev => !prev)}
+              >
+                <Star
+                  size={18}
+                  color={isFavourited ? '#F59E0B' : '#FFFFFF'}
+                  fill={isFavourited ? '#F59E0B' : 'transparent'}
+                />
+                <Text style={styles.actionText}>
+                  {isFavourited ? 'Favourited' : 'Favourite'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.actionBtn}
+                onPress={() => setShowComments(prev => !prev)}
+              >
+                <MessageSquare
+                  size={18}
+                  color={showComments ? '#10B981' : '#FFFFFF'}
+                />
+                <Text style={styles.actionText}>Comments</Text>
+              </Pressable>
+
+              <Pressable style={styles.actionBtn} onPress={handleShare}>
+                <Share2 size={18} color="#FFFFFF" />
+                <Text style={styles.actionText}>Share</Text>
+              </Pressable>
+            </View>
+
+            {/* Render Comments Section ONLY when selected */}
+            {showComments ? <CommentsSection /> : null}
+          </ScrollView>
         ) : null}
       </View>
     </Modal>
   );
-}
+}

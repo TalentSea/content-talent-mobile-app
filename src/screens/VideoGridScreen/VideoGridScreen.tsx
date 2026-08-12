@@ -1,56 +1,95 @@
-import React from 'react';
-import { FlatList, Pressable, StatusBar, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import {
+  Pressable,
+  StatusBar,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search } from 'lucide-react-native';
 
-import { VideoCard } from '../../components/VideoCard/VideoCard';
+import { CategoryTabs } from '../../components/CategoryTabs';
+import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { styles } from './styles';
 
+const CATEGORIES = ['All', 'Popular', 'Processing', 'Tutorials', 'Tech'];
+
 export function VideoGridScreen({ route, navigation }: any) {
-    const { section } = route.params;
+  const { section } = route.params || {};
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
-    const { popularVideos, processingVideos } = useVideos();
-    const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
+  const { popularVideos, processingVideos, loading, reload } = useVideos();
+  const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
 
-    const isPopular = section === 'popular';
-    const title = isPopular ? 'Popular Videos' : 'Processing';
-    const videos = isPopular ? popularVideos : processingVideos;
+  const isPopular = section === 'popular';
+  const title = isPopular ? 'Popular Videos' : 'Processing Videos';
+  const baseVideos = isPopular ? popularVideos : processingVideos;
 
-    return (
-        <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="light-content" />
+  const filteredVideos = baseVideos.filter(v => {
+    const matchesSearch = searchQuery
+      ? v.title.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    const matchesCategory =
+      selectedCategory === 'All' || selectedCategory === 'Popular'
+        ? true
+        : v.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
-            <View style={styles.expandedHeader}>
-                <Pressable
-                    style={styles.backButton}
-                    onPress={() => navigation.goBack()}
-                    hitSlop={10}
-                >
-                    <Text style={styles.backIcon}>‹</Text>
-                </Pressable>
+  return (
+    <SafeAreaView style={styles.screen}>
+      <StatusBar barStyle="light-content" />
 
-                <Text style={styles.expandedTitle}>{title}</Text>
-                <View style={styles.backButtonSpacer} />
-            </View>
+      {/* Header with Back Button & Title */}
+      <View style={styles.expandedHeader}>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          hitSlop={10}
+        >
+          <Text style={styles.backIcon}>‹</Text>
+        </Pressable>
 
-            {videos.length === 0 ? (
-                <Text style={styles.emptyText}>No videos found.</Text>
-            ) : (
-                <FlatList
-                    data={videos}
-                    keyExtractor={item => String(item.id)}
-                    numColumns={2}
-                    columnWrapperStyle={styles.gridRow}
-                    contentContainerStyle={styles.gridContent}
-                    renderItem={({ item }) => (
-                        <VideoCard video={item} onPress={() => playVideo(item)} fullWidth />
-                    )}
-                />
-            )}
+        <Text style={styles.expandedTitle}>{title}</Text>
+        <View style={styles.backButtonSpacer} />
+      </View>
 
-            <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
-        </SafeAreaView>
-    );
+      {/* Search Input Bar */}
+      <View style={styles.searchBarContainer}>
+        <Search size={16} color="#9CA3AF" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search videos..."
+          placeholderTextColor="#6B7280"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      {/* Category Tabs */}
+      <CategoryTabs
+        categories={CATEGORIES}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
+
+      {/* Vertical List (VL) 2-column Grid */}
+      <VerticalList
+        videos={filteredVideos}
+        numColumns={2}
+        refreshing={loading}
+        onRefresh={reload}
+        onPressVideo={playVideo}
+        emptyText="No videos match your filter."
+      />
+
+      {/* Video Player Modal */}
+      <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
+    </SafeAreaView>
+  );
 }

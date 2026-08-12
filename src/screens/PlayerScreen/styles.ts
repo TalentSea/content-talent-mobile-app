@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
     playerVideoArea: {
         width: '100%',
         aspectRatio: 16 / 9,
-        backgroundColor: colors.background,
+        backgroundColor: '#000000',
         justifyContent: 'center',
     },
     videoPlayer: {
@@ -17,33 +17,44 @@ export const styles = StyleSheet.create({
         height: '100%',
         borderRadius: 0,
     },
-    playerInfo: {
+    playerInfoScroll: {
+        flex: 1,
+    },
+    playerInfoContent: {
         padding: 16,
+        paddingBottom: 40,
     },
     playerTitle: {
         color: colors.text,
-        fontSize: 17,
-        fontWeight: '900',
+        fontSize: 18,
+        fontWeight: '800',
+        lineHeight: 24,
     },
     playerDescription: {
         color: colors.muted,
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '400',
         marginTop: 8,
         lineHeight: 18,
     },
-    autoplayRow: {
+    actionsBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 16,
-        paddingTop: 14,
-        borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'space-around',
+        marginVertical: 18,
+        paddingVertical: 12,
+        backgroundColor: '#12121C',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#1E1E2D',
     },
-    autoplayLabel: {
-        color: colors.text,
-        fontSize: 13,
-        fontWeight: '700',
+    actionBtn: {
+        alignItems: 'center',
+        gap: 4,
+    },
+    actionText: {
+        color: '#D1D5DB',
+        fontSize: 11,
+        fontWeight: '600',
     },
 });

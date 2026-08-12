@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    ActivityIndicator,
     Image,
     Pressable,
     StatusBar,
@@ -8,35 +7,57 @@ import {
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth0 } from 'react-native-auth0';
-import { ChevronLeft, LogOut, CheckCircle, AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, LogOut, LogIn, CheckCircle, User as UserIcon } from 'lucide-react-native';
+import { BottomNavBar } from '../../components/BottomNavBar';
+import { VerticalList } from '../../components/VerticalList';
+import { PlayerModal } from '../PlayerScreen/PlayerModal';
+import { useVideos } from '../../hooks/useVideo';
+import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { getCurrentUser, clearSessionTokens } from '../../services/api/authService';
 import { styles } from './styles';
 import { colors } from '../../constants/colors';
 
 export function ProfileScreen({ navigation }: any) {
-    const { user, clearSession, isLoading } = useAuth0();
+    const user = getCurrentUser();
+    const [activeTab, setActiveTab] = useState<'liked' | 'saved' | 'favourited'>('liked');
+
+    const { popularVideos, loading, reload } = useVideos();
+    const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
+
+    const isLoggedIn = !!user;
+
+    const currentUser = user || {
+        name: 'User',
+        email: 'user@streamr.app',
+        avatar_url: undefined,
+        role: 'guest',
+    };
+
+    const userVideos =
+        activeTab === 'liked'
+            ? popularVideos.slice(0, 3)
+            : activeTab === 'saved'
+            ? popularVideos.slice(1, 4)
+            : popularVideos.slice(2);
 
     const handleLogout = async () => {
-        try {
-            await clearSession();
-        } catch (error) {
-            console.warn('Logout failed:', error);
+        await clearSessionTokens();
+        if (navigation) {
+            navigation.navigate('Login');
         }
     };
 
-    if (!user) {
-        return (
-            <SafeAreaView style={styles.loadingScreen}>
-                <ActivityIndicator color={colors.primary} size="large" />
-            </SafeAreaView>
-        );
-    }
+    const handleLoginRedirect = () => {
+        if (navigation) {
+            navigation.navigate('Login');
+        }
+    };
 
     return (
         <SafeAreaView style={styles.screen}>
             <StatusBar barStyle="light-content" />
 
-            {/* Header */}
+            {/* Header: Clean title with back button, no top logout button */}
             <View style={styles.header}>
                 <Pressable
                     style={styles.backButton}
@@ -48,16 +69,13 @@ export function ProfileScreen({ navigation }: any) {
                 <View style={styles.headerPlaceholder} />
             </View>
 
-            {/* Profile Content */}
             <View style={styles.content}>
                 <View style={styles.avatarContainer}>
-                    {user.picture ? (
-                        <Image source={{ uri: user.picture }} style={styles.avatar} />
+                    {currentUser.avatar_url ? (
+                        <Image source={{ uri: currentUser.avatar_url }} style={styles.avatar} />
                     ) : (
                         <View style={styles.avatarFallback}>
-                            <Text style={styles.avatarFallbackText}>
-                                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                            </Text>
+                            <UserIcon color="#FFFFFF" size={32} />
                         </View>
                     )}
                 </View>
@@ -65,14 +83,14 @@ export function ProfileScreen({ navigation }: any) {
                 <View style={styles.infoCard}>
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Name</Text>
-                        <Text style={styles.infoValue}>{user.name || 'Anonymous User'}</Text>
+                        <Text style={styles.infoValue}>{currentUser.name}</Text>
                     </View>
 
                     <View style={styles.divider} />
 
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Email</Text>
-                        <Text style={styles.infoValue}>{user.email || 'N/A'}</Text>
+                        <Text style={styles.infoValue}>{currentUser.email}</Text>
                     </View>
 
                     <View style={styles.divider} />
@@ -80,40 +98,133 @@ export function ProfileScreen({ navigation }: any) {
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Status</Text>
                         <View style={styles.badgeRow}>
-                            {user.email_verified ? (
-                                <View style={[styles.badge, styles.badgeVerified]}>
-                                    <CheckCircle color="#10B981" size={14} style={styles.badgeIcon} />
-                                    <Text style={styles.badgeTextVerified}>Verified</Text>
-                                </View>
-                            ) : (
-                                <View style={[styles.badge, styles.badgePending]}>
-                                    <AlertCircle color="#F59E0B" size={14} style={styles.badgeIcon} />
-                                    <Text style={styles.badgeTextPending}>Pending Verification</Text>
-                                </View>
-                            )}
+                            <View style={[styles.badge, isLoggedIn ? styles.badgeVerified : { backgroundColor: 'rgba(107, 114, 128, 0.2)' }]}>
+                                <CheckCircle color={isLoggedIn ? '#10B981' : '#9CA3AF'} size={14} style={styles.badgeIcon} />
+                                <Text style={isLoggedIn ? styles.badgeTextVerified : { color: '#9CA3AF', fontSize: 12, fontWeight: '600' }}>
+                                    {isLoggedIn ? `Verified ${currentUser.role}` : 'Guest Visitor'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
                 </View>
 
-                {/* Logout Button */}
-                <Pressable
-                    style={({ pressed }) => [
-                        styles.logoutButton,
-                        pressed && styles.logoutButtonPressed,
-                    ]}
-                    onPress={handleLogout}
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator color="#FFFFFF" size="small" />
+                {/* Login or Logout Action Button */}
+                <View style={{ marginTop: 14, marginBottom: 6, width: '100%' }}>
+                    {isLoggedIn ? (
+                        <Pressable
+                            style={({ pressed }) => [{
+                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                borderColor: '#EF4444',
+                                borderWidth: 1,
+                                borderRadius: 12,
+                                paddingVertical: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                opacity: pressed ? 0.8 : 1,
+                            }]}
+                            onPress={handleLogout}
+                        >
+                            <LogOut color="#EF4444" size={18} />
+                            <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>
+                                Log Out
+                            </Text>
+                        </Pressable>
                     ) : (
-                        <>
-                            <LogOut color="#FFFFFF" size={20} style={styles.logoutIcon} />
-                            <Text style={styles.logoutButtonText}>Log Out</Text>
-                        </>
+                        <Pressable
+                            style={({ pressed }) => [{
+                                backgroundColor: '#6366F1',
+                                borderRadius: 12,
+                                paddingVertical: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                opacity: pressed ? 0.8 : 1,
+                            }]}
+                            onPress={handleLoginRedirect}
+                        >
+                            <LogIn color="#FFFFFF" size={18} />
+                            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                                Log In with Google or Facebook
+                            </Text>
+                        </Pressable>
                     )}
-                </Pressable>
+                </View>
+
+                {/* User Activity Tab Switcher: Liked | Saved | Favourited */}
+                <View style={styles.tabContainer}>
+                    <Pressable
+                        style={[
+                            styles.tabButton,
+                            activeTab === 'liked' && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab('liked')}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                activeTab === 'liked' && styles.activeTabText,
+                            ]}
+                        >
+                            Liked ({popularVideos.slice(0, 3).length})
+                        </Text>
+                    </Pressable>
+
+                    <Pressable
+                        style={[
+                            styles.tabButton,
+                            activeTab === 'saved' && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab('saved')}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                activeTab === 'saved' && styles.activeTabText,
+                            ]}
+                        >
+                            Saved ({popularVideos.slice(1, 4).length})
+                        </Text>
+                    </Pressable>
+
+                    <Pressable
+                        style={[
+                            styles.tabButton,
+                            activeTab === 'favourited' && styles.activeTabButton,
+                        ]}
+                        onPress={() => setActiveTab('favourited')}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                activeTab === 'favourited' && styles.activeTabText,
+                            ]}
+                        >
+                            Favourited ({popularVideos.slice(2).length})
+                        </Text>
+                    </Pressable>
+                </View>
+
+                {/* Activity Feed Grid (VL) */}
+                <View style={{ flex: 1 }}>
+                    <VerticalList
+                        videos={userVideos}
+                        numColumns={2}
+                        refreshing={loading}
+                        onRefresh={reload}
+                        onPressVideo={playVideo}
+                        emptyText={`No ${activeTab} videos yet.`}
+                    />
+                </View>
             </View>
+
+            {/* Permanent Bottom Navigation Bar */}
+            <BottomNavBar activeTab="Profile" navigation={navigation} />
+
+            {/* Video Player Modal */}
+            <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
         </SafeAreaView>
     );
 }

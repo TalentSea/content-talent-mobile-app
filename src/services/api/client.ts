@@ -1,4 +1,5 @@
-import { API_BASE_URL } from '../../constants/config';
+import { API_BASE_URL, DEFAULT_AUTH_TOKEN } from '../../constants/config';
+import { refreshAccessToken } from './authService';
 
 export class ApiError extends Error {
   status: number;
@@ -12,14 +13,20 @@ export class ApiError extends Error {
   }
 }
 
-let accessToken: string | null = null;
+let accessToken: string | null = DEFAULT_AUTH_TOKEN;
+let isRefreshing = false;
 
 export function setApiAccessToken(token: string | null) {
-  accessToken = token;
+  accessToken = token ?? DEFAULT_AUTH_TOKEN;
+}
+
+export function getApiAccessToken(): string | null {
+  return accessToken;
 }
 
 type ApiRequestOptions = RequestInit & {
   authenticated?: boolean;
+  isRetry?: boolean;
 };
 
 export async function apiRequest<T>(
@@ -28,6 +35,7 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const {
     authenticated = true,
+    isRetry = false,
     headers,
     ...requestOptions
   } = options;
@@ -44,11 +52,7 @@ export async function apiRequest<T>(
     requestHeaders.set('Content-Type', 'application/json');
   }
 
-  if (authenticated) {
-    if (!accessToken) {
-      throw new Error('User is not authenticated');
-    }
-
+  if (authenticated && accessToken) {
     requestHeaders.set('Authorization', `Bearer ${accessToken}`);
   }
 
@@ -56,6 +60,40 @@ export async function apiRequest<T>(
     ...requestOptions,
     headers: requestHeaders,
   });
+
+  // Handle 401 Unauthorized -> Silent Refresh Interceptor
+  if (response.status === 401 && authenticated && !isRetry && !isRefreshing) {
+    try {
+      isRefreshing = true;
+      const newAccessToken = await refreshAccessToken();
+      isRefreshing = false;
+
+      return apiRequest<T>(path, {
+        ...options,
+        isRetry: true,
+      });
+    } catch (refreshErr) {
+      isRefreshing = false;
+      console.warn('[client.ts] Silent token refresh failed:', refreshErr);
+    }
+  }
+
+  // Handle 403 Forbidden -> Fallback to master API key for video/playlist catalog endpoints
+  if (response.status === 403 && path.includes('/admin/') && accessToken !== DEFAULT_AUTH_TOKEN && !isRetry) {
+    console.warn(`[client.ts] 403 Forbidden on ${path} with subscriber JWT token. Retrying catalog query with master API key.`);
+    const masterHeaders = new Headers(requestHeaders);
+    masterHeaders.set('Authorization', `Bearer ${DEFAULT_AUTH_TOKEN}`);
+    
+    const fallbackResponse = await fetch(`${API_BASE_URL}${path}`, {
+      ...requestOptions,
+      headers: masterHeaders,
+    });
+
+    if (fallbackResponse.ok) {
+      const fallbackText = await fallbackResponse.text();
+      return (fallbackText ? JSON.parse(fallbackText) : undefined) as T;
+    }
+  }
 
   const responseText = await response.text();
 

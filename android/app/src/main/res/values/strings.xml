@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CleanVideoApp</string>
+    <string name="facebook_app_id">3169763853213963</string>
+    <string name="fb_login_protocol_scheme">fb3169763853213963</string>
 </resources>

@@ -57,6 +57,11 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setCaptionsEnabled(enabled)
     }
 
+    @ReactProp(name = "selectedTextTrack")
+    fun setSelectedTextTrack(view: NativeVideoPlayerView, selectedTextTrack: ReadableMap?) {
+        view.setSelectedTextTrack(selectedTextTrack)
+    }
+
 
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
         val builder = MapBuilder.newHashMap<String, Any>()
