@@ -26,7 +26,7 @@ export type VideoCardProps = {
 
 export function VideoCard({
   video,
-  id,
+  id: _id,
   title,
   thumbnailUrl,
   category,
@@ -72,10 +72,6 @@ export function VideoCard({
         ]}
       >
         <Image source={{ uri: thumb }} style={styles.thumbnail} />
-
-        <View style={styles.playBadge}>
-          <Text style={styles.playIcon}>{streamable ? '▶' : '…'}</Text>
-        </View>
 
         {displayDuration ? (
           <View style={styles.durationBadge}>

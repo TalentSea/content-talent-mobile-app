@@ -3,7 +3,6 @@ import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS
 import { fetchHLSCaptions } from './captionsApi';
 import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
 import type {
-  ApiVideo,
   PaginatedVideosResponse,
   VideoDetails,
 } from '../../../types/video';

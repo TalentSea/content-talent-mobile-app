@@ -13,12 +13,15 @@ import { ProfileScreen } from '../screens/ProfileScreen/ProfileScreen';
 import { VideoGridScreen } from '../screens/VideoGridScreen/VideoGridScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen/NotificationsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
+import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
+import { LibraryProvider } from '../contexts/LibraryContext';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
     return (
+        <LibraryProvider>
         <NavigationContainer>
             <Stack.Navigator
                 initialRouteName="Login"
@@ -35,10 +38,12 @@ export function RootNavigator() {
                 <Stack.Screen name="Categories" component={CategoriesScreen} />
                 <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
-                <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
-                <Stack.Screen name="Notifications" component={NotificationsScreen} />
                 <Stack.Screen name="Settings" component={SettingsScreen} />
+                <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                <Stack.Screen name="Library" component={LibraryScreen} />
+                <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
             </Stack.Navigator>
         </NavigationContainer>
+        </LibraryProvider>
     );
 }

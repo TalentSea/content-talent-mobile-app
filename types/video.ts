@@ -67,6 +67,7 @@ export type DownloadItem = {
 export type PlayInfo = {
   id?: number;
   title: string;
+  category?: string;
   description?: string;
   category?: string;
   tags?: string[];

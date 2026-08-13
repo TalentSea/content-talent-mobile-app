@@ -37,14 +37,32 @@ export const styles = StyleSheet.create({
     headerPlaceholder: {
         width: 40,
     },
+    headerActions: {
+        width: 88,
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+    },
+    headerIconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.surface,
+    },
     content: {
         flex: 1,
+    },
+    profileContent: {
         paddingHorizontal: 16,
         paddingTop: 16,
+        paddingBottom: 28,
     },
-    avatarContainer: {
+    profileSummary: {
         alignItems: 'center',
-        marginBottom: 16,
+        paddingVertical: 8,
+        marginBottom: 22,
     },
     avatar: {
         width: 80,
@@ -68,64 +86,127 @@ export const styles = StyleSheet.create({
         fontSize: 28,
         fontWeight: '800',
     },
-    infoCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.05)',
-        marginBottom: 16,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    infoLabel: {
-        color: colors.muted,
-        fontSize: 13,
-        fontWeight: '500',
-    },
-    infoValue: {
+    libraryTitle: {
         color: colors.text,
+        fontSize: 16,
+        fontWeight: '800',
+        marginBottom: 10,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    historyChevron: {
+        marginLeft: 2,
+        marginTop: -10,
+    },
+    historyShelf: {
+        paddingBottom: 18,
+        gap: 12,
+    },
+    historyCard: {
+        width: 148,
+    },
+    historyThumbnail: {
+        width: 148,
+        height: 84,
+        borderRadius: 10,
+        backgroundColor: colors.surface,
+    },
+    historyThumbnailFallback: {
+        width: 148,
+        height: 84,
+        borderRadius: 10,
+        backgroundColor: colors.surface,
+    },
+    historyTitle: {
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: '700',
+        lineHeight: 17,
+        marginTop: 7,
+    },
+    historyEmpty: {
+        minHeight: 58,
+        paddingHorizontal: 14,
+        marginBottom: 18,
+        borderRadius: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: colors.surface,
+    },
+    historyEmptyText: {
+        flex: 1,
+        color: colors.muted,
         fontSize: 13,
         fontWeight: '600',
     },
-    divider: {
-        height: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    libraryList: {
+        marginBottom: 8,
     },
-    badgeRow: {
+    libraryRow: {
+        minHeight: 92,
+        paddingVertical: 10,
         flexDirection: 'row',
         alignItems: 'center',
+        marginBottom: 10,
     },
-    badge: {
+    libraryThumbnail: {
+        width: 118,
+        height: 72,
+        borderRadius: 10,
+        marginRight: 12,
+        backgroundColor: colors.surface,
+    },
+    libraryThumbnailFallback: {
+        width: 118,
+        height: 72,
+        borderRadius: 10,
+        marginRight: 12,
+        backgroundColor: '#242431',
+    },
+    libraryCopy: {
+        flex: 1,
+        paddingRight: 12,
+    },
+    libraryRowTitle: {
+        color: colors.text,
+        fontSize: 13,
+        fontWeight: '800',
+    },
+    libraryRowSubtitle: {
+        color: colors.muted,
+        fontSize: 11,
+        lineHeight: 16,
+        marginTop: 4,
+    },
+    creatorName: {
+        color: colors.text,
+        fontSize: 20,
+        fontWeight: '800',
+        marginTop: 10,
+    },
+    creatorEmail: {
+        color: colors.muted,
+        fontSize: 13,
+        marginTop: 4,
+    },
+    creatorBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        marginTop: 10,
+        paddingHorizontal: 9,
         paddingVertical: 4,
         borderRadius: 8,
-    },
-    badgeVerified: {
         backgroundColor: 'rgba(16, 185, 129, 0.1)',
     },
-    badgePending: {
-        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-    },
-    badgeIcon: {
-        marginRight: 4,
-    },
-    badgeTextVerified: {
+    creatorBadgeText: {
         color: '#10B981',
         fontSize: 12,
         fontWeight: '600',
-    },
-    badgeTextPending: {
-        color: '#F59E0B',
-        fontSize: 12,
-        fontWeight: '600',
+        marginLeft: 5,
     },
     tabContainer: {
         flexDirection: 'row',

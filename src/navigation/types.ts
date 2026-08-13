@@ -13,9 +13,12 @@ export type RootStackParamList = {
         category: string;
     };
     Profile: undefined;
+    Settings: undefined;
+    Notifications: undefined;
+    Library: {
+        type: 'history' | 'downloads' | 'liked' | 'saved';
+    };
     VideoGrid: {
         section: VideoSectionKey;
     };
-    Notifications: undefined;
-    Settings: undefined;
 };
