@@ -17,6 +17,7 @@ yarn-error.log*
 
 # Android build outputs & local config
 android/.gradle/
+android/.kotlin/
 android/app/.cxx/
 android/app/build/
 android/app/src/main/assets/
