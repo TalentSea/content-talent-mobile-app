@@ -12,11 +12,30 @@ export function useWatchHistory(availableVideos: ApiVideo[] = []) {
   const [history, setHistory] = useState<WatchHistoryItem[]>(getWatchHistory);
 
   useEffect(() => {
+    let mounted = true;
     const update = () => {
-      setHistory(getWatchHistory());
+      if (!mounted) return;
+      const nextHistory = getWatchHistory();
+      setHistory(prev => {
+        if (
+          prev.length === nextHistory.length &&
+          prev.every(
+            (item, idx) =>
+              item.video.id === nextHistory[idx]?.video?.id &&
+              item.progressPercentage === nextHistory[idx]?.progressPercentage,
+          )
+        ) {
+          return prev;
+        }
+        return nextHistory;
+      });
     };
+    update();
     const unsubscribe = subscribeWatchHistory(update);
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const availableIdsKey = (availableVideos || []).map(v => v.id).join(',');

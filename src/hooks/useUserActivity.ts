@@ -15,12 +15,32 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
   const [savedVideos, setSavedVideos] = useState<ApiVideo[]>(getSavedVideos);
 
   useEffect(() => {
+    let mounted = true;
     const update = () => {
-      setLikedVideos(getLikedVideos());
-      setSavedVideos(getSavedVideos());
+      if (!mounted) return;
+      const nextLiked = getLikedVideos();
+      const nextSaved = getSavedVideos();
+
+      setLikedVideos(prev => {
+        if (prev.length === nextLiked.length && prev.every((v, i) => v.id === nextLiked[i]?.id)) {
+          return prev;
+        }
+        return nextLiked;
+      });
+
+      setSavedVideos(prev => {
+        if (prev.length === nextSaved.length && prev.every((v, i) => v.id === nextSaved[i]?.id)) {
+          return prev;
+        }
+        return nextSaved;
+      });
     };
+    update();
     const unsubscribe = subscribeUserActivity(update);
-    return () => unsubscribe();
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const availableIdsKey = (availableVideos || []).map(v => v.id).join(',');

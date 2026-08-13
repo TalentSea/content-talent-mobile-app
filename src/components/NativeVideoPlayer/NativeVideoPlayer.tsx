@@ -27,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import RNFS from 'react-native-fs';
 import { registerInAppDownload } from '../../services/downloadService';
+import type { ApiVideo } from '../../types/video';
 
 type CaptionTrack = {
   uri?: string;
@@ -46,6 +47,11 @@ export type DownloadItem = {
 };
 
 type VideoPlayerProps = {
+  video?: ApiVideo;
+  id?: number | string;
+  category?: string;
+  thumbnailUrl?: string;
+  description?: string;
   uri: string;
   mp4Url?: string;
   downloadUrls?: DownloadItem[];
@@ -72,6 +78,11 @@ type VideoPlayerProps = {
 const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 
 export default function NativeVideoPlayer({
+  video,
+  id,
+  category,
+  thumbnailUrl,
+  description,
   uri,
   mp4Url,
   downloadUrls = [],
