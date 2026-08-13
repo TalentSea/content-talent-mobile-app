@@ -277,28 +277,31 @@ export default function NativeVideoPlayer({
       setIsDownloading(false);
 
       if (res.statusCode === 200 || res.statusCode === 206) {
+        const realVideoId = video?.id || (id ? Number(id) : Date.now());
+        const downloadVideoObj: ApiVideo = video || {
+          id: realVideoId,
+          title: videoTitle,
+          description: description || null,
+          main_thumbnail_url: thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+          category: category || 'General',
+          tags: [],
+          status: 'published',
+          encode_progress: 100,
+          is_playable: true,
+          views: 0,
+          duration: '00:00',
+          published_at: null,
+          scheduled_at: null,
+          created_at: new Date().toISOString(),
+        };
+
         registerInAppDownload({
-          id: Date.now(),
+          id: realVideoId,
           title: videoTitle,
           localPath: destPath,
           quality: label,
           downloadedAt: new Date().toISOString(),
-          video: {
-            id: Date.now(),
-            title: videoTitle,
-            description: null,
-            main_thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-            category: 'General',
-            tags: [],
-            status: 'published',
-            encode_progress: 100,
-            is_playable: true,
-            views: 0,
-            duration: '00:00',
-            published_at: null,
-            scheduled_at: null,
-            created_at: new Date().toISOString(),
-          },
+          video: downloadVideoObj,
         });
 
         Alert.alert(

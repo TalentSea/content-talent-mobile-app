@@ -11,26 +11,23 @@ import {
 import type { ApiVideo } from '../types/video';
 
 export function useDownloads(availableVideos: ApiVideo[] = []) {
-  const [downloadedVideos, setDownloadedVideos] = useState<DownloadedVideoItem[]>(getDownloadedVideos);
-
-  useEffect(() => {
-    const update = () => {
-      setDownloadedVideos(getDownloadedVideos());
-    };
-    const unsubscribe = subscribeDownloads(update);
-    return () => unsubscribe();
-  }, []);
+  const [downloadedVideos, setDownloadedVideos] = useState<DownloadedVideoItem[]>(() =>
+    getDownloadedVideos(availableVideos),
+  );
 
   const availableIdsKey = (availableVideos || []).map(v => v.id).join(',');
 
-  const filteredDownloadedVideos = useMemo(() => {
-    if (!availableVideos || availableVideos.length === 0) return downloadedVideos;
-    const availableIds = new Set(availableVideos.map(v => v.id));
-    return downloadedVideos.filter(item => availableIds.has(item.video.id));
-  }, [downloadedVideos, availableIdsKey]);
+  useEffect(() => {
+    const update = () => {
+      setDownloadedVideos(getDownloadedVideos(availableVideos));
+    };
+    update();
+    const unsubscribe = subscribeDownloads(update);
+    return () => unsubscribe();
+  }, [availableIdsKey]);
 
   return {
-    downloadedVideos: filteredDownloadedVideos,
+    downloadedVideos,
     isVideoDownloadedInApp,
     downloadVideoInApp,
     removeDownloadedVideoInApp,
