@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   findNodeHandle,
   Platform,
   Pressable,
@@ -132,6 +133,19 @@ export default function NativeVideoPlayer({
     setPaused(!autoStart);
     setError(null);
   }, [autoStart, uri]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState.match(/inactive|background/)) {
+        console.log('[NativeVideoPlayer] App state changed to background/inactive, pausing video');
+        setPaused(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     setShowControls(controls);

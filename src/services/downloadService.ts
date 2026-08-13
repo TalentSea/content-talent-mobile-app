@@ -66,7 +66,11 @@ export function subscribeDownloads(listener: () => void): () => void {
   };
 }
 
-export function getDownloadedVideos(): DownloadedVideoItem[] {
+export function getDownloadedVideos(availableVideos?: ApiVideo[]): DownloadedVideoItem[] {
+  if (availableVideos && availableVideos.length > 0) {
+    const availableIds = new Set(availableVideos.map(v => v.id));
+    return downloadedVideosStore.filter(item => availableIds.has(item.video.id));
+  }
   return [...downloadedVideosStore];
 }
 

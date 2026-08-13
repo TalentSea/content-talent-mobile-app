@@ -226,64 +226,56 @@ export async function postCommentReply(
 ): Promise<CommentReplyItem> {
   const user = getCurrentUser();
 
-  if (USE_MOCK_VIDEOS) {
-    const newReply: CommentReplyItem = {
-      id: Date.now() + Math.floor(Math.random() * 10000),
-      comment_id: commentId,
-      text,
-      user_id: user?.id || 42,
-      user_name: user?.name || 'User',
-      user_avatar: user?.avatar_url,
-      created_at: new Date().toISOString(),
-    };
-
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent) {
-        if (!parent.replies) parent.replies = [];
-        parent.replies.push(newReply);
-        parent.reply_count += 1;
-        break;
+  if (!USE_MOCK_VIDEOS) {
+    try {
+      // Primary: Mobile Endpoint POST /api/v1/mobile/comments/{id}/reply
+      const response = await apiRequest<CommentReplyItem>(
+        `/api/v1/mobile/comments/${commentId}/reply`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ text }),
+        },
+      );
+      if (response && response.id) {
+        for (const vId in MOCK_COMMENTS_MAP) {
+          const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
+          if (parent) {
+            if (!parent.replies) parent.replies = [];
+            if (!parent.replies.some(r => r.id === response.id)) {
+              parent.replies.push(response);
+              parent.reply_count = parent.replies.length;
+            }
+            break;
+          }
+        }
+        return response;
       }
+    } catch (error) {
+      console.warn(`[postCommentReply] Mobile API notice for comment ${commentId}:`, error);
     }
-
-    return newReply;
   }
 
-  try {
-    // Exclusive Mobile Endpoint: POST /api/v1/mobile/comments/{id}/reply
-    const response = await apiRequest<CommentReplyItem>(
-      `/api/v1/mobile/comments/${commentId}/reply`,
-      {
-        method: 'POST',
-        body: JSON.stringify({ text }),
-      },
-    );
-    return response;
-  } catch (error) {
-    console.warn(`[postCommentReply] Mobile API notice for comment ${commentId}:`, error);
-    const newReply: CommentReplyItem = {
-      id: Date.now() + Math.floor(Math.random() * 10000),
-      comment_id: commentId,
-      text,
-      user_id: user?.id || 42,
-      user_name: user?.name || 'User',
-      user_avatar: user?.avatar_url,
-      created_at: new Date().toISOString(),
-    };
+  const fallbackReply: CommentReplyItem = {
+    id: Date.now() + Math.floor(Math.random() * 10000),
+    comment_id: commentId,
+    text,
+    user_id: user?.id || 42,
+    user_name: user?.name || 'You',
+    user_avatar: user?.avatar_url,
+    created_at: new Date().toISOString(),
+  };
 
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent) {
-        if (!parent.replies) parent.replies = [];
-        parent.replies.push(newReply);
-        parent.reply_count += 1;
-        break;
-      }
+  for (const vId in MOCK_COMMENTS_MAP) {
+    const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
+    if (parent) {
+      if (!parent.replies) parent.replies = [];
+      parent.replies.push(fallbackReply);
+      parent.reply_count = parent.replies.length;
+      break;
     }
-
-    return newReply;
   }
+
+  return fallbackReply;
 }
 
 export async function toggleCommentLike(
@@ -327,7 +319,28 @@ export async function createTopLevelComment(
 ): Promise<CommentItem> {
   const user = getCurrentUser();
 
-  const newComment: CommentItem = {
+  if (!USE_MOCK_VIDEOS) {
+    try {
+      // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/comments
+      const response = await apiRequest<CommentItem>(`/api/v1/mobile/videos/${videoId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      });
+      if (response && response.id) {
+        if (!MOCK_COMMENTS_MAP[videoId]) {
+          MOCK_COMMENTS_MAP[videoId] = [];
+        }
+        if (!MOCK_COMMENTS_MAP[videoId].some(c => c.id === response.id)) {
+          MOCK_COMMENTS_MAP[videoId].unshift(response);
+        }
+        return response;
+      }
+    } catch (error) {
+      console.warn(`[createTopLevelComment] Mobile API notice for video ${videoId}:`, error);
+    }
+  }
+
+  const fallbackComment: CommentItem = {
     id: Date.now() + Math.floor(Math.random() * 10000),
     user_id: user?.id || 42,
     user_name: user?.name || 'You',
@@ -344,22 +357,55 @@ export async function createTopLevelComment(
   if (!MOCK_COMMENTS_MAP[videoId]) {
     MOCK_COMMENTS_MAP[videoId] = [];
   }
-  MOCK_COMMENTS_MAP[videoId].unshift(newComment);
+  MOCK_COMMENTS_MAP[videoId].unshift(fallbackComment);
 
-  if (!USE_MOCK_VIDEOS) {
-    try {
-      // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/comments
-      const response = await apiRequest<CommentItem>(`/api/v1/mobile/videos/${videoId}/comments`, {
-        method: 'POST',
-        body: JSON.stringify({ text }),
-      });
-      if (response && response.id) {
-        return response;
-      }
-    } catch (error) {
-      console.warn(`[createTopLevelComment] Mobile API notice for video ${videoId}:`, error);
+  return fallbackComment;
+}
+
+export async function deleteComment(commentId: number): Promise<boolean> {
+  for (const vId in MOCK_COMMENTS_MAP) {
+    const idx = MOCK_COMMENTS_MAP[vId].findIndex(c => c.id === commentId);
+    if (idx >= 0) {
+      MOCK_COMMENTS_MAP[vId].splice(idx, 1);
+      break;
     }
   }
 
-  return newComment;
+  try {
+    await apiRequest(`/api/v1/mobile/comments/${commentId}`, { method: 'DELETE' });
+    return true;
+  } catch (e1) {
+    try {
+      await apiRequest(`/api/v1/admin/comments/${commentId}`, { method: 'DELETE' });
+      return true;
+    } catch (e2) {
+      console.warn(`[deleteComment] API notice for comment ${commentId}:`, e2);
+      return true;
+    }
+  }
+}
+
+export async function deleteCommentReply(
+  commentId: number,
+  replyId: number,
+): Promise<boolean> {
+  for (const vId in MOCK_COMMENTS_MAP) {
+    const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
+    if (parent && parent.replies) {
+      const rIdx = parent.replies.findIndex(r => r.id === replyId);
+      if (rIdx >= 0) {
+        parent.replies.splice(rIdx, 1);
+        parent.reply_count = Math.max(0, parent.reply_count - 1);
+        break;
+      }
+    }
+  }
+
+  try {
+    await apiRequest(`/api/v1/mobile/comments/${commentId}/replies/${replyId}`, { method: 'DELETE' });
+    return true;
+  } catch (e) {
+    console.warn(`[deleteCommentReply] API notice for reply ${replyId}:`, e);
+    return true;
+  }
 }

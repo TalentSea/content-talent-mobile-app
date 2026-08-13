@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
 import { getRelativeTimeString, formatViews, formatDurationString } from '../../utils/timeUtils';
@@ -22,6 +23,7 @@ export type VideoCardProps = {
   hideDescription?: boolean;
   hideTags?: boolean;
   onPress?: () => void;
+  onDelete?: () => void;
 };
 
 export function VideoCard({
@@ -38,9 +40,10 @@ export function VideoCard({
   hideDescription = false,
   hideTags = false,
   onPress,
+  onDelete,
 }: VideoCardProps) {
   const { history } = useWatchHistory();
-  const currentVideoId = video?.id || (id ? parseInt(id) : 1);
+  const currentVideoId = video?.id || (_id ? parseInt(_id) : 1);
 
   // Find progress percentage from watch history
   const watchHistoryItem = history.find(h => h.video.id === currentVideoId);
@@ -72,6 +75,19 @@ export function VideoCard({
         ]}
       >
         <Image source={{ uri: thumb }} style={styles.thumbnail} />
+
+        {onDelete ? (
+          <Pressable
+            style={styles.deleteBadge}
+            onPress={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            hitSlop={8}
+          >
+            <Trash2 size={12} color="#FFFFFF" />
+          </Pressable>
+        ) : null}
 
         {displayDuration ? (
           <View style={styles.durationBadge}>

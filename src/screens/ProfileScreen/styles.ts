@@ -53,6 +53,67 @@ export const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        paddingHorizontal: 16,
+    },
+    avatarContainer: {
+        alignItems: 'center',
+        marginTop: 12,
+        marginBottom: 12,
+    },
+    infoCard: {
+        backgroundColor: '#141422',
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        marginBottom: 8,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 6,
+    },
+    infoLabel: {
+        color: '#9CA3AF',
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    infoValue: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        marginVertical: 6,
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 16,
+        backgroundColor: 'rgba(107, 114, 128, 0.2)',
+    },
+    badgeVerified: {
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.4)',
+    },
+    badgeIcon: {
+        marginRight: 6,
+    },
+    badgeTextVerified: {
+        color: '#10B981',
+        fontSize: 12,
+        fontWeight: '700',
     },
     profileContent: {
         paddingHorizontal: 16,

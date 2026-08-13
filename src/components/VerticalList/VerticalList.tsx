@@ -11,6 +11,7 @@ type VerticalListProps = {
   isContinueWatching?: boolean;
   onRefresh?: () => void;
   onPressVideo?: (video: ApiVideo) => void;
+  onDeleteVideo?: (video: ApiVideo) => void;
   emptyText?: string;
   HeaderComponent?: React.ReactElement;
   FooterComponent?: React.ReactElement;
@@ -23,6 +24,7 @@ export function VerticalList({
   isContinueWatching = false,
   onRefresh,
   onPressVideo,
+  onDeleteVideo,
   emptyText = 'No videos found.',
   HeaderComponent,
   FooterComponent,
@@ -62,6 +64,7 @@ export function VerticalList({
           badgeText={item.status}
           isContinueWatching={isContinueWatching}
           onPress={() => onPressVideo && onPressVideo(item)}
+          onDelete={onDeleteVideo ? () => onDeleteVideo(item) : undefined}
         />
       )}
     />

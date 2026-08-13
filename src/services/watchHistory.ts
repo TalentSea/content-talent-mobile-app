@@ -119,12 +119,33 @@ export function recordWatchHistory(
   );
 }
 
-export function getWatchHistory(): WatchHistoryItem[] {
-  return [...watchHistoryStore];
+export function getWatchHistory(availableVideos?: ApiVideo[]): WatchHistoryItem[] {
+  if (!availableVideos || availableVideos.length === 0) {
+    return [...watchHistoryStore];
+  }
+  const availableIds = new Set(availableVideos.map(v => v.id));
+  return watchHistoryStore.filter(item => availableIds.has(item.video.id));
 }
 
-export function getContinueWatchingVideos(): ApiVideo[] {
-  return watchHistoryStore.map(item => item.video);
+export function getContinueWatchingVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  if (!availableVideos || availableVideos.length === 0) {
+    return watchHistoryStore.map(item => item.video);
+  }
+  const availableIds = new Set(availableVideos.map(v => v.id));
+  return watchHistoryStore
+    .filter(item => availableIds.has(item.video.id))
+    .map(item => item.video);
+}
+
+export function cleanUnavailableWatchHistory(availableVideos: ApiVideo[]) {
+  if (!availableVideos || availableVideos.length === 0) return;
+  const availableIds = new Set(availableVideos.map(v => v.id));
+  const prevCount = watchHistoryStore.length;
+  watchHistoryStore = watchHistoryStore.filter(item => availableIds.has(item.video.id));
+  if (watchHistoryStore.length !== prevCount) {
+    notifyListeners();
+    persistWatchHistoryToDisk();
+  }
 }
 
 export function clearWatchHistory() {

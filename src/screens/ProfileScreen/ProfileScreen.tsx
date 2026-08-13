@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, LogOut, LogIn, CheckCircle, User as UserIcon, Settings, Bell } from 'lucide-react-native';
+import { ChevronLeft, LogOut, LogIn, CheckCircle, User as UserIcon, Settings, Bell, Trash2 } from 'lucide-react-native';
 import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
@@ -27,9 +27,9 @@ export function ProfileScreen({ navigation }: any) {
   const [activeTab, setActiveTab] = useState<'liked' | 'saved' | 'downloads' | 'history'>('liked');
 
   const { videos, loading, reload } = useVideos();
-  const { likedVideos, savedVideos } = useUserActivity();
-  const { continueWatching } = useWatchHistory();
-  const { downloadedVideos } = useDownloads();
+  const { likedVideos, savedVideos } = useUserActivity(videos);
+  const { continueWatching, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
+  const { downloadedVideos } = useDownloads(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
   const isLoggedIn = !!user;
@@ -122,7 +122,7 @@ export function ProfileScreen({ navigation }: any) {
               <View style={[styles.badge, isLoggedIn ? styles.badgeVerified : { backgroundColor: 'rgba(107, 114, 128, 0.2)' }]}>
                 <CheckCircle color={isLoggedIn ? '#10B981' : '#9CA3AF'} size={14} style={styles.badgeIcon} />
                 <Text style={isLoggedIn ? styles.badgeTextVerified : { color: '#9CA3AF', fontSize: 12, fontWeight: '600' }}>
-                  {isLoggedIn ? `Verified ${currentUser.role}` : 'Guest Visitor'}
+                  {isLoggedIn ? 'Verified Subscriber' : 'Guest Visitor'}
                 </Text>
               </View>
             </View>
@@ -249,6 +249,30 @@ export function ProfileScreen({ navigation }: any) {
           </Pressable>
         </View>
 
+        {/* Clear All History Header Action Button */}
+        {activeTab === 'history' && continueWatching.length > 0 ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <Pressable
+              style={({ pressed }) => [{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => clearWatchHistory()}
+            >
+              <Trash2 size={12} color="#EF4444" />
+              <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '700' }}>Clear All History</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
         {/* Activity Feed Grid */}
         <View style={{ flex: 1 }}>
           <VerticalList
@@ -258,6 +282,7 @@ export function ProfileScreen({ navigation }: any) {
             isContinueWatching={true}
             onRefresh={reload}
             onPressVideo={playVideo}
+            onDeleteVideo={activeTab === 'history' ? (video: any) => removeWatchHistoryItem(video.id) : undefined}
             emptyText={`No ${activeTab} videos found.`}
           />
         </View>

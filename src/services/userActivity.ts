@@ -143,10 +143,18 @@ export function toggleSaveVideo(video: ApiVideo): boolean {
   return isNowSaved;
 }
 
-export function getLikedVideos(): ApiVideo[] {
+export function getLikedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  if (availableVideos && availableVideos.length > 0) {
+    const availableIds = new Set(availableVideos.map(v => v.id));
+    return likedVideosStore.filter(v => availableIds.has(v.id));
+  }
   return [...likedVideosStore];
 }
 
-export function getSavedVideos(): ApiVideo[] {
+export function getSavedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  if (availableVideos && availableVideos.length > 0) {
+    const availableIds = new Set(availableVideos.map(v => v.id));
+    return savedVideosStore.filter(v => availableIds.has(v.id));
+  }
   return [...savedVideosStore];
 }
