@@ -1,3 +1,4 @@
+import RNFS from 'react-native-fs';
 import { apiGet, apiRequest } from './client';
 import { USE_MOCK_VIDEOS } from '../../constants/config';
 import { getCurrentUser } from './authService';
@@ -130,20 +131,73 @@ const MOCK_COMMENTS_MAP: Record<number, CommentItem[]> = {
   ],
 };
 
+const COMMENTS_STORAGE_PATH = `${RNFS.DocumentDirectoryPath}/session_comments.json`;
+
+async function persistCommentsToDisk() {
+  try {
+    const data = JSON.stringify(MOCK_COMMENTS_MAP);
+    await RNFS.writeFile(COMMENTS_STORAGE_PATH, data, 'utf8');
+  } catch (e) {
+    console.warn('[commentsApi] Disk save notice:', e);
+  }
+}
+
+async function restoreCommentsFromDisk() {
+  try {
+    const exists = await RNFS.exists(COMMENTS_STORAGE_PATH);
+    if (exists) {
+      const content = await RNFS.readFile(COMMENTS_STORAGE_PATH, 'utf8');
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object') {
+        for (const vId in parsed) {
+          const numId = Number(vId);
+          if (Array.isArray(parsed[vId])) {
+            const existing = MOCK_COMMENTS_MAP[numId] || [];
+            const map = new Map<number, CommentItem>();
+            for (const item of [...parsed[vId], ...existing]) {
+              if (item && item.id) map.set(item.id, item);
+            }
+            MOCK_COMMENTS_MAP[numId] = Array.from(map.values());
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[commentsApi] Disk restore notice:', e);
+  }
+}
+
+restoreCommentsFromDisk();
+
+function deduplicateCommentItems(items: CommentItem[]): CommentItem[] {
+  const seen = new Set<number>();
+  const result: CommentItem[] = [];
+  for (const item of items) {
+    if (item && item.id && !seen.has(item.id)) {
+      seen.add(item.id);
+      result.push(item);
+    }
+  }
+  return result;
+}
+
 export async function fetchVideoComments(
   videoId: number,
   sort: string = 'newest',
   page: number = 1,
   limit: number = 20,
 ): Promise<PaginatedCommentsResponse> {
+  const localList = MOCK_COMMENTS_MAP[videoId] || [];
+
   if (USE_MOCK_VIDEOS) {
-    const list = MOCK_COMMENTS_MAP[videoId] || MOCK_COMMENTS_MAP[1] || [];
+    const defaultList = MOCK_COMMENTS_MAP[1] || [];
+    const combined = deduplicateCommentItems([...localList, ...defaultList]);
     return {
-      total: list.length,
+      total: combined.length,
       page,
       limit,
       total_pages: 1,
-      items: list,
+      items: combined,
     };
   }
 
@@ -159,21 +213,26 @@ export async function fetchVideoComments(
       `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
     );
 
-    if (!response || !response.items) {
-      const list = MOCK_COMMENTS_MAP[videoId] || MOCK_COMMENTS_MAP[1] || [];
-      return { total: list.length, page: 1, limit: 20, total_pages: 1, items: list };
-    }
+    const remoteItems = response?.items || [];
+    const combined = deduplicateCommentItems([...localList, ...remoteItems]);
 
-    return response;
+    return {
+      total: combined.length,
+      page: response?.page || page,
+      limit: response?.limit || limit,
+      total_pages: response?.total_pages || 1,
+      items: combined,
+    };
   } catch (error) {
     console.warn(`[fetchVideoComments] Mobile API notice for video ${videoId}:`, error);
-    const list = MOCK_COMMENTS_MAP[videoId] || MOCK_COMMENTS_MAP[1] || [];
+    const defaultList = MOCK_COMMENTS_MAP[1] || [];
+    const combined = deduplicateCommentItems([...localList, ...defaultList]);
     return {
-      total: list.length,
+      total: combined.length,
       page: 1,
       limit: 20,
       total_pages: 1,
-      items: list,
+      items: combined,
     };
   }
 }
@@ -248,6 +307,7 @@ export async function postCommentReply(
             break;
           }
         }
+        persistCommentsToDisk();
         return response;
       }
     } catch (error) {
@@ -274,6 +334,7 @@ export async function postCommentReply(
       break;
     }
   }
+  persistCommentsToDisk();
 
   return fallbackReply;
 }
@@ -287,6 +348,7 @@ export async function toggleCommentLike(
       if (comment) {
         comment.is_liked = !comment.is_liked;
         comment.likes += comment.is_liked ? 1 : -1;
+        persistCommentsToDisk();
         return { is_liked: comment.is_liked, likes: comment.likes };
       }
     }
@@ -306,6 +368,7 @@ export async function toggleCommentLike(
       if (comment) {
         comment.is_liked = !comment.is_liked;
         comment.likes += comment.is_liked ? 1 : -1;
+        persistCommentsToDisk();
         return { is_liked: comment.is_liked, likes: comment.likes };
       }
     }
@@ -333,6 +396,7 @@ export async function createTopLevelComment(
         if (!MOCK_COMMENTS_MAP[videoId].some(c => c.id === response.id)) {
           MOCK_COMMENTS_MAP[videoId].unshift(response);
         }
+        persistCommentsToDisk();
         return response;
       }
     } catch (error) {
@@ -358,6 +422,7 @@ export async function createTopLevelComment(
     MOCK_COMMENTS_MAP[videoId] = [];
   }
   MOCK_COMMENTS_MAP[videoId].unshift(fallbackComment);
+  persistCommentsToDisk();
 
   return fallbackComment;
 }
@@ -370,6 +435,7 @@ export async function deleteComment(commentId: number): Promise<boolean> {
       break;
     }
   }
+  persistCommentsToDisk();
 
   try {
     await apiRequest(`/api/v1/mobile/comments/${commentId}`, { method: 'DELETE' });
@@ -400,6 +466,7 @@ export async function deleteCommentReply(
       }
     }
   }
+  persistCommentsToDisk();
 
   try {
     await apiRequest(`/api/v1/mobile/comments/${commentId}/replies/${replyId}`, { method: 'DELETE' });
