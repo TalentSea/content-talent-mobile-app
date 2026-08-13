@@ -67,6 +67,7 @@ export async function restoreStoredSession(): Promise<UserProfile | null> {
       setApiAccessToken(parsed.accessToken);
       storedRefreshToken = parsed.refreshToken || null;
       currentAuthenticatedUser = parsed.user;
+      notifyAuthChange();
       return parsed.user;
     }
   } catch (err) {
@@ -77,6 +78,27 @@ export async function restoreStoredSession(): Promise<UserProfile | null> {
 
 export function getStoredRefreshToken(): string | null {
   return storedRefreshToken;
+}
+
+const authChangeListeners: Set<() => void> = new Set();
+
+export function subscribeAuthChange(listener: () => void): () => void {
+  authChangeListeners.add(listener);
+  return () => {
+    authChangeListeners.delete(listener);
+  };
+}
+
+function notifyAuthChange() {
+  authChangeListeners.forEach(fn => fn());
+}
+
+export function getUserStorageKey(): string {
+  if (!currentAuthenticatedUser) return 'guest';
+  if (currentAuthenticatedUser.email) {
+    return currentAuthenticatedUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  }
+  return `user_${currentAuthenticatedUser.id || 'anon'}`;
 }
 
 export function getCurrentUser(): UserProfile | null {
@@ -90,6 +112,7 @@ export function setSessionTokens(accessToken: string, refreshToken: string, user
     currentAuthenticatedUser = user;
   }
   saveSessionToStorage(accessToken, refreshToken, user || currentAuthenticatedUser || undefined);
+  notifyAuthChange();
 }
 
 export async function clearSessionTokens() {
@@ -97,6 +120,7 @@ export async function clearSessionTokens() {
   storedRefreshToken = null;
   currentAuthenticatedUser = null;
   await removeSessionFromStorage();
+  notifyAuthChange();
 
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');

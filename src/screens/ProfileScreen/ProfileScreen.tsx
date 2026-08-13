@@ -48,7 +48,9 @@ export function ProfileScreen({ navigation }: any) {
       ? likedVideos
       : activeTab === 'saved'
       ? savedVideos
-      : downloadedVideos.map((item: DownloadedVideoItem) => item.video);
+      : downloadedVideos
+          .map((item: DownloadedVideoItem) => item?.video || (item as any))
+          .filter((v: ApiVideo) => v && v.id);
 
   const handleLogout = async () => {
     await clearSessionTokens();

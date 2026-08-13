@@ -8,6 +8,8 @@ import {
   removeVideoWatchHistoryApi,
 } from './api/userActivityApi';
 
+import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+
 export type WatchHistoryItem = {
   video: ApiVideo;
   watchedAt: string;
@@ -15,7 +17,10 @@ export type WatchHistoryItem = {
   lastPositionSeconds?: number;
 };
 
-const HISTORY_FILE_PATH = `${RNFS.DocumentDirectoryPath}/watch_history.json`;
+function getHistoryFilePath(): string {
+  const userKey = getUserStorageKey();
+  return `${RNFS.DocumentDirectoryPath}/watch_history_${userKey}.json`;
+}
 
 // Clean memory-backed watch history store restored from disk and backend API
 let watchHistoryStore: WatchHistoryItem[] = [];
@@ -28,8 +33,9 @@ function notifyListeners() {
 
 async function persistWatchHistoryToDisk() {
   try {
+    const filePath = getHistoryFilePath();
     const data = JSON.stringify(watchHistoryStore);
-    await RNFS.writeFile(HISTORY_FILE_PATH, data, 'utf8');
+    await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
     console.warn('[watchHistory] Disk save notice:', err);
   }
@@ -37,17 +43,23 @@ async function persistWatchHistoryToDisk() {
 
 async function restoreWatchHistoryFromDisk() {
   try {
-    const exists = await RNFS.exists(HISTORY_FILE_PATH);
+    const filePath = getHistoryFilePath();
+    const exists = await RNFS.exists(filePath);
     if (exists) {
-      const content = await RNFS.readFile(HISTORY_FILE_PATH, 'utf8');
+      const content = await RNFS.readFile(filePath, 'utf8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
         watchHistoryStore = parsed;
         notifyListeners();
+        return;
       }
     }
+    watchHistoryStore = [];
+    notifyListeners();
   } catch (err) {
     console.warn('[watchHistory] Disk restore notice:', err);
+    watchHistoryStore = [];
+    notifyListeners();
   }
 }
 
@@ -176,5 +188,6 @@ export function subscribeWatchHistory(listener: () => void): () => void {
   };
 }
 
-// Initial sync on startup
+// Initial sync on startup & listener on user login/logout switch
 syncWatchHistoryWithBackend();
+subscribeAuthChange(() => syncWatchHistoryWithBackend());

@@ -9,8 +9,14 @@ export type DownloadedVideoItem = {
   resolution: string;
 };
 
+import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+
 const DOWNLOAD_DIR = `${RNFS.DocumentDirectoryPath}/in_app_downloads`;
-const DOWNLOADS_METADATA_FILE = `${RNFS.DocumentDirectoryPath}/downloads_metadata.json`;
+
+function getDownloadsFilePath(): string {
+  const userKey = getUserStorageKey();
+  return `${RNFS.DocumentDirectoryPath}/downloads_metadata_${userKey}.json`;
+}
 
 let downloadedVideosStore: DownloadedVideoItem[] = [];
 
@@ -22,8 +28,9 @@ function notifyListeners() {
 
 async function persistDownloadsToDisk() {
   try {
+    const filePath = getDownloadsFilePath();
     const data = JSON.stringify(downloadedVideosStore);
-    await RNFS.writeFile(DOWNLOADS_METADATA_FILE, data, 'utf8');
+    await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
     console.warn('[downloadService] Disk save notice:', err);
   }
@@ -31,17 +38,23 @@ async function persistDownloadsToDisk() {
 
 async function restoreDownloadsFromDisk() {
   try {
-    const exists = await RNFS.exists(DOWNLOADS_METADATA_FILE);
+    const filePath = getDownloadsFilePath();
+    const exists = await RNFS.exists(filePath);
     if (exists) {
-      const content = await RNFS.readFile(DOWNLOADS_METADATA_FILE, 'utf8');
+      const content = await RNFS.readFile(filePath, 'utf8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
         downloadedVideosStore = parsed;
         notifyListeners();
+        return;
       }
     }
+    downloadedVideosStore = [];
+    notifyListeners();
   } catch (err) {
     console.warn('[downloadService] Disk restore notice:', err);
+    downloadedVideosStore = [];
+    notifyListeners();
   }
 }
 
@@ -58,6 +71,7 @@ async function ensureDownloadDirExists() {
 }
 
 ensureDownloadDirExists();
+subscribeAuthChange(() => restoreDownloadsFromDisk());
 
 export function subscribeDownloads(listener: () => void): () => void {
   listeners.add(listener);
@@ -67,11 +81,22 @@ export function subscribeDownloads(listener: () => void): () => void {
 }
 
 export function getDownloadedVideos(availableVideos?: ApiVideo[]): DownloadedVideoItem[] {
+  const normalized = downloadedVideosStore.map(item => {
+    const v: ApiVideo = (item as any)?.video || (item as any);
+    return {
+      video: v,
+      localFilePath: item?.localFilePath || `${DOWNLOAD_DIR}/video_${v?.id || 1}.mp4`,
+      downloadedAt: item?.downloadedAt || new Date().toISOString(),
+      fileSizeMB: item?.fileSizeMB || 28.5,
+      resolution: item?.resolution || '720p HD',
+    };
+  });
+
   if (availableVideos && availableVideos.length > 0) {
     const availableIds = new Set(availableVideos.map(v => v.id));
-    return downloadedVideosStore.filter(item => availableIds.has(item.video.id));
+    return normalized.filter(item => item.video && availableIds.has(item.video.id));
   }
-  return [...downloadedVideosStore];
+  return normalized;
 }
 
 export function isVideoDownloadedInApp(videoId: number): boolean {
