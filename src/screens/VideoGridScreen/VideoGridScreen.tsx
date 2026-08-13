@@ -16,26 +16,36 @@ import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { styles } from './styles';
 
-const CATEGORIES = ['All', 'Popular', 'Processing', 'Tutorials', 'Tech'];
+const CATEGORIES = ['All', 'Popular', 'Recent', 'Tech', 'Sci-Fi', 'Animation'];
 
 export function VideoGridScreen({ route, navigation }: any) {
   const { section } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const { popularVideos, processingVideos, loading, reload } = useVideos();
+  const { videos, popularVideos, processingVideos, loading, reload } = useVideos();
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
 
   const isPopular = section === 'popular';
-  const title = isPopular ? 'Popular Videos' : 'Processing Videos';
-  const baseVideos = isPopular ? popularVideos : processingVideos;
+  const isRecent = section === 'recent';
+  const title = isPopular ? 'Popular Videos' : isRecent ? 'Recently Added Videos' : 'Processing Videos';
+
+  let baseVideos = isPopular
+    ? [...popularVideos].sort((a, b) => (b.views || 0) - (a.views || 0))
+    : isRecent
+    ? [...videos].sort((a, b) => {
+        const timeA = new Date(a.published_at || a.created_at || 0).getTime();
+        const timeB = new Date(b.published_at || b.created_at || 0).getTime();
+        return timeB - timeA;
+      })
+    : processingVideos;
 
   const filteredVideos = baseVideos.filter(v => {
     const matchesSearch = searchQuery
       ? v.title.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
     const matchesCategory =
-      selectedCategory === 'All' || selectedCategory === 'Popular'
+      selectedCategory === 'All' || selectedCategory === 'Popular' || selectedCategory === 'Recent'
         ? true
         : v.category === selectedCategory;
     return matchesSearch && matchesCategory;

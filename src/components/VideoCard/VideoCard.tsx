@@ -2,7 +2,11 @@ import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
+import { getRelativeTimeString, formatViews, formatDurationString } from '../../utils/timeUtils';
+import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { styles } from './styles';
+
+import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 
 export type VideoCardProps = {
   video?: ApiVideo;
@@ -14,6 +18,9 @@ export type VideoCardProps = {
   durationText?: string;
   badgeText?: string;
   fullWidth?: boolean;
+  isContinueWatching?: boolean;
+  hideDescription?: boolean;
+  hideTags?: boolean;
   onPress?: () => void;
 };
 
@@ -27,19 +34,31 @@ export function VideoCard({
   durationText,
   badgeText,
   fullWidth = false,
+  isContinueWatching = false,
+  hideDescription = false,
+  hideTags = false,
   onPress,
 }: VideoCardProps) {
+  const { history } = useWatchHistory();
+  const currentVideoId = video?.id || (id ? parseInt(id) : 1);
+
+  // Find progress percentage from watch history
+  const watchHistoryItem = history.find(h => h.video.id === currentVideoId);
+  const watchProgress = watchHistoryItem?.progressPercentage || 0;
+
   const cardTitle = title || video?.title || 'Untitled Video';
-  const cardCategory = category || video?.category || 'Video';
-  const thumb =
-    thumbnailUrl ||
-    video?.main_thumbnail_url ||
-    'https://via.placeholder.com/400x240/14141F/FFFFFF?text=No+Thumbnail';
+  const cardCategory = category || video?.category || '';
+  const thumb = getThumbnailForVideo(video, thumbnailUrl);
   const streamable = video ? isStreamable(video.status) : true;
   const statusInfo = video ? getStatusDisplay(video.status) : null;
   const isEncoding = video?.status?.trim().toUpperCase() === 'ENCODING';
-  const displayViews = views || (video?.views ? `${video.views} views` : undefined);
-  const displayDuration = durationText || video?.duration;
+
+  const displayViews = views || formatViews(video?.views);
+  const displayDuration = formatDurationString(durationText || video?.duration);
+  const uploadedTimeAgo = getRelativeTimeString(video?.published_at || video?.created_at);
+
+  const shouldHideDescription = isContinueWatching || hideDescription;
+  const shouldHideTags = isContinueWatching || hideTags;
 
   return (
     <Pressable
@@ -75,6 +94,18 @@ export function VideoCard({
           </View>
         ) : null}
 
+        {/* Watch Progress Red Line at bottom of thumbnail */}
+        {watchProgress > 0 ? (
+          <View style={styles.watchProgressWrap}>
+            <View
+              style={[
+                styles.watchProgressFill,
+                { width: `${watchProgress}%` as any },
+              ]}
+            />
+          </View>
+        ) : null}
+
         {isEncoding && video?.encode_progress != null ? (
           <View style={styles.encodeProgressWrap}>
             <View
@@ -91,19 +122,42 @@ export function VideoCard({
         {cardTitle}
       </Text>
 
-      <View style={styles.metaRow}>
-        <Text numberOfLines={1} style={styles.category}>
-          {cardCategory}
+      {/* Video Description preview (Hidden for Continue Watching) */}
+      {!shouldHideDescription && video?.description ? (
+        <Text numberOfLines={2} style={styles.descriptionText}>
+          {video.description}
         </Text>
-        {displayViews ? (
+      ) : null}
+
+      {/* Meta row */}
+      <View style={styles.metaRow}>
+        {cardCategory && cardCategory.toLowerCase() !== 'general' ? (
           <>
-            <Text style={styles.dot}>•</Text>
-            <Text numberOfLines={1} style={styles.meta}>
-              {displayViews}
+            <Text numberOfLines={1} style={styles.category}>
+              {cardCategory}
             </Text>
+            <Text style={styles.dot}>•</Text>
           </>
         ) : null}
+        <Text numberOfLines={1} style={styles.meta}>
+          {displayViews}
+        </Text>
+        <Text style={styles.dot}>•</Text>
+        <Text numberOfLines={1} style={styles.uploadedTimeText}>
+          {uploadedTimeAgo}
+        </Text>
       </View>
+
+      {/* Tag Pills (Hidden for Continue Watching) */}
+      {!shouldHideTags && video?.tags && video.tags.length > 0 ? (
+        <View style={styles.tagContainer}>
+          {video.tags.slice(0, 3).map((tag, idx) => (
+            <View key={idx} style={styles.tagPill}>
+              <Text style={styles.tagText}>#{tag}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </Pressable>
   );
 }

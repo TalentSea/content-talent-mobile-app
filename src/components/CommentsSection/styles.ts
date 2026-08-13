@@ -31,7 +31,7 @@ export const styles = StyleSheet.create({
     borderColor: '#2A2A3C',
   },
   sendButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#E50914',
     width: 38,
     height: 38,
     borderRadius: 19,
@@ -91,5 +91,81 @@ export const styles = StyleSheet.create({
   likeCount: {
     color: '#9CA3AF',
     fontSize: 12,
+  },
+  replyActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  replyActionText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  viewRepliesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  viewRepliesText: {
+    color: '#E50914',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  repliesSection: {
+    marginTop: 10,
+    paddingLeft: 12,
+    borderLeftWidth: 2,
+    borderLeftColor: '#374151',
+    gap: 8,
+  },
+  replyCard: {
+    backgroundColor: '#1A1A28',
+    padding: 8,
+    borderRadius: 8,
+  },
+  replyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  replyUser: {
+    color: '#F9FAFB',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  replyText: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  inlineReplyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  inlineReplyInput: {
+    flex: 1,
+    backgroundColor: '#1E1E2E',
+    color: '#FFFFFF',
+    fontSize: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  inlineReplySubmit: {
+    backgroundColor: '#E50914',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  inlineReplySubmitText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

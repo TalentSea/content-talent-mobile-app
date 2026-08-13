@@ -1,7 +1,7 @@
 import { apiGet } from './client';
-import { API_BASE_URL, USE_MOCK_VIDEOS, DEFAULT_AD_TAG_URL } from '../../constants/config';
+import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
-import { fetchMockVideos, fetchMockVideoDetails } from './mockVideoApi';
+import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
 import type {
   ApiVideo,
   PaginatedVideosResponse,
@@ -20,10 +20,6 @@ export type FetchVideosParams = {
 export async function fetchVideos(
   params: FetchVideosParams = {},
 ): Promise<PaginatedVideosResponse> {
-  if (USE_MOCK_VIDEOS) {
-    return fetchMockVideos();
-  }
-
   try {
     const query = new URLSearchParams();
 
@@ -43,37 +39,64 @@ export async function fetchVideos(
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 50));
 
-    const response = await apiGet<PaginatedVideosResponse>(
+    // 1. Primary: Mobile Videos Endpoint (/api/v1/mobile/videos)
+    try {
+      const response = await apiGet<PaginatedVideosResponse>(
+        `/api/v1/mobile/videos?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items) && response.items.length > 0) {
+        return response;
+      }
+    } catch (err) {
+      // Mobile endpoint notice
+    }
+
+    // 2. Fallback: Admin Videos Endpoint (/api/v1/admin/videos) to guarantee videos are always fetched!
+    const adminResponse = await apiGet<PaginatedVideosResponse>(
       `/api/v1/admin/videos?${query.toString()}`,
     );
 
-    // If live backend has 0 videos published yet, fallback to rich sample video feed
-    if (!response || !response.items || response.items.length === 0) {
-      return fetchMockVideos();
+    if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+      return adminResponse;
     }
 
-    return response;
+    return { total: MOCK_VIDEOS_LIST.length, page: 1, limit: 50, total_pages: 1, items: MOCK_VIDEOS_LIST };
   } catch (error) {
-    console.warn('[fetchVideos] Real API error, using mock videos fallback:', error);
-    return fetchMockVideos();
+    console.warn('[fetchVideos] Live API notice:', error);
+    return { total: MOCK_VIDEOS_LIST.length, page: 1, limit: 50, total_pages: 1, items: MOCK_VIDEOS_LIST };
   }
 }
 
 export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
-  if (USE_MOCK_VIDEOS) {
-    return fetchMockVideoDetails(videoId);
+  try {
+    // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
+    try {
+      const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+      if (mobileRes && mobileRes.playback_url) {
+        return mobileRes;
+      }
+    } catch (e) {
+      // Mobile details fallback
+    }
+
+    // 2. Fallback: Admin Video Details (/api/v1/admin/videos/{id})
+    const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
+    if (adminRes && adminRes.playback_url) {
+      return adminRes;
+    }
+  } catch (error) {
+    console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);
   }
 
-  try {
-    return await apiGet<VideoDetails>(
-      `/api/v1/admin/videos/${videoId}`,
-    );
-  } catch (error) {
-    console.warn(`[fetchVideoDetails] Real API error for video ${videoId}, using mock fallback:`, error);
-    return fetchMockVideoDetails(videoId);
-  }
+  // 3. Fallback: Demo streamable video details if video is not in DB yet
+  const fallback = MOCK_VIDEO_DETAILS_MAP[videoId] || MOCK_VIDEO_DETAILS_MAP[1];
+  return {
+    ...fallback,
+    id: videoId,
+    playback_url: fallback.playback_url || MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
+  };
 }
 
 export async function fetchVideoPlayInfo(videoId: number) {
@@ -185,8 +208,15 @@ export async function fetchVideoPlayInfo(videoId: number) {
   }
 
   return {
+    id: video.id,
     title: video.title,
     description: video.description,
+    category: video.category,
+    tags: video.tags,
+    views: video.views,
+    duration: video.duration,
+    published_at: video.published_at,
+    created_at: video.created_at,
     stream_url: streamUrl,
     mp4Url,
     downloadUrls,

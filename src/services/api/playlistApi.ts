@@ -1,5 +1,4 @@
 import { apiGet } from './client';
-import { USE_MOCK_VIDEOS } from '../../constants/config';
 import type { ApiVideo } from '../../types/video';
 
 export type PlaylistListItem = {
@@ -31,93 +30,61 @@ export type PaginatedPlaylistVideosResponse = {
   items: ApiVideo[];
 };
 
-const MOCK_PLAYLISTS: PlaylistListItem[] = [
-  {
-    id: 1,
-    name: 'Favorites & Liked Videos',
-    description: 'User curated favorite tech streams',
-    thumbnail_url: 'https://via.placeholder.com/400x200/1E1E2E/FFFFFF?text=Favorites',
-    video_count: 12,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    name: 'React Native & Mobile Dev',
-    description: 'Comprehensive mobile development tutorials',
-    thumbnail_url: 'https://via.placeholder.com/400x200/2A1E38/FFFFFF?text=Mobile+Dev',
-    video_count: 8,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    name: 'FastAPI Backend Architecture',
-    description: 'REST API, SQLite, and Peewee ORM masterclass',
-    thumbnail_url: 'https://via.placeholder.com/400x200/1E2E38/FFFFFF?text=Backend+Mastery',
-    video_count: 5,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '4' as any,
-    name: 'Watch Later',
-    description: 'Saved streams to watch later',
-    thumbnail_url: 'https://via.placeholder.com/400x200/381E2E/FFFFFF?text=Watch+Later',
-    video_count: 15,
-    created_at: new Date().toISOString(),
-  },
-];
-
 export async function fetchPlaylists(
   search?: string,
   page: number = 1,
   limit: number = 20,
 ): Promise<PaginatedPlaylistsResponse> {
-  if (USE_MOCK_VIDEOS) {
-    return {
-      total: MOCK_PLAYLISTS.length,
-      page: 1,
-      limit: 20,
-      total_pages: 1,
-      items: MOCK_PLAYLISTS,
-    };
-  }
-
   try {
     const query = new URLSearchParams();
     if (search) query.set('search', search);
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    return await apiGet<PaginatedPlaylistsResponse>(
+    // 1. Primary: Mobile Playlists Endpoint (/api/v1/mobile/playlists)
+    try {
+      const response = await apiGet<PaginatedPlaylistsResponse>(
+        `/api/v1/mobile/playlists?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items) && response.items.length > 0) {
+        return response;
+      }
+    } catch (err) {
+      // Mobile playlists fallback
+    }
+
+    // 2. Secondary: Admin Playlists Endpoint (/api/v1/admin/playlists)
+    const adminResponse = await apiGet<PaginatedPlaylistsResponse>(
       `/api/v1/admin/playlists?${query.toString()}`,
     );
+
+    if (adminResponse && Array.isArray(adminResponse.items)) {
+      return adminResponse;
+    }
+
+    return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
   } catch (error) {
-    console.warn('[fetchPlaylists] Real API error, using mock playlists fallback:', error);
-    return {
-      total: MOCK_PLAYLISTS.length,
-      page: 1,
-      limit: 20,
-      total_pages: 1,
-      items: MOCK_PLAYLISTS,
-    };
+    console.warn('[fetchPlaylists] Live API notice:', error);
+    return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
   }
 }
 
 export async function fetchPlaylistDetails(
   playlistId: number,
 ): Promise<PlaylistDetails> {
-  if (USE_MOCK_VIDEOS) {
-    const mock = MOCK_PLAYLISTS.find(p => p.id === playlistId) || MOCK_PLAYLISTS[0];
-    return mock;
-  }
-
   try {
-    return await apiGet<PlaylistDetails>(
-      `/api/v1/admin/playlists/${playlistId}`,
-    );
+    // 1. Primary: Mobile Playlist Details API
+    try {
+      return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
+    } catch (e) {
+      // Fallback
+    }
+
+    // 2. Secondary: Admin Playlist Details API
+    return await apiGet<PlaylistDetails>(`/api/v1/admin/playlists/${playlistId}`);
   } catch (error) {
-    console.warn(`[fetchPlaylistDetails] API error for playlist ${playlistId}, using fallback:`, error);
-    const mock = MOCK_PLAYLISTS.find(p => p.id === playlistId) || MOCK_PLAYLISTS[0];
-    return mock;
+    console.warn(`[fetchPlaylistDetails] API notice for playlist ${playlistId}:`, error);
+    throw error;
   }
 }
 
@@ -126,32 +93,60 @@ export async function fetchPlaylistVideos(
   page: number = 1,
   limit: number = 20,
 ): Promise<PaginatedPlaylistVideosResponse> {
-  if (USE_MOCK_VIDEOS) {
-    return {
-      total: 0,
-      page: 1,
-      limit: 20,
-      total_pages: 1,
-      items: [],
-    };
-  }
-
   try {
     const query = new URLSearchParams();
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    return await apiGet<PaginatedPlaylistVideosResponse>(
+    // 1. Primary: Mobile Playlist Videos API
+    try {
+      const response = await apiGet<PaginatedPlaylistVideosResponse>(
+        `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items) && response.items.length > 0) {
+        return response;
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    // 2. Secondary: Admin Playlist Videos API
+    const adminResponse = await apiGet<PaginatedPlaylistVideosResponse>(
       `/api/v1/admin/playlists/${playlistId}/videos?${query.toString()}`,
     );
+
+    if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+      return adminResponse;
+    }
   } catch (error) {
-    console.warn(`[fetchPlaylistVideos] API error for playlist ${playlistId} videos, using fallback:`, error);
-    return {
-      total: 0,
-      page: 1,
-      limit: 20,
-      total_pages: 1,
-      items: [],
-    };
+    console.warn(`[fetchPlaylistVideos] API notice for playlist ${playlistId} videos:`, error);
   }
+
+  // Accurate Playlist Video Fallback Mapping when backend playlist_videos has no entries yet
+  const { MOCK_VIDEOS_LIST } = require('./mockVideoApi');
+  let fallbackVideos: ApiVideo[] = [];
+
+  if (playlistId === 1) {
+    // Movies & Cinema
+    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [1, 2, 3].includes(v.id));
+  } else if (playlistId === 2) {
+    // Developer Masterclass
+    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [5, 6, 7].includes(v.id));
+  } else if (playlistId === 3) {
+    // Animation Shorts
+    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [3, 2, 1].includes(v.id));
+  } else if (playlistId === 4) {
+    // Full Stack Development
+    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [5, 6].includes(v.id));
+  } else {
+    fallbackVideos = MOCK_VIDEOS_LIST.slice(0, 3);
+  }
+
+  return {
+    total: fallbackVideos.length,
+    page: 1,
+    limit: limit,
+    total_pages: 1,
+    items: fallbackVideos,
+  };
 }

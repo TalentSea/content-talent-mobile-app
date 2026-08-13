@@ -65,8 +65,15 @@ export type DownloadItem = {
 };
 
 export type PlayInfo = {
+  id?: number;
   title: string;
   description?: string;
+  category?: string;
+  tags?: string[];
+  views?: number;
+  duration?: string;
+  published_at?: string;
+  created_at?: string;
   stream_url: string;
   mp4Url?: string;
   downloadUrls?: DownloadItem[];

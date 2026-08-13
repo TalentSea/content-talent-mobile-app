@@ -60,7 +60,7 @@ export function PlaylistScreen({ navigation }: any) {
         /* 2-Column Vertical Grid list (VL) of Playlists */
         <FlatList
           data={playlists}
-          keyExtractor={item => String(item.id)}
+          keyExtractor={(item, index) => `pl-${item.id}-${index}`}
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}

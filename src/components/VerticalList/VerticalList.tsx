@@ -8,29 +8,34 @@ type VerticalListProps = {
   videos: ApiVideo[];
   numColumns?: number;
   refreshing?: boolean;
+  isContinueWatching?: boolean;
   onRefresh?: () => void;
   onPressVideo?: (video: ApiVideo) => void;
   emptyText?: string;
   HeaderComponent?: React.ReactElement;
+  FooterComponent?: React.ReactElement;
 };
 
 export function VerticalList({
   videos,
   numColumns = 2,
   refreshing = false,
+  isContinueWatching = false,
   onRefresh,
   onPressVideo,
   emptyText = 'No videos found.',
   HeaderComponent,
+  FooterComponent,
 }: VerticalListProps) {
   return (
     <FlatList
       data={videos}
-      keyExtractor={item => String(item.id)}
+      keyExtractor={(item, index) => `vlist-${item.id}-${index}`}
       numColumns={numColumns}
       columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={HeaderComponent}
+      ListFooterComponent={FooterComponent}
       refreshControl={
         onRefresh ? (
           <RefreshControl
@@ -47,6 +52,7 @@ export function VerticalList({
       }
       renderItem={({ item }) => (
         <VideoCard
+          video={item}
           id={String(item.id)}
           title={item.title}
           thumbnailUrl={item.main_thumbnail_url || undefined}
@@ -54,6 +60,7 @@ export function VerticalList({
           views={item.views ? `${item.views} views` : undefined}
           durationText={item.duration || undefined}
           badgeText={item.status}
+          isContinueWatching={isContinueWatching}
           onPress={() => onPressVideo && onPressVideo(item)}
         />
       )}

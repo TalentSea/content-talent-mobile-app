@@ -43,6 +43,7 @@ export async function apiRequest<T>(
   const requestHeaders = new Headers(headers);
 
   requestHeaders.set('Accept', 'application/json');
+  requestHeaders.set('ngrok-skip-browser-warning', 'true');
 
   if (
     requestOptions.body &&

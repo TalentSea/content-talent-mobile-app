@@ -146,7 +146,7 @@ export const styles = StyleSheet.create({
     },
     tabText: {
         color: '#9CA3AF',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
     },
     activeTabText: {

@@ -11,6 +11,8 @@ import { CategoriesScreen } from '../screens/CategoriesScreen/CategoriesScreen';
 import { CategoryDetailScreen } from '../screens/CategoryDetailScreen/CategoryDetailScreen';
 import { ProfileScreen } from '../screens/ProfileScreen/ProfileScreen';
 import { VideoGridScreen } from '../screens/VideoGridScreen/VideoGridScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen/NotificationsScreen';
+import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -34,6 +36,8 @@ export function RootNavigator() {
                 <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
                 <Stack.Screen name="Profile" component={ProfileScreen} />
                 <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
+                <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                <Stack.Screen name="Settings" component={SettingsScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

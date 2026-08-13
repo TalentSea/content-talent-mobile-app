@@ -67,3 +67,5 @@ export function BottomNavBar({ activeTab, navigation }: BottomNavBarProps) {
     </View>
   );
 }
+
+

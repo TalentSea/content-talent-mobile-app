@@ -7,6 +7,7 @@ import { styles } from './styles';
 type HorizontalListProps = {
   title: string;
   videos: ApiVideo[];
+  isContinueWatching?: boolean;
   onPressVideo?: (video: ApiVideo) => void;
   onSeeAll?: () => void;
   emptyText?: string;
@@ -15,10 +16,14 @@ type HorizontalListProps = {
 export function HorizontalList({
   title,
   videos,
+  isContinueWatching,
   onPressVideo,
   onSeeAll,
   emptyText = 'No videos available.',
 }: HorizontalListProps) {
+  const isContinueWatchingList =
+    isContinueWatching ?? title.toLowerCase().includes('continue watching');
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -35,12 +40,13 @@ export function HorizontalList({
       ) : (
         <FlatList
           data={videos}
-          keyExtractor={item => String(item.id)}
+          keyExtractor={(item, index) => `hlist-${item.id}-${index}`}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <VideoCard
+              video={item}
               id={String(item.id)}
               title={item.title}
               thumbnailUrl={item.main_thumbnail_url || undefined}
@@ -48,6 +54,7 @@ export function HorizontalList({
               views={item.views ? `${item.views} views` : undefined}
               durationText={item.duration || undefined}
               badgeText={item.status}
+              isContinueWatching={isContinueWatchingList}
               onPress={() => onPressVideo && onPressVideo(item)}
             />
           )}

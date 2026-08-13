@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   findNodeHandle,
-  PermissionsAndroid,
   Platform,
   Pressable,
   requireNativeComponent,
@@ -26,6 +25,7 @@ import {
   VolumeX,
 } from 'lucide-react-native';
 import RNFS from 'react-native-fs';
+import { registerInAppDownload } from '../../services/downloadService';
 
 type CaptionTrack = {
   uri?: string;
@@ -232,23 +232,14 @@ export default function NativeVideoPlayer({
       const videoTitle = title || 'video';
       const safeTitle = `${videoTitle.replace(/[^a-zA-Z0-9]/g, '_')}_${label.replace(/\s+/g, '_')}`;
 
-      if (Platform.OS === 'android' && Platform.Version < 33) {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          Alert.alert(
-            'Permission Denied',
-            'Storage permission is required to save MP4 videos.',
-          );
-          return;
-        }
+      // In-App Private Sandboxed Document Directory
+      const dirPath = `${RNFS.DocumentDirectoryPath}/offline_videos`;
+      const exists = await RNFS.exists(dirPath);
+      if (!exists) {
+        await RNFS.mkdir(dirPath);
       }
 
-      const destPath =
-        Platform.OS === 'android'
-          ? `${RNFS.DownloadDirectoryPath}/${safeTitle}.mp4`
-          : `${RNFS.DocumentDirectoryPath}/${safeTitle}.mp4`;
+      const destPath = `${dirPath}/${safeTitle}.mp4`;
 
       setIsDownloading(true);
       setDownloadingLabel(label);
@@ -272,9 +263,33 @@ export default function NativeVideoPlayer({
       setIsDownloading(false);
 
       if (res.statusCode === 200 || res.statusCode === 206) {
+        registerInAppDownload({
+          id: Date.now(),
+          title: videoTitle,
+          localPath: destPath,
+          quality: label,
+          downloadedAt: new Date().toISOString(),
+          video: {
+            id: Date.now(),
+            title: videoTitle,
+            description: null,
+            main_thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+            category: 'General',
+            tags: [],
+            status: 'published',
+            encode_progress: 100,
+            is_playable: true,
+            views: 0,
+            duration: '00:00',
+            published_at: null,
+            scheduled_at: null,
+            created_at: new Date().toISOString(),
+          },
+        });
+
         Alert.alert(
-          'Download Complete',
-          `Saved "${videoTitle}" (${label}) to Downloads folder!`,
+          'In-App Download Complete',
+          `Saved "${videoTitle}" (${label}) to In-App Profile Downloads!`,
         );
       } else {
         Alert.alert(
@@ -287,7 +302,7 @@ export default function NativeVideoPlayer({
       console.error('[Download error]:', err);
       Alert.alert(
         'Download Failed',
-        'Could not save MP4 video file directly.',
+        'Could not save video in app.',
       );
     }
   };
@@ -312,7 +327,6 @@ export default function NativeVideoPlayer({
     const seekable = e.nativeEvent.seekableDuration || e.nativeEvent.duration || 0;
     setCurrentTime(newCurrentTime);
 
-    // FIX: Fix 0:21 / 0:10 duration mismatch during dynamic HLS streaming
     if (seekable > 0 && seekable > duration) {
       setDuration(seekable);
     } else if (newCurrentTime > duration && duration > 0) {
@@ -379,9 +393,7 @@ export default function NativeVideoPlayer({
     uri: c.uri,
   }));
 
-  // FIX: Progress percent clamped between 0% and 100%
   const progressPercent = duration > 0 ? Math.min(Math.max((currentTime / duration) * 100, 0), 100) : 0;
-
 
   return (
     <View style={[styles.container, style]}>
@@ -497,7 +509,6 @@ export default function NativeVideoPlayer({
                 </Pressable>
               ) : null}
 
-
               {/* Settings Gear Button */}
               <Pressable
                 style={styles.ytIconButton}
@@ -527,7 +538,7 @@ export default function NativeVideoPlayer({
             </View>
           </View>
 
-          {/* Center Controls (Rewind 10s, Big Play/Pause Button, Forward 10s) */}
+          {/* Center Controls */}
           <View style={styles.centerControlsRow} pointerEvents="box-none">
             {!error && !isBuffering ? (
               <>
@@ -560,12 +571,12 @@ export default function NativeVideoPlayer({
               </Text>
               {isDownloading ? (
                 <Text style={styles.downloadProgressText}>
-                  Downloading MP4 ({downloadingLabel})... {downloadProgress}%
+                  In-App Downloading ({downloadingLabel})... {downloadProgress}%
                 </Text>
               ) : null}
             </View>
 
-            {/* YouTube Red Progress Bar */}
+            {/* Progress Bar */}
             <Pressable
               style={styles.progressBarWrapper}
               onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
@@ -621,7 +632,7 @@ export default function NativeVideoPlayer({
                 </View>
               </View>
 
-              {/* Download Quality Button */}
+              {/* In-App Download Quality Button */}
               <Pressable
                 style={styles.actionButton}
                 onPress={() => {
@@ -650,10 +661,10 @@ export default function NativeVideoPlayer({
               ) : null}
             </View>
 
-            {/* Download Quality Options Menu (1080p, 720p, 480p, 240p) */}
+            {/* Download Quality Options Menu */}
             {showDownloadMenu ? (
               <View style={styles.speedMenu}>
-                <Text style={styles.menuHeaderTitle}>Download Quality</Text>
+                <Text style={styles.menuHeaderTitle}>In-App Download Quality</Text>
                 {availableDownloadUrls.map((item, idx) => (
                   <Pressable
                     key={idx}
@@ -668,7 +679,7 @@ export default function NativeVideoPlayer({
               </View>
             ) : null}
 
-            {/* Settings Menu Dropdown - ONLY Captions */}
+            {/* Settings Menu Dropdown */}
             {showSettingsMenu ? (
               <View style={styles.speedMenu}>
                 <Text style={styles.menuHeaderTitle}>Settings</Text>
@@ -683,8 +694,6 @@ export default function NativeVideoPlayer({
                 </Pressable>
               </View>
             ) : null}
-
-
 
             {/* Caption Menu Dropdown */}
             {showCaptionMenu ? (
@@ -796,176 +805,127 @@ export default function NativeVideoPlayer({
   );
 }
 
-const PLAYER_COLORS = {
-  white: '#FFFFFF',
-  mutedWhite: 'rgba(255,255,255,0.72)',
-  overlayTop: 'rgba(0,0,0,0.4)',
-  overlayBottom: 'rgba(0,0,0,0.8)',
-  progressTrack: 'rgba(255,255,255,0.35)',
-  progressFill: '#FF0000',
-  accent: '#FF0000',
-};
-
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: '100%',
+    aspectRatio: 16 / 9,
     backgroundColor: '#000000',
     overflow: 'hidden',
   },
   player: {
-    width: '100%',
-    height: '100%',
+    ...StyleSheet.absoluteFill,
   },
   touchOverlay: {
     ...StyleSheet.absoluteFill,
-    zIndex: 10,
-    elevation: 10,
-    backgroundColor: 'transparent',
   },
   controlsLayer: {
     ...StyleSheet.absoluteFill,
-    zIndex: 20,
-    elevation: 20,
     justifyContent: 'space-between',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   topBar: {
-    minHeight: 56,
-    paddingHorizontal: 14,
-    paddingTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: 10,
+  },
+  topIconButton: {
+    padding: 6,
+    marginRight: 8,
+  },
+  backIconText: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: '300',
+  },
+  playerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    flex: 1,
   },
   topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  topIconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playerTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 6,
-    flex: 1,
-  },
-  backIconText: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: '600',
-    lineHeight: 30,
-    marginLeft: -2,
-  },
-
-  // YouTube-Style Pill & Badge Buttons
   ytPillButton: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 10,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   ytPillButtonActive: {
-    backgroundColor: '#FF0000',
+    backgroundColor: '#E50914',
   },
   ytPillText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
   },
   ytIconButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 6,
   },
   ytIconButtonActive: {
-    backgroundColor: '#FF0000',
+    backgroundColor: 'rgba(229, 9, 20, 0.4)',
+    borderRadius: 4,
   },
   ccBadgeText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '800',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    paddingHorizontal: 4,
+    borderRadius: 2,
   },
   ytSpeedText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
   },
-
-  // YouTube-Style Center Controls (Rewind 10s, Play/Pause, Forward 10s)
   centerControlsRow: {
-    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    gap: 28,
-  },
-  ytCenterPlayButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.85)',
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 32,
   },
   ytSkipButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
-    justifyContent: 'center',
     alignItems: 'center',
   },
   ytSkipText: {
     color: '#FFFFFF',
-    fontSize: 9,
-    fontWeight: '800',
-    marginTop: 1,
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
   },
-
-  centerOverlay: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    justifyContent: 'center',
+  ytCenterPlayButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
-    zIndex: 25,
-    elevation: 25,
+    justifyContent: 'center',
   },
   bottomPanel: {
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   timeRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 6,
   },
   timeText: {
-    color: 'rgba(255,255,255,0.86)',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -975,70 +935,58 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   progressBarWrapper: {
-    height: 22,
+    height: 20,
     justifyContent: 'center',
   },
   progressBarBackground: {
     height: 4,
-    borderRadius: 2,
     backgroundColor: 'rgba(255,255,255,0.3)',
-    overflow: 'visible',
+    borderRadius: 2,
+    position: 'relative',
   },
   progressBarFill: {
-    height: 4,
-    borderRadius: 2,
+    height: '100%',
     backgroundColor: '#FF0000',
+    borderRadius: 2,
   },
   progressThumb: {
-    position: 'absolute',
-    top: -5,
-    width: 14,
-    height: 14,
-    marginLeft: -7,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#FF0000',
+    position: 'absolute',
+    top: -4,
+    marginLeft: -6,
   },
   bottomActions: {
-    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 8,
-  },
-  actionButton: {
-    minWidth: 32,
-    height: 30,
-    borderRadius: 15,
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
   },
   volumeControlRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    padding: 6,
   },
   volumeSliderWrapper: {
     width: 60,
-    height: 32,
+    height: 20,
     justifyContent: 'center',
-    marginLeft: 4,
-    marginRight: 8,
   },
   volumeSliderBg: {
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 2,
     position: 'relative',
-    justifyContent: 'center',
   },
   volumeSliderFill: {
     height: '100%',
-    backgroundColor: '#FF0000',
+    backgroundColor: '#FFFFFF',
     borderRadius: 2,
-    position: 'absolute',
-    left: 0,
-    top: 0,
   },
   volumeSliderThumb: {
     width: 10,
@@ -1046,66 +994,67 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#FFFFFF',
     position: 'absolute',
+    top: -3,
     marginLeft: -5,
-  },
-  errorBox: {
-    maxWidth: '80%',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(18,18,18,0.9)',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  retryButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-  },
-  retryText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
   },
   speedMenu: {
     position: 'absolute',
-    right: 14,
-    bottom: 62,
-    width: 130,
-    borderRadius: 10,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(18,18,18,0.96)',
-    zIndex: 40,
-    elevation: 40,
+    bottom: 50,
+    right: 16,
+    backgroundColor: '#1E1E2E',
+    borderRadius: 8,
+    padding: 8,
+    minWidth: 150,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  menuHeaderTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    marginBottom: 6,
+    paddingHorizontal: 8,
   },
   speedItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   speedText: {
     color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '700',
   },
   speedTextActive: {
     color: '#FF0000',
+    fontWeight: '700',
   },
-  menuHeaderTitle: {
-    color: '#FF0000',
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    paddingHorizontal: 14,
-    paddingTop: 6,
-    paddingBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.15)',
+  centerOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  errorBox: {
+    backgroundColor: '#1E1E2E',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    maxWidth: '80%',
+  },
+  errorText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  retryButton: {
+    backgroundColor: '#FF0000',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
   },
 });
