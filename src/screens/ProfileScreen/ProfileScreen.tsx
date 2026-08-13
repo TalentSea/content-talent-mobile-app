@@ -53,7 +53,10 @@ export function ProfileScreen({ navigation }: any) {
   const handleLogout = async () => {
     await clearSessionTokens();
     if (navigation) {
-      navigation.navigate('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     }
   };
 

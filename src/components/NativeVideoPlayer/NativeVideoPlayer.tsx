@@ -426,12 +426,14 @@ export default function NativeVideoPlayer({
         onError={(e: any) => {
           const { message = 'Failed to load video stream', errorCode } = e.nativeEvent || {};
 
-          if (activeCaptions.length > 0 && (message.includes('404') || message.includes('BAD_HTTP_STATUS') || String(errorCode).includes('IO'))) {
-            console.warn('[NativeVideoPlayer] Side-loaded VTT returned 404, clearing side-loaded captions list...');
+          if (activeCaptions.length > 0) {
+            console.warn('[NativeVideoPlayer] Clearing side-loaded captions list to ensure smooth video stream playback...');
             setActiveCaptions([]);
             if (!hasEmbeddedCaptions) {
               setSelectedCaptionIndex(-1);
             }
+            setRetryCount(prev => prev + 1);
+            setError(null);
             return;
           }
 

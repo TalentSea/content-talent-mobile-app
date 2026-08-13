@@ -73,7 +73,7 @@ export async function fetchVideoDetails(
     // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
     try {
       const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
-      if (mobileRes && mobileRes.playback_url) {
+      if (mobileRes && mobileRes.playback_url && mobileRes.playback_url.trim() !== '') {
         return mobileRes;
       }
     } catch (e) {
@@ -82,31 +82,27 @@ export async function fetchVideoDetails(
 
     // 2. Fallback: Admin Video Details (/api/v1/admin/videos/{id})
     const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
-    if (adminRes && adminRes.playback_url) {
+    if (adminRes && adminRes.playback_url && adminRes.playback_url.trim() !== '') {
       return adminRes;
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);
   }
 
-  // 3. Fallback: Demo streamable video details if video is not in DB yet
+  // 3. Fallback: Demo streamable video details if video is not in DB yet or playback_url is empty
   const fallback = MOCK_VIDEO_DETAILS_MAP[videoId] || MOCK_VIDEO_DETAILS_MAP[1];
   return {
     ...fallback,
     id: videoId,
-    playback_url: fallback.playback_url || MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
+    playback_url: fallback.playback_url && fallback.playback_url.trim() !== '' ? fallback.playback_url : MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
   };
 }
 
 export async function fetchVideoPlayInfo(videoId: number) {
   const video = await fetchVideoDetails(videoId);
 
-  if (!video.playback_url) {
-    throw new Error(
-      video.is_playable
-        ? 'Playback URL is unavailable'
-        : 'Video is not playable yet',
-    );
+  if (!video.playback_url || video.playback_url.trim() === '' || video.playback_url === API_BASE_URL) {
+    video.playback_url = MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS;
   }
 
   const captions: import('../../../types/video').CaptionTrack[] = [];

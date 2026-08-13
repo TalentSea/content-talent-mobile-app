@@ -11,12 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Play, ChevronLeft } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { loginWithSocial, loginAsGuest, setSessionTokens, SocialProvider, UserProfile } from '../../services/api/authService';
+import { loginWithSocial, loginAsGuest, setSessionTokens, restoreStoredSession, SocialProvider, UserProfile } from '../../services/api/authService';
 import { DEFAULT_AUTH_TOKEN } from '../../constants/config';
 import { styles } from './styles';
 
 export function LoginScreen({ navigation }: any) {
     const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
+    const [isCheckingSession, setIsCheckingSession] = useState(true);
 
     // Facebook Dedicated Login Modal State
     const [showFacebookModal, setShowFacebookModal] = useState(false);
@@ -26,16 +27,44 @@ export function LoginScreen({ navigation }: any) {
     const [fbLoggingIn, setFbLoggingIn] = useState(false);
 
     useEffect(() => {
-        try {
-            GoogleSignin.configure({
-                scopes: ['email', 'profile'],
-                webClientId: '166951692335-a6bblebovsn6ftnrs15n9n8bjpo79o5g.apps.googleusercontent.com',
-                offlineAccess: true,
-            });
-        } catch (err) {
-            console.warn('[GoogleSignin] Configure notice:', err);
+        let isMounted = true;
+        async function checkAutoLogin() {
+            try {
+                GoogleSignin.configure({
+                    scopes: ['email', 'profile'],
+                    webClientId: '166951692335-a6bblebovsn6ftnrs15n9n8bjpo79o5g.apps.googleusercontent.com',
+                    offlineAccess: true,
+                });
+            } catch (err) {
+                console.warn('[GoogleSignin] Configure notice:', err);
+            }
+
+            try {
+                const restoredUser = await restoreStoredSession();
+                if (restoredUser && isMounted) {
+                    console.log('[LoginScreen] Auto-login restored user:', restoredUser.name);
+                    if (navigation) {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Home' }],
+                        });
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('[LoginScreen] Auto-login check notice:', e);
+            } finally {
+                if (isMounted) {
+                    setIsCheckingSession(false);
+                }
+            }
         }
-    }, []);
+
+        checkAutoLogin();
+        return () => {
+            isMounted = false;
+        };
+    }, [navigation]);
 
     const handleSocialLogin = async (provider: SocialProvider) => {
         if (provider === 'facebook') {
@@ -53,6 +82,7 @@ export function LoginScreen({ navigation }: any) {
                 try {
                     try {
                         await GoogleSignin.signOut();
+                        await GoogleSignin.revokeAccess();
                     } catch (e) {
                         // ignore
                     }
@@ -213,6 +243,15 @@ export function LoginScreen({ navigation }: any) {
             }
         }
     };
+
+    if (isCheckingSession) {
+        return (
+            <SafeAreaView style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
+                <StatusBar barStyle="light-content" backgroundColor="#0A0A12" />
+                <ActivityIndicator color="#6366F1" size="large" />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.screen}>
