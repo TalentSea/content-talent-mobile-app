@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   ScrollView,
+  Share,
   StatusBar,
   Text,
   Pressable,
@@ -56,13 +57,10 @@ export function PlayerModal({
   const [copiedLink, setCopiedLink] = useState(false);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-<<<<<<< Updated upstream
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [likesCount, setLikesCount] = useState<number>(0);
   const hasCountedViewRef = useRef(false);
-=======
   const [videoRatio, setVideoRatio] = useState<number | null>(null);
->>>>>>> Stashed changes
   const { width, height } = useWindowDimensions();
 
   const currentVideoId = (playingVideo as any)?.id || 1;
@@ -162,11 +160,22 @@ export function PlayerModal({
     });
   }
 
-  function handleCopyShareLink() {
+  async function handleCopyShareLink() {
     setCopiedLink(true);
-    setTimeout(() => {
-      setCopiedLink(false);
-    }, 2500);
+    try {
+      const shareUrl = `streamr://watch/${currentVideoId}`;
+      await Share.share({
+        title: playingVideo?.title || 'Share Video',
+        message: `Watch "${playingVideo?.title || 'Video'}" in Streamr App: ${shareUrl}`,
+        url: shareUrl,
+      });
+    } catch (err) {
+      console.warn('[PlayerModal] Notice sharing video link:', err);
+    } finally {
+      setTimeout(() => {
+        setCopiedLink(false);
+      }, 2500);
+    }
   }
 
   const categoryName = (playingVideo as any)?.category || 'General';
@@ -175,22 +184,8 @@ export function PlayerModal({
   const durationText = (playingVideo as any)?.duration || '00:00';
   const timeAgoText = getRelativeTimeString((playingVideo as any)?.published_at || (playingVideo as any)?.created_at);
 
-  const categoryLower = categoryName.toLowerCase();
-  const titleLower = (playingVideo?.title || '').toLowerCase();
-
-  const isShortVideo =
-    categoryLower === 'shorts' ||
-    categoryLower === 'short' ||
-    titleLower.includes('soup dumplings') ||
-    (videoRatio != null && videoRatio < 0.95);
-
-  const activeRatio = isShortVideo ? 2 / 3 : 16 / 9;
-
-  const playerResizeMode = isFullscreen
-    ? isShortVideo
-      ? 'contain'
-      : 'cover'
-    : 'cover';
+  const activeRatio = 16 / 9;
+  const playerResizeMode = 'contain';
 
   return (
     <Modal
@@ -379,7 +374,7 @@ export function PlayerModal({
               {/* Share URL Box */}
               <View style={{ backgroundColor: '#121218', borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 16 }}>
                 <Text numberOfLines={1} style={{ fontSize: 12, color: '#E2E8F0', flex: 1, marginRight: 10 }}>
-                  {playingVideo?.stream_url || `https://streamr.app/watch/${currentVideoId}`}
+                  {`streamr://watch/${currentVideoId}`}
                 </Text>
                 <Pressable
                   onPress={handleCopyShareLink}
@@ -394,7 +389,7 @@ export function PlayerModal({
 
               {/* In-App Share Code */}
               <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.12)', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: '#A5B4FC' }}>In-App Share Code:</Text>
+                <Text style={{ fontSize: 12, color: '#A5B4FC' }}>In-App Deep Link Code:</Text>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#6366F1' }}>#STREAMR-{currentVideoId}</Text>
               </View>
             </View>

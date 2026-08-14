@@ -6,13 +6,13 @@ import {
   findNodeHandle,
   Platform,
   Pressable,
-  requireNativeComponent,
   StyleSheet,
   Text,
   UIManager,
   View,
   ViewStyle,
 } from 'react-native';
+import { RCTNativeVideoPlayer } from './NativeVideoPlayerNative';
 import {
   Download,
   Maximize,
@@ -77,7 +77,6 @@ type VideoPlayerProps = {
   onProgress?: (currentTime: number, duration: number) => void;
 };
 
-const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 
 export default function NativeVideoPlayer({
   video,
@@ -510,21 +509,31 @@ export default function NativeVideoPlayer({
             </View>
 
             <View style={styles.topBarRight}>
-              {/* Autoplay Toggle Switch */}
+              {/* Autoplay Toggle Switch Pill */}
               {onToggleAutoplay ? (
                 <Pressable
                   style={[
-                    styles.ytPillButton,
-                    autoplay && styles.ytPillButtonActive,
+                    styles.autoplayToggleTrack,
+                    autoplay ? styles.autoplayToggleTrackOn : styles.autoplayToggleTrackOff,
                   ]}
                   onPress={() => {
                     onToggleAutoplay();
                     setShowControls(true);
                   }}
+                  hitSlop={8}
                 >
-                  <Text style={styles.ytPillText}>
-                    {autoplay ? 'AUTO ON' : 'AUTO OFF'}
-                  </Text>
+                  <View
+                    style={[
+                      styles.autoplayToggleThumb,
+                      autoplay ? styles.autoplayToggleThumbOn : styles.autoplayToggleThumbOff,
+                    ]}
+                  >
+                    {autoplay ? (
+                      <Pause color="#111111" size={9} fill="#111111" />
+                    ) : (
+                      <Play color="#666666" size={9} fill="#666666" style={{ marginLeft: 1 }} />
+                    )}
+                  </View>
                 </Pressable>
               ) : null}
 
@@ -545,6 +554,8 @@ export default function NativeVideoPlayer({
                     } else {
                       setShowCaptionMenu(prev => !prev);
                       setShowMoreMenu(false);
+                      setShowSettingsMenu(false);
+                      setShowDownloadMenu(false);
                     }
                     setShowControls(true);
                   }}
@@ -564,20 +575,7 @@ export default function NativeVideoPlayer({
                   setShowControls(true);
                 }}
               >
-                <Settings color="#FFFFFF" size={16} />
-              </Pressable>
-
-              {/* Playback Speed Menu */}
-              <Pressable
-                style={styles.ytIconButton}
-                onPress={() => {
-                  setShowMoreMenu(prev => !prev);
-                  setShowCaptionMenu(false);
-                  setShowSettingsMenu(false);
-                  setShowDownloadMenu(false);
-                }}
-              >
-                <Text style={styles.ytSpeedText}>{rate}x</Text>
+                <Settings color="#FFFFFF" size={18} />
               </Pressable>
             </View>
           </View>
@@ -642,67 +640,71 @@ export default function NativeVideoPlayer({
               </View>
             </Pressable>
 
-            {/* Bottom Actions Row */}
+            {/* Bottom Actions Row (Grouped in bottom right: Sound, Download, Fullscreen/Landscape) */}
             <View style={styles.bottomActions}>
-              <View style={styles.volumeControlRow}>
-                <Pressable style={styles.actionButton} onPress={toggleMute}>
-                  {isMuted ? (
-                    <VolumeX color="#FFFFFF" size={16} />
-                  ) : (
-                    <Volume2 color="#FFFFFF" size={16} />
-                  )}
-                </Pressable>
+              <View style={styles.bottomRightGroup}>
+                <View style={styles.volumeControlRow}>
+                  <Pressable style={styles.actionButton} onPress={toggleMute} hitSlop={6}>
+                    {isMuted ? (
+                      <VolumeX color="#FFFFFF" size={16} />
+                    ) : (
+                      <Volume2 color="#FFFFFF" size={16} />
+                    )}
+                  </Pressable>
 
-                <View
-                  style={styles.volumeSliderWrapper}
-                  onStartShouldSetResponder={() => true}
-                  onResponderMove={handleVolumeChange}
-                  onResponderGrant={handleVolumeChange}
-                >
-                  <View style={styles.volumeSliderBg}>
-                    <View
-                      style={[
-                        styles.volumeSliderFill,
-                        { width: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.volumeSliderThumb,
-                        { left: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
-                      ]}
-                    />
+                  <View
+                    style={styles.volumeSliderWrapper}
+                    onStartShouldSetResponder={() => true}
+                    onResponderMove={handleVolumeChange}
+                    onResponderGrant={handleVolumeChange}
+                  >
+                    <View style={styles.volumeSliderBg}>
+                      <View
+                        style={[
+                          styles.volumeSliderFill,
+                          { width: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.volumeSliderThumb,
+                          { left: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
+                        ]}
+                      />
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              {/* In-App Download Quality Button */}
-              <Pressable
-                style={styles.actionButton}
-                onPress={() => {
-                  setShowDownloadMenu(prev => !prev);
-                  setShowCaptionMenu(false);
-                  setShowMoreMenu(false);
-                  setShowSettingsMenu(false);
-                }}
-                disabled={isDownloading}
-              >
-                {isDownloading ? (
-                  <ActivityIndicator size="small" color="#FF0000" />
-                ) : (
-                  <Download color="#FFFFFF" size={14} />
-                )}
-              </Pressable>
-
-              {onToggleFullscreen ? (
-                <Pressable style={styles.actionButton} onPress={onToggleFullscreen}>
-                  {style && (style as any).width ? (
-                    <Minimize color="#FFFFFF" size={14} />
+                {/* In-App Download Quality Button */}
+                <Pressable
+                  style={styles.actionButton}
+                  onPress={() => {
+                    setShowDownloadMenu(prev => !prev);
+                    setShowCaptionMenu(false);
+                    setShowMoreMenu(false);
+                    setShowSettingsMenu(false);
+                  }}
+                  disabled={isDownloading}
+                  hitSlop={6}
+                >
+                  {isDownloading ? (
+                    <ActivityIndicator size="small" color="#FF0000" />
                   ) : (
-                    <Maximize color="#FFFFFF" size={14} />
+                    <Download color="#FFFFFF" size={16} />
                   )}
                 </Pressable>
-              ) : null}
+
+                {/* Landscape / Fullscreen Toggle Button */}
+                {onToggleFullscreen ? (
+                  <Pressable style={styles.actionButton} onPress={onToggleFullscreen} hitSlop={6}>
+                    {style && (style as any).width ? (
+                      <Minimize color="#FFFFFF" size={16} />
+                    ) : (
+                      <Maximize color="#FFFFFF" size={16} />
+                    )}
+                  </Pressable>
+                ) : null}
+              </View>
             </View>
 
             {/* Download Quality Options Menu */}
@@ -727,6 +729,15 @@ export default function NativeVideoPlayer({
             {showSettingsMenu ? (
               <View style={styles.speedMenu}>
                 <Text style={styles.menuHeaderTitle}>Settings</Text>
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setShowMoreMenu(true);
+                    setShowSettingsMenu(false);
+                  }}
+                >
+                  <Text style={styles.speedText}>Playback Speed ({rate}x) ›</Text>
+                </Pressable>
                 <Pressable
                   style={styles.speedItem}
                   onPress={() => {
@@ -852,7 +863,7 @@ export default function NativeVideoPlayer({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    aspectRatio: 16 / 9,
+    height: '100%',
     backgroundColor: '#000000',
     overflow: 'hidden',
   },
@@ -898,21 +909,34 @@ const styles = StyleSheet.create({
   topBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
-  ytPillButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+  autoplayToggleTrack: {
+    width: 40,
+    height: 22,
+    borderRadius: 11,
+    padding: 2,
+    justifyContent: 'center',
   },
-  ytPillButtonActive: {
-    backgroundColor: '#E50914',
+  autoplayToggleTrackOn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
-  ytPillText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
+  autoplayToggleTrackOff: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  autoplayToggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoplayToggleThumbOn: {
+    alignSelf: 'flex-end',
+  },
+  autoplayToggleThumbOff: {
+    alignSelf: 'flex-start',
   },
   ytIconButton: {
     padding: 6,
@@ -1005,19 +1029,24 @@ const styles = StyleSheet.create({
   bottomActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     marginTop: 6,
+  },
+  bottomRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   volumeControlRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   actionButton: {
     padding: 6,
   },
   volumeSliderWrapper: {
-    width: 60,
+    width: 50,
     height: 20,
     justifyContent: 'center',
   },
@@ -1029,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   volumeSliderFill: {
     height: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FF0000',
     borderRadius: 2,
   },
   volumeSliderThumb: {
