@@ -47,14 +47,18 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
 
   const filteredLikedVideos = useMemo(() => {
     if (!availableVideos || availableVideos.length === 0) return likedVideos;
-    const availableIds = new Set(availableVideos.map(v => v.id));
-    return likedVideos.filter(v => availableIds.has(v.id));
+    const videoMap = new Map(availableVideos.map(v => [v.id, v]));
+    return likedVideos
+      .filter(v => videoMap.has(v.id))
+      .map(v => ({ ...v, ...videoMap.get(v.id) }));
   }, [likedVideos, availableIdsKey]);
 
   const filteredSavedVideos = useMemo(() => {
     if (!availableVideos || availableVideos.length === 0) return savedVideos;
-    const availableIds = new Set(availableVideos.map(v => v.id));
-    return savedVideos.filter(v => availableIds.has(v.id));
+    const videoMap = new Map(availableVideos.map(v => [v.id, v]));
+    return savedVideos
+      .filter(v => videoMap.has(v.id))
+      .map(v => ({ ...v, ...videoMap.get(v.id) }));
   }, [savedVideos, availableIdsKey]);
 
   return {

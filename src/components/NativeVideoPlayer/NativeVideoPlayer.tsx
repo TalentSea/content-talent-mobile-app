@@ -77,7 +77,6 @@ type VideoPlayerProps = {
   onProgress?: (currentTime: number, duration: number) => void;
 };
 
-
 export default function NativeVideoPlayer({
   video,
   id,
@@ -441,6 +440,7 @@ export default function NativeVideoPlayer({
       <RCTNativeVideoPlayer
         key={`${uri}-${retryCount}`}
         ref={playerRef}
+        useTextureView={true}
         source={{
           uri,
           type: 'm3u8',
@@ -503,9 +503,6 @@ export default function NativeVideoPlayer({
                   <Text style={styles.backIconText}>‹</Text>
                 </Pressable>
               ) : null}
-              <Text style={styles.playerTitle} numberOfLines={1}>
-                {title ?? ''}
-              </Text>
             </View>
 
             <View style={styles.topBarRight}>
@@ -607,38 +604,39 @@ export default function NativeVideoPlayer({
 
           {/* Bottom Control Panel */}
           <View style={styles.bottomPanel} pointerEvents="box-none">
-            <View style={styles.timeRow}>
+            {/* Duration Time Text and Progress Bar in the same horizontal line */}
+            <View style={styles.progressRow}>
               <Text style={styles.timeText}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </Text>
-              {isDownloading ? (
-                <Text style={styles.downloadProgressText}>
-                  In-App Downloading ({downloadingLabel})... {downloadProgress}%
-                </Text>
-              ) : null}
+
+              <Pressable
+                style={styles.progressBarWrapperFlex}
+                onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
+                onPress={handleProgressBarPress}
+              >
+                <View style={styles.progressBarBackground}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${progressPercent}%` as any },
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.progressThumb,
+                      { left: `${progressPercent}%` as any },
+                    ]}
+                  />
+                </View>
+              </Pressable>
             </View>
 
-            {/* Progress Bar */}
-            <Pressable
-              style={styles.progressBarWrapper}
-              onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
-              onPress={handleProgressBarPress}
-            >
-              <View style={styles.progressBarBackground}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${progressPercent}%` as any },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressThumb,
-                    { left: `${progressPercent}%` as any },
-                  ]}
-                />
-              </View>
-            </Pressable>
+            {isDownloading ? (
+              <Text style={styles.downloadProgressText}>
+                In-App Downloading ({downloadingLabel})... {downloadProgress}%
+              </Text>
+            ) : null}
 
             {/* Bottom Actions Row (Grouped in bottom right: Sound, Download, Fullscreen/Landscape) */}
             <View style={styles.bottomActions}>
@@ -985,6 +983,17 @@ const styles = StyleSheet.create({
   bottomPanel: {
     paddingHorizontal: 16,
     paddingBottom: 12,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+  },
+  progressBarWrapperFlex: {
+    flex: 1,
+    height: 20,
+    justifyContent: 'center',
   },
   timeRow: {
     flexDirection: 'row',

@@ -47,8 +47,12 @@ export function useWatchHistory(availableVideos: ApiVideo[] = []) {
   }, [history, availableIdsKey]);
 
   const filteredContinueWatching = useMemo(() => {
-    return filteredHistory.map(item => item.video);
-  }, [filteredHistory]);
+    const videoMap = new Map((availableVideos || []).map(v => [v.id, v]));
+    return filteredHistory.map(item => {
+      const latest = videoMap.get(item.video.id);
+      return latest ? { ...item.video, ...latest } : item.video;
+    });
+  }, [filteredHistory, availableIdsKey]);
 
   return {
     history: filteredHistory,

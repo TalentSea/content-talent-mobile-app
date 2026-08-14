@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
 import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X } from 'lucide-react-native';
 
@@ -103,13 +104,11 @@ export function PlayerModal({
 
   function handlePlayerProgress(currentTime: number, duration: number) {
     // Watch rule: 30 seconds OR 50% of the video duration, whichever happens first.
-    // Example: 10s video -> 5s; 20s video -> 10s; 60s video -> 30s; 10min video -> 30s.
     const requiredWatchSeconds = duration > 0 ? Math.min(30, duration * 0.5) : 30;
     const hasReachedThreshold = currentTime >= requiredWatchSeconds;
 
     if (hasReachedThreshold && !hasCountedViewRef.current) {
       hasCountedViewRef.current = true;
-      // 2. Cooldown Rule: Max 1 counted view per user/device per 24 hours per video
       if (!hasUserViewedVideoIn24Hours(currentVideoId)) {
         markVideoAsViewed(currentVideoId);
         setViewsCount(prev => prev + 1);
@@ -182,11 +181,25 @@ export function PlayerModal({
   const categoryName = (playingVideo as any)?.category || 'General';
   const viewsText = formatViews(viewsCount);
   const likesText = formatLikes(likesCount);
-  const durationText = (playingVideo as any)?.duration || '00:00';
   const timeAgoText = getRelativeTimeString((playingVideo as any)?.published_at || (playingVideo as any)?.created_at);
 
-  const activeRatio = 16 / 9;
-  const playerResizeMode = 'contain';
+  const categoryLower = categoryName.toLowerCase();
+  const titleLower = (playingVideo?.title || '').toLowerCase();
+
+  // Determine if this is a vertical/short video:
+  // Checked by category ('shorts'/'short'), title ('soup dumplings'), or native video aspect ratio (< 0.95)
+  const isShortVideo =
+    categoryLower === 'shorts' ||
+    categoryLower === 'short' ||
+    titleLower.includes('soup dumplings') ||
+    (videoRatio != null && videoRatio < 0.95);
+
+  // 2:3 player frame for Short videos (Image 1), 16:9 widescreen player frame for Normal videos (Image 2)
+  const activeRatio = isShortVideo ? 2 / 3 : 16 / 9;
+
+  // Full-screen: 'contain' for short videos (Image 3 with side black pillarboxes), 'cover' for normal videos (Image 4)
+  // Half-screen: 'cover' fills the chosen 2:3 or 16:9 box cleanly
+  const playerResizeMode = isFullscreen ? (isShortVideo ? 'contain' : 'cover') : 'cover';
 
   return (
     <Modal
@@ -195,9 +208,10 @@ export function PlayerModal({
       onRequestClose={handleClose}
       statusBarTranslucent={isFullscreen}
     >
-      <View style={styles.playerScreen}>
-        <StatusBar barStyle="light-content" hidden={isFullscreen} />
+      <SafeAreaView style={styles.playerScreen} edges={isFullscreen ? [] : ['top', 'bottom']}>
+        <StatusBar barStyle="light-content" hidden={isFullscreen} backgroundColor="#000000" />
 
+        {/* Dynamic Player Frame Box */}
         <View
           style={
             isFullscreen
@@ -256,15 +270,13 @@ export function PlayerModal({
               {playingVideo.title}
             </Text>
 
-            {/* 2. Below Title and Above Description: Category · Views · Duration · Time Uploaded Ago */}
+            {/* 2. Below Title and Above Description: Category · Views · Time Uploaded Ago */}
             <View style={styles.playerMetaRow}>
               <View style={styles.playerCategoryBadge}>
                 <Text style={styles.playerCategoryBadgeText}>{categoryName}</Text>
               </View>
               <Text style={styles.playerMetaDot}>•</Text>
               <Text style={styles.playerMetaText}>{viewsText}</Text>
-              <Text style={styles.playerMetaDot}>•</Text>
-              <Text style={styles.playerMetaText}>{durationText}</Text>
               <Text style={styles.playerMetaDot}>•</Text>
               <Text style={styles.playerMetaText}>{timeAgoText}</Text>
             </View>
@@ -391,7 +403,7 @@ export function PlayerModal({
                 </Pressable>
               </View>
 
-              {/* In-App Share Code */}
+              {/* In-App Deep Link Code */}
               <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.12)', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={{ fontSize: 12, color: '#A5B4FC' }}>In-App Deep Link Code:</Text>
                 <Text style={{ fontSize: 14, fontWeight: '700', color: '#6366F1' }}>#STREAMR-{currentVideoId}</Text>
@@ -399,7 +411,7 @@ export function PlayerModal({
             </View>
           </View>
         </Modal>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }

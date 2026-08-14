@@ -5,6 +5,7 @@ import type { ApiVideo } from '../../types/video';
 import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
 import { getRelativeTimeString, formatViews, formatLikes, formatDurationString } from '../../utils/timeUtils';
 import { useWatchHistory } from '../../hooks/useWatchHistory';
+import { isVideoLiked } from '../../services/userActivity';
 import { styles } from './styles';
 
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
@@ -58,8 +59,13 @@ export function VideoCard({
   const statusInfo = video ? getStatusDisplay(video.status) : null;
   const isEncoding = video?.status?.trim().toUpperCase() === 'ENCODING';
 
-  const displayViews = views || formatViews(video?.views);
-  const displayLikes = likes || (video?.likes != null ? `${formatLikes(video.likes)} likes` : '0 likes');
+  const rawViews = video?.views ?? (video as any)?.views_count ?? 0;
+  const rawLikes = video?.likes ?? (video as any)?.likes_count ?? 0;
+  const isLikedByMe = video ? isVideoLiked(video.id) : false;
+  const effectiveLikes = isLikedByMe ? Math.max(1, rawLikes) : rawLikes;
+
+  const displayViews = views || formatViews(rawViews);
+  const displayLikes = likes || (effectiveLikes > 0 ? `${formatLikes(effectiveLikes)} ${effectiveLikes === 1 ? 'like' : 'likes'}` : '0 likes');
   const displayDuration = formatDurationString(durationText || video?.duration);
   const uploadedTimeAgo = getRelativeTimeString(video?.published_at || video?.created_at);
 
