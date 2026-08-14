@@ -36,6 +36,10 @@ export type ApiVideo = {
   is_playable: boolean;
   views: number;
   likes?: number;
+  views_count?: number;
+  likes_count?: number;
+  is_liked?: boolean;
+  is_saved?: boolean;
   duration: string | null;
   main_thumbnail_url: string | null;
   published_at: string | null;

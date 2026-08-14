@@ -72,62 +72,57 @@ export function ProfileScreen({ navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header: Clean title with back, notifications, and settings buttons */}
+      {/* Header: Circular back button, Profile title, Notifications and Settings circular icon buttons */}
       <View style={styles.header}>
         <Pressable
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <ChevronLeft color={colors.text} size={24} />
+          <ChevronLeft color="#FFFFFF" size={20} />
         </Pressable>
-        <Text style={styles.headerTitle}>Account Profile</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Pressable onPress={() => navigation.navigate('Notifications')}>
-            <Bell color="#FFFFFF" size={20} />
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Pressable
+            style={styles.headerIconButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Bell color="#FFFFFF" size={18} />
           </Pressable>
-          <Pressable onPress={() => navigation.navigate('Settings')}>
-            <Settings color="#FFFFFF" size={20} />
+          <Pressable
+            style={styles.headerIconButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Settings color="#FFFFFF" size={18} />
           </Pressable>
         </View>
       </View>
 
-
       <View style={styles.content}>
-        <View style={styles.avatarContainer}>
-          {currentUser.avatar_url ? (
-            <Image source={{ uri: currentUser.avatar_url }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <UserIcon color="#FFFFFF" size={32} />
-            </View>
-          )}
-        </View>
-
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name</Text>
-            <Text style={styles.infoValue}>{currentUser.name}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{currentUser.email}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Status</Text>
-            <View style={styles.badgeRow}>
-              <View style={[styles.badge, isLoggedIn ? styles.badgeVerified : { backgroundColor: 'rgba(107, 114, 128, 0.2)' }]}>
-                <CheckCircle color={isLoggedIn ? '#10B981' : '#9CA3AF'} size={14} style={styles.badgeIcon} />
-                <Text style={isLoggedIn ? styles.badgeTextVerified : { color: '#9CA3AF', fontSize: 12, fontWeight: '600' }}>
-                  {isLoggedIn ? 'Verified Subscriber' : 'Guest Visitor'}
-                </Text>
+        {/* Upper Profile Section matching screenshot */}
+        <View style={styles.profileHeaderSection}>
+          <View style={styles.avatarRing}>
+            {currentUser.avatar_url ? (
+              <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarInner}>
+                <UserIcon color="#FFFFFF" size={36} />
               </View>
-            </View>
+            )}
+          </View>
+
+          <Text style={styles.profileNameText}>
+            {currentUser.name && currentUser.name !== 'User' ? currentUser.name : 'Streamr Creator'}
+          </Text>
+
+          <Text style={styles.profileEmailText}>
+            {currentUser.email && currentUser.email !== 'user@streamr.app' ? currentUser.email : 'creator@streamr.app'}
+          </Text>
+
+          <View style={styles.verifiedBadgePill}>
+            <CheckCircle color="#10B981" size={14} />
+            <Text style={styles.verifiedBadgeText}>
+              {isLoggedIn ? 'Verified creator' : 'Guest visitor'}
+            </Text>
           </View>
         </View>
 

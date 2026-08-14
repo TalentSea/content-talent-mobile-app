@@ -16,6 +16,22 @@ export type FetchVideosParams = {
   limit?: number;
 };
 
+export function normalizeVideoItem(item: any): import('../../../types/video').ApiVideo {
+  if (!item) return item;
+  const rawViews = item.views ?? item.views_count ?? item.view_count ?? 0;
+  const rawLikes = item.likes ?? item.likes_count ?? item.like_count ?? 0;
+  const parsedViews = typeof rawViews === 'number' ? rawViews : parseInt(String(rawViews), 10) || 0;
+  const parsedLikes = typeof rawLikes === 'number' ? rawLikes : parseInt(String(rawLikes), 10) || 0;
+
+  return {
+    ...item,
+    views: parsedViews,
+    likes: parsedLikes,
+    views_count: parsedViews,
+    likes_count: parsedLikes,
+  };
+}
+
 export async function fetchVideos(
   params: FetchVideosParams = {},
 ): Promise<PaginatedVideosResponse> {
@@ -44,7 +60,10 @@ export async function fetchVideos(
         `/api/v1/mobile/videos?${query.toString()}`,
       );
       if (response && Array.isArray(response.items) && response.items.length > 0) {
-        return response;
+        return {
+          ...response,
+          items: response.items.map(normalizeVideoItem),
+        };
       }
     } catch (err) {
       // Mobile endpoint notice
@@ -56,13 +75,28 @@ export async function fetchVideos(
     );
 
     if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
-      return adminResponse;
+      return {
+        ...adminResponse,
+        items: adminResponse.items.map(normalizeVideoItem),
+      };
     }
 
-    return { total: MOCK_VIDEOS_LIST.length, page: 1, limit: 50, total_pages: 1, items: MOCK_VIDEOS_LIST };
+    return {
+      total: MOCK_VIDEOS_LIST.length,
+      page: 1,
+      limit: 50,
+      total_pages: 1,
+      items: MOCK_VIDEOS_LIST.map(normalizeVideoItem),
+    };
   } catch (error) {
     console.warn('[fetchVideos] Live API notice:', error);
-    return { total: MOCK_VIDEOS_LIST.length, page: 1, limit: 50, total_pages: 1, items: MOCK_VIDEOS_LIST };
+    return {
+      total: MOCK_VIDEOS_LIST.length,
+      page: 1,
+      limit: 50,
+      total_pages: 1,
+      items: MOCK_VIDEOS_LIST.map(normalizeVideoItem),
+    };
   }
 }
 
@@ -74,7 +108,7 @@ export async function fetchVideoDetails(
     try {
       const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
       if (mobileRes && mobileRes.playback_url && mobileRes.playback_url.trim() !== '') {
-        return mobileRes;
+        return normalizeVideoItem(mobileRes) as VideoDetails;
       }
     } catch (e) {
       // Mobile details fallback
@@ -83,7 +117,7 @@ export async function fetchVideoDetails(
     // 2. Fallback: Admin Video Details (/api/v1/admin/videos/{id})
     const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
     if (adminRes && adminRes.playback_url && adminRes.playback_url.trim() !== '') {
-      return adminRes;
+      return normalizeVideoItem(adminRes) as VideoDetails;
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);
@@ -91,11 +125,11 @@ export async function fetchVideoDetails(
 
   // 3. Fallback: Demo streamable video details if video is not in DB yet or playback_url is empty
   const fallback = MOCK_VIDEO_DETAILS_MAP[videoId] || MOCK_VIDEO_DETAILS_MAP[1];
-  return {
+  return normalizeVideoItem({
     ...fallback,
     id: videoId,
     playback_url: fallback.playback_url && fallback.playback_url.trim() !== '' ? fallback.playback_url : MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
-  };
+  }) as VideoDetails;
 }
 
 export async function fetchVideoPlayInfo(videoId: number) {

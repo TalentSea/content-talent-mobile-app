@@ -102,11 +102,12 @@ export function PlayerModal({
   }, [playingVideo, currentVideoId]);
 
   function handlePlayerProgress(currentTime: number, duration: number) {
-    // 1. Threshold Rule: Must watch at least 10% of total video duration (or 5s fallback)
-    const requiredWatchSeconds = duration > 0 ? duration * 0.1 : 5;
-    const hasReachedTenPercent = currentTime >= requiredWatchSeconds;
+    // Watch rule: 30 seconds OR 50% of the video duration, whichever happens first.
+    // Example: 10s video -> 5s; 20s video -> 10s; 60s video -> 30s; 10min video -> 30s.
+    const requiredWatchSeconds = duration > 0 ? Math.min(30, duration * 0.5) : 30;
+    const hasReachedThreshold = currentTime >= requiredWatchSeconds;
 
-    if (hasReachedTenPercent && !hasCountedViewRef.current) {
+    if (hasReachedThreshold && !hasCountedViewRef.current) {
       hasCountedViewRef.current = true;
       // 2. Cooldown Rule: Max 1 counted view per user/device per 24 hours per video
       if (!hasUserViewedVideoIn24Hours(currentVideoId)) {
@@ -269,7 +270,10 @@ export function PlayerModal({
             </View>
 
             {/* 3. Description with "Show More" / "Show Less" */}
-            {playingVideo.description ? (
+            {playingVideo.description &&
+            !playingVideo.description.trim().startsWith('pkill') &&
+            !playingVideo.description.includes('uvicorn') &&
+            !playingVideo.description.includes('nohup') ? (
               <View>
                 <Text
                   style={styles.playerDescription}

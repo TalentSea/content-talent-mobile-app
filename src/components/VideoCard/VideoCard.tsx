@@ -59,7 +59,7 @@ export function VideoCard({
   const isEncoding = video?.status?.trim().toUpperCase() === 'ENCODING';
 
   const displayViews = views || formatViews(video?.views);
-  const displayLikes = likes || (video?.likes != null && video.likes > 0 ? `${formatLikes(video.likes)} likes` : null);
+  const displayLikes = likes || (video?.likes != null ? `${formatLikes(video.likes)} likes` : '0 likes');
   const displayDuration = formatDurationString(durationText || video?.duration);
   const uploadedTimeAgo = getRelativeTimeString(video?.published_at || video?.created_at);
 

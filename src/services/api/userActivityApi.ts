@@ -1,6 +1,7 @@
 import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
 import { incrementMockVideoViews, toggleMockVideoLike } from './mockVideoApi';
+import { normalizeVideoItem } from './video';
 
 export type UserHistoryResponseItem = {
   video_id: number;
@@ -27,7 +28,10 @@ export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosRespons
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
-    return response;
+    return {
+      ...response,
+      items: response.items.map(normalizeVideoItem),
+    };
   } catch (error) {
     console.warn('[fetchUserWatchHistoryApi] Mobile API notice:', error);
     return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
@@ -41,7 +45,10 @@ export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosRes
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
-    return response;
+    return {
+      ...response,
+      items: response.items.map(normalizeVideoItem),
+    };
   } catch (error) {
     console.warn('[fetchUserContinueWatchingApi] Mobile API notice:', error);
     return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
@@ -93,7 +100,10 @@ export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
-    return response;
+    return {
+      ...response,
+      items: response.items.map(normalizeVideoItem),
+    };
   } catch (error) {
     console.warn('[fetchUserLikedVideosApi] Mobile API notice:', error);
     return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
@@ -117,7 +127,10 @@ export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
-    return response;
+    return {
+      ...response,
+      items: response.items.map(normalizeVideoItem),
+    };
   } catch (error) {
     console.warn('[fetchUserSavedVideosApi] Mobile API notice:', error);
     return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };

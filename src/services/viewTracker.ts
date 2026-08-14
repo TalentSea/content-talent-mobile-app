@@ -3,8 +3,8 @@ import RNFS from 'react-native-fs';
 const VIEWS_TRACKER_FILE = `${RNFS.DocumentDirectoryPath}/streamr_viewed_videos_24h.json`;
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
 
-// Stores videoId -> timestamp (ms)
-let viewedVideoTimestamps: Record<number, number> = {};
+// Stores videoId (as String key) -> timestamp (ms)
+let viewedVideoTimestamps: Record<string, number> = {};
 let isInitialized = false;
 
 export async function initViewTracker(): Promise<void> {
@@ -28,21 +28,24 @@ export async function initViewTracker(): Promise<void> {
 // Initial restoration
 initViewTracker();
 
-export function hasUserViewedVideoIn24Hours(videoId: number): boolean {
-  const lastViewedAt = viewedVideoTimestamps[videoId];
+export function hasUserViewedVideoIn24Hours(videoId: number | string): boolean {
+  const key = String(videoId);
+  const lastViewedAt = viewedVideoTimestamps[key];
   if (!lastViewedAt) return false;
-  const elapsed = Date.now() - lastViewedAt;
+  const elapsed = Date.now() - Number(lastViewedAt);
   return elapsed < TWENTY_FOUR_HOURS_MS;
 }
 
-export async function markVideoAsViewed(videoId: number): Promise<void> {
+export async function markVideoAsViewed(videoId: number | string): Promise<void> {
+  await initViewTracker();
+  const key = String(videoId);
   const now = Date.now();
-  viewedVideoTimestamps[videoId] = now;
+  viewedVideoTimestamps[key] = now;
 
   // Prune entries older than 30 days to keep json file clean
   const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   for (const idStr in viewedVideoTimestamps) {
-    if (now - viewedVideoTimestamps[idStr] > THIRTY_DAYS_MS) {
+    if (now - Number(viewedVideoTimestamps[idStr]) > THIRTY_DAYS_MS) {
       delete viewedVideoTimestamps[idStr];
     }
   }
