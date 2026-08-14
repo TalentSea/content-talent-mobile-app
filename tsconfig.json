@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "include": ["src/**/*", "types/**/*", "App.tsx", "index.js"],
+  "exclude": ["**/node_modules", "**/Pods", "content-talent-mobile-app"]
 }

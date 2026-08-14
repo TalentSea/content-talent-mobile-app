@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
-import { getRelativeTimeString, formatViews, formatDurationString } from '../../utils/timeUtils';
+import { getRelativeTimeString, formatViews, formatLikes, formatDurationString } from '../../utils/timeUtils';
 import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { styles } from './styles';
 
@@ -15,6 +15,7 @@ export type VideoCardProps = {
   thumbnailUrl?: string;
   category?: string;
   views?: string;
+  likes?: string;
   durationText?: string;
   badgeText?: string;
   fullWidth?: boolean;
@@ -31,6 +32,7 @@ export function VideoCard({
   thumbnailUrl,
   category,
   views,
+  likes,
   durationText,
   badgeText,
   fullWidth = false,
@@ -40,7 +42,7 @@ export function VideoCard({
   onPress,
 }: VideoCardProps) {
   const { history } = useWatchHistory();
-  const currentVideoId = video?.id || (id ? parseInt(id) : 1);
+  const currentVideoId = video?.id || (_id ? parseInt(_id) : 1);
 
   // Find progress percentage from watch history
   const watchHistoryItem = history.find(h => h.video.id === currentVideoId);
@@ -54,6 +56,7 @@ export function VideoCard({
   const isEncoding = video?.status?.trim().toUpperCase() === 'ENCODING';
 
   const displayViews = views || formatViews(video?.views);
+  const displayLikes = likes || (video?.likes != null && video.likes > 0 ? `${formatLikes(video.likes)} likes` : null);
   const displayDuration = formatDurationString(durationText || video?.duration);
   const uploadedTimeAgo = getRelativeTimeString(video?.published_at || video?.created_at);
 
@@ -138,6 +141,14 @@ export function VideoCard({
         <Text numberOfLines={1} style={styles.meta}>
           {displayViews}
         </Text>
+        {displayLikes ? (
+          <>
+            <Text style={styles.dot}>•</Text>
+            <Text numberOfLines={1} style={styles.meta}>
+              {displayLikes}
+            </Text>
+          </>
+        ) : null}
         <Text style={styles.dot}>•</Text>
         <Text numberOfLines={1} style={styles.uploadedTimeText}>
           {uploadedTimeAgo}

@@ -254,4 +254,56 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '700',
     },
+    avatarContainer: {
+        alignItems: 'center',
+        marginVertical: 16,
+    },
+    infoCard: {
+        backgroundColor: colors.surface,
+        borderRadius: 12,
+        padding: 16,
+        marginVertical: 12,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    infoLabel: {
+        color: colors.muted,
+        fontSize: 14,
+    },
+    infoValue: {
+        color: colors.text,
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    },
+    badgeVerified: {
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    },
+    badgeIcon: {
+        marginRight: 4,
+    },
+    badgeTextVerified: {
+        color: '#10B981',
+        fontSize: 12,
+        fontWeight: '600',
+    },
 });

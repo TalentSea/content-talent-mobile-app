@@ -27,7 +27,7 @@ export function getRelativeTimeString(dateString?: string | null): string {
 }
 
 export function formatViews(views?: number): string {
-  if (views == null) return '14.2K views';
+  if (views == null || isNaN(views) || views < 0) return '0 views';
   if (views >= 1000000) {
     return `${(views / 1000000).toFixed(1)}M views`;
   }
@@ -35,6 +35,17 @@ export function formatViews(views?: number): string {
     return `${(views / 1000).toFixed(1)}K views`;
   }
   return `${views} views`;
+}
+
+export function formatLikes(likes?: number): string {
+  if (likes == null || likes <= 0) return '0';
+  if (likes >= 1000000) {
+    return `${(likes / 1000000).toFixed(1)}M`;
+  }
+  if (likes >= 1000) {
+    return `${(likes / 1000).toFixed(1)}K`;
+  }
+  return `${likes}`;
 }
 
 export function formatDurationString(duration?: string | null): string {

@@ -213,6 +213,7 @@ export async function fetchVideoPlayInfo(videoId: number) {
     category: video.category,
     tags: video.tags,
     views: video.views,
+    likes: (video as any).likes ?? (video as any).likes_count ?? 0,
     duration: video.duration,
     published_at: video.published_at,
     created_at: video.created_at,

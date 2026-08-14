@@ -110,7 +110,7 @@ export function toggleLikeVideo(video: ApiVideo): boolean {
   notifyActivityListeners();
   persistUserActivityToDisk();
 
-  toggleUserLikedVideoApi(video.id).catch(err =>
+  toggleUserLikedVideoApi(video.id, isNowLiked).catch(err =>
     console.warn('[toggleLikeVideo] API toggle notice:', err),
   );
 

@@ -66,6 +66,7 @@ type VideoPlayerProps = {
   style?: ViewStyle;
   onClose?: () => void;
   onEnd?: () => void;
+  onProgress?: (currentTime: number, duration: number) => void;
 };
 
 const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
@@ -92,6 +93,7 @@ export default function NativeVideoPlayer({
   style,
   onClose,
   onEnd,
+  onProgress,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
 
@@ -331,6 +333,10 @@ export default function NativeVideoPlayer({
       setDuration(seekable);
     } else if (newCurrentTime > duration && duration > 0) {
       setDuration(newCurrentTime);
+    }
+
+    if (onProgress) {
+      onProgress(newCurrentTime, seekable || duration || 0);
     }
   };
 

@@ -13,7 +13,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 45200,
+    views: 0,
+    likes: 0,
     duration: '12:14',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 3600000 * 4).toISOString(), // 4 hours ago
@@ -31,7 +32,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 89300,
+    views: 0,
+    likes: 0,
     duration: '14:48',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 3600000 * 12).toISOString(), // 12 hours ago
@@ -49,7 +51,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 123100,
+    views: 0,
+    likes: 0,
     duration: '09:56',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 86400000 * 5).toISOString(),
@@ -67,7 +70,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 67400,
+    views: 0,
+    likes: 0,
     duration: '22:15',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 3600000 * 1).toISOString(), // 1 hour ago (Latest!)
@@ -85,7 +89,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 31200,
+    views: 0,
+    likes: 0,
     duration: '18:40',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 3600000 * 8).toISOString(),
@@ -103,7 +108,8 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: 54100,
+    views: 0,
+    likes: 0,
     duration: '15:20',
     main_thumbnail_url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
     published_at: new Date(Date.now() - 3600000 * 16).toISOString(),
@@ -119,16 +125,52 @@ export const MOCK_VIDEOS_LIST: ApiVideo[] = [
     category: 'Tech',
     tags: ['4k', 'processing', 'encoding'],
     status: 'PROCESSING',
-    encode_progress: 68,
+    encode_progress: 65,
     is_playable: false,
     views: 0,
-    duration: '05:30',
-    main_thumbnail_url: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+    likes: 0,
+    duration: null,
+    main_thumbnail_url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
     published_at: null,
-    scheduled_at: null,
-    created_at: new Date(Date.now() - 3600000).toISOString(),
+    scheduled_at: new Date(Date.now() + 86400000 * 1).toISOString(),
+    created_at: new Date().toISOString(),
   },
 ];
+
+const catalogListeners: Set<() => void> = new Set();
+
+function notifyCatalogListeners() {
+  catalogListeners.forEach(fn => fn());
+}
+
+export function subscribeVideoCatalog(listener: () => void): () => void {
+  catalogListeners.add(listener);
+  return () => {
+    catalogListeners.delete(listener);
+  };
+}
+
+export function incrementMockVideoViews(videoId: number) {
+  const item = MOCK_VIDEOS_LIST.find(v => v.id === videoId);
+  if (item) {
+    item.views = (item.views || 0) + 1;
+  }
+  if (MOCK_VIDEO_DETAILS_MAP[videoId]) {
+    MOCK_VIDEO_DETAILS_MAP[videoId].views = (MOCK_VIDEO_DETAILS_MAP[videoId].views || 0) + 1;
+  }
+  notifyCatalogListeners();
+}
+
+export function toggleMockVideoLike(videoId: number, isLiked: boolean) {
+  const item = MOCK_VIDEOS_LIST.find(v => v.id === videoId);
+  if (item) {
+    item.likes = Math.max(0, (item.likes || 0) + (isLiked ? 1 : -1));
+  }
+  if (MOCK_VIDEO_DETAILS_MAP[videoId]) {
+    MOCK_VIDEO_DETAILS_MAP[videoId].likes = Math.max(0, (MOCK_VIDEO_DETAILS_MAP[videoId].likes || 0) + (isLiked ? 1 : -1));
+  }
+  notifyCatalogListeners();
+}
 
 export const MOCK_VIDEO_DETAILS_MAP: Record<number, VideoDetails> = {
   1: {
@@ -200,7 +242,7 @@ export async function fetchMockVideos(): Promise<PaginatedVideosResponse> {
     page: 1,
     limit: 50,
     total_pages: 1,
-    items: MOCK_VIDEOS_LIST,
+    items: [...MOCK_VIDEOS_LIST],
   };
 }
 
@@ -210,6 +252,6 @@ export async function fetchMockVideoDetails(videoId: number): Promise<VideoDetai
   if (!details) {
     return MOCK_VIDEO_DETAILS_MAP[1];
   }
-  return details;
+  return { ...details };
 }
 

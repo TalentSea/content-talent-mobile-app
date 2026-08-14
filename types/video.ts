@@ -35,6 +35,7 @@ export type ApiVideo = {
   encode_progress: number;
   is_playable: boolean;
   views: number;
+  likes?: number;
   duration: string | null;
   main_thumbnail_url: string | null;
   published_at: string | null;
@@ -69,9 +70,9 @@ export type PlayInfo = {
   title: string;
   category?: string;
   description?: string;
-  category?: string;
   tags?: string[];
   views?: number;
+  likes?: number;
   duration?: string;
   published_at?: string;
   created_at?: string;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   ScrollView,
@@ -21,9 +21,11 @@ import {
   toggleLikeVideo,
   toggleSaveVideo,
 } from '../../services/userActivity';
+import { incrementVideoViewsApi } from '../../services/api/userActivityApi';
+import { hasUserViewedVideoIn24Hours, markVideoAsViewed } from '../../services/viewTracker';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import type { PlaylistListItem } from '../../services/api/playlistApi';
-import { formatViews, getRelativeTimeString } from '../../utils/timeUtils';
+import { formatLikes, formatViews, getRelativeTimeString } from '../../utils/timeUtils';
 import { styles } from '../PlayerScreen/styles';
 
 type PlayerModalProps = {
@@ -54,6 +56,9 @@ export function PlayerModal({
   const [copiedLink, setCopiedLink] = useState(false);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [viewsCount, setViewsCount] = useState<number>(0);
+  const [likesCount, setLikesCount] = useState<number>(0);
+  const hasCountedViewRef = useRef(false);
   const { width, height } = useWindowDimensions();
 
   const currentVideoId = (playingVideo as any)?.id || 1;
@@ -68,7 +73,8 @@ export function PlayerModal({
     status: 'published',
     encode_progress: 100,
     is_playable: true,
-    views: (playingVideo as any)?.views ?? 0,
+    views: viewsCount,
+    likes: likesCount,
     duration: (playingVideo as any)?.duration || '00:00',
     published_at: (playingVideo as any)?.published_at || new Date().toISOString(),
     scheduled_at: null,
@@ -77,6 +83,12 @@ export function PlayerModal({
 
   useEffect(() => {
     if (playingVideo) {
+      hasCountedViewRef.current = false;
+      const initialViews = (playingVideo as any)?.views ?? 0;
+      const initialLikes = (playingVideo as any)?.likes ?? (playingVideo as any)?.likes_count ?? 0;
+      setViewsCount(initialViews);
+      setLikesCount(initialLikes);
+
       recordWatchHistory(currentVideoObj, 45);
       setLiked(isVideoLiked(currentVideoId));
       setSaved(isVideoSaved(currentVideoId));
@@ -86,9 +98,29 @@ export function PlayerModal({
     }
   }, [playingVideo, currentVideoId]);
 
+  function handlePlayerProgress(currentTime: number, duration: number) {
+    // 1. Threshold Rule: Must watch at least 10% of total video duration (or 5s fallback)
+    const requiredWatchSeconds = duration > 0 ? duration * 0.1 : 5;
+    const hasReachedTenPercent = currentTime >= requiredWatchSeconds;
+
+    if (hasReachedTenPercent && !hasCountedViewRef.current) {
+      hasCountedViewRef.current = true;
+      // 2. Cooldown Rule: Max 1 counted view per user/device per 24 hours per video
+      if (!hasUserViewedVideoIn24Hours(currentVideoId)) {
+        markVideoAsViewed(currentVideoId);
+        setViewsCount(prev => prev + 1);
+        incrementVideoViewsApi(currentVideoId).catch(err =>
+          console.warn('[PlayerModal] Notice incrementing view count:', err),
+        );
+      }
+    }
+  }
+
   function handleToggleLike() {
-    const next = toggleLikeVideo(currentVideoObj);
-    setLiked(next);
+    const isCurrentlyLiked = liked;
+    const nextLikedState = toggleLikeVideo(currentVideoObj);
+    setLiked(nextLikedState);
+    setLikesCount(prev => (isCurrentlyLiked ? Math.max(0, prev - 1) : prev + 1));
   }
 
   function handleToggleSave() {
@@ -133,7 +165,8 @@ export function PlayerModal({
   }
 
   const categoryName = (playingVideo as any)?.category || 'General';
-  const viewsText = formatViews((playingVideo as any)?.views ?? 0);
+  const viewsText = formatViews(viewsCount);
+  const likesText = formatLikes(likesCount);
   const durationText = (playingVideo as any)?.duration || '00:00';
   const timeAgoText = getRelativeTimeString((playingVideo as any)?.published_at || (playingVideo as any)?.created_at);
 
@@ -181,6 +214,7 @@ export function PlayerModal({
               onToggleAutoplay={onToggleAutoplay}
               onClose={handleClose}
               onEnd={onVideoEnd}
+              onProgress={handlePlayerProgress}
             />
           ) : null}
         </View>
@@ -242,7 +276,9 @@ export function PlayerModal({
                   color={liked ? '#EF4444' : '#FFFFFF'}
                   fill={liked ? '#EF4444' : 'transparent'}
                 />
-                <Text style={styles.actionText}>{liked ? 'Liked' : 'Like'}</Text>
+                <Text style={[styles.actionText, liked ? { color: '#EF4444', fontWeight: '700' } : null]}>
+                  {likesText}
+                </Text>
               </Pressable>
 
               <Pressable
