@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getDownloadedVideos,
   subscribeDownloads,
@@ -8,17 +8,23 @@ import {
   DownloadedVideoItem,
 } from '../services/downloadService';
 
-export function useDownloads() {
-  const [downloadedVideos, setDownloadedVideos] = useState<DownloadedVideoItem[]>(
-    getDownloadedVideos(),
+import type { ApiVideo } from '../types/video';
+
+export function useDownloads(availableVideos: ApiVideo[] = []) {
+  const [downloadedVideos, setDownloadedVideos] = useState<DownloadedVideoItem[]>(() =>
+    getDownloadedVideos(availableVideos),
   );
 
+  const availableIdsKey = (availableVideos || []).map(v => v.id).join(',');
+
   useEffect(() => {
-    const unsubscribe = subscribeDownloads(() => {
-      setDownloadedVideos(getDownloadedVideos());
-    });
+    const update = () => {
+      setDownloadedVideos(getDownloadedVideos(availableVideos));
+    };
+    update();
+    const unsubscribe = subscribeDownloads(update);
     return () => unsubscribe();
-  }, []);
+  }, [availableIdsKey]);
 
   return {
     downloadedVideos,

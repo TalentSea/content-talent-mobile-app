@@ -7,7 +7,12 @@ import {
   toggleUserSavedVideoApi,
 } from './api/userActivityApi';
 
-const ACTIVITY_FILE_PATH = `${RNFS.DocumentDirectoryPath}/user_activity.json`;
+import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+
+function getActivityFilePath(): string {
+  const userKey = getUserStorageKey();
+  return `${RNFS.DocumentDirectoryPath}/user_activity_${userKey}.json`;
+}
 
 let likedVideosStore: ApiVideo[] = [];
 let savedVideosStore: ApiVideo[] = [];
@@ -20,11 +25,12 @@ function notifyActivityListeners() {
 
 async function persistUserActivityToDisk() {
   try {
+    const filePath = getActivityFilePath();
     const data = JSON.stringify({
       liked: likedVideosStore,
       saved: savedVideosStore,
     });
-    await RNFS.writeFile(ACTIVITY_FILE_PATH, data, 'utf8');
+    await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
     console.warn('[userActivity] Disk save notice:', err);
   }
@@ -32,20 +38,24 @@ async function persistUserActivityToDisk() {
 
 async function restoreUserActivityFromDisk() {
   try {
-    const exists = await RNFS.exists(ACTIVITY_FILE_PATH);
+    const filePath = getActivityFilePath();
+    const exists = await RNFS.exists(filePath);
     if (exists) {
-      const content = await RNFS.readFile(ACTIVITY_FILE_PATH, 'utf8');
+      const content = await RNFS.readFile(filePath, 'utf8');
       const parsed = JSON.parse(content);
-      if (parsed && Array.isArray(parsed.liked)) {
-        likedVideosStore = parsed.liked;
-      }
-      if (parsed && Array.isArray(parsed.saved)) {
-        savedVideosStore = parsed.saved;
-      }
+      likedVideosStore = parsed && Array.isArray(parsed.liked) ? parsed.liked : [];
+      savedVideosStore = parsed && Array.isArray(parsed.saved) ? parsed.saved : [];
       notifyActivityListeners();
+      return;
     }
+    likedVideosStore = [];
+    savedVideosStore = [];
+    notifyActivityListeners();
   } catch (err) {
     console.warn('[userActivity] Disk restore notice:', err);
+    likedVideosStore = [];
+    savedVideosStore = [];
+    notifyActivityListeners();
   }
 }
 
@@ -81,8 +91,9 @@ export async function syncUserActivityWithBackend() {
   }
 }
 
-// Initial restoration on startup
+// Initial restoration on startup & listener on user login/logout switch
 syncUserActivityWithBackend();
+subscribeAuthChange(() => syncUserActivityWithBackend());
 
 export function subscribeUserActivity(listener: () => void): () => void {
   activityListeners.add(listener);
@@ -143,10 +154,18 @@ export function toggleSaveVideo(video: ApiVideo): boolean {
   return isNowSaved;
 }
 
-export function getLikedVideos(): ApiVideo[] {
+export function getLikedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  if (availableVideos && availableVideos.length > 0) {
+    const availableIds = new Set(availableVideos.map(v => v.id));
+    return likedVideosStore.filter(v => availableIds.has(v.id));
+  }
   return [...likedVideosStore];
 }
 
-export function getSavedVideos(): ApiVideo[] {
+export function getSavedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  if (availableVideos && availableVideos.length > 0) {
+    const availableIds = new Set(availableVideos.map(v => v.id));
+    return savedVideosStore.filter(v => availableIds.has(v.id));
+  }
   return [...savedVideosStore];
 }

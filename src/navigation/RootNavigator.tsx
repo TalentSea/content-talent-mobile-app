@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -15,16 +16,52 @@ import { NotificationsScreen } from '../screens/NotificationsScreen/Notification
 import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
 import { LibraryProvider } from '../contexts/LibraryContext';
+import { restoreStoredSession } from '../services/api/authService';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
+    const [isInitializing, setIsInitializing] = useState(true);
+    const [initialRoute, setInitialRoute] = useState<'Home' | 'Login'>('Login');
+
+    useEffect(() => {
+        let isMounted = true;
+        async function checkInitialAuth() {
+            try {
+                const user = await restoreStoredSession();
+                if (user && isMounted) {
+                    console.log('[RootNavigator] Initial session restored for user:', user.name);
+                    setInitialRoute('Home');
+                } else if (isMounted) {
+                    setInitialRoute('Login');
+                }
+            } catch (err) {
+                console.warn('[RootNavigator] Initial auth restore notice:', err);
+                if (isMounted) setInitialRoute('Login');
+            } finally {
+                if (isMounted) setIsInitializing(false);
+            }
+        }
+        checkInitialAuth();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    if (isInitializing) {
+        return (
+            <View style={{ flex: 1, backgroundColor: '#05050A', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#6366F1" />
+            </View>
+        );
+    }
+
     return (
         <LibraryProvider>
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="Login"
+                initialRouteName={initialRoute}
                 screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: '#05050A' },

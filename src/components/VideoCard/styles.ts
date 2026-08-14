@@ -182,4 +182,16 @@ export const styles = StyleSheet.create({
     height: 3,
     backgroundColor: '#3B82F6',
   },
+  deleteBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 20,
+  },
 });

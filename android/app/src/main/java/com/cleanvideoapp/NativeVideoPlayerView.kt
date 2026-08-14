@@ -86,6 +86,18 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         imaAdsLoader?.setPlayer(player)
         addView(playerView)
 
+        (context as? ReactContext)?.addLifecycleEventListener(object : com.facebook.react.bridge.LifecycleEventListener {
+            override fun onHostResume() {}
+            override fun onHostPause() {
+                if (player.isPlaying) {
+                    player.pause()
+                }
+            }
+            override fun onHostDestroy() {
+                releasePlayer()
+            }
+        })
+
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
                 if (videoSize.width > 0 && videoSize.height > 0) {

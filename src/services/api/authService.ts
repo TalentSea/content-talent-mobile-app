@@ -1,3 +1,4 @@
+import RNFS from 'react-native-fs';
 import { apiRequest, setApiAccessToken } from './client';
 import { USE_MOCK_VIDEOS, DEFAULT_AUTH_TOKEN } from '../../constants/config';
 
@@ -27,8 +28,77 @@ export type RefreshTokenResponse = {
 let storedRefreshToken: string | null = null;
 let currentAuthenticatedUser: UserProfile | null = null;
 
+const SESSION_FILE_PATH = `${RNFS.DocumentDirectoryPath}/user_session_v1.json`;
+
+async function saveSessionToStorage(accessToken: string, refreshToken: string, user?: UserProfile) {
+  try {
+    const data = JSON.stringify({
+      accessToken,
+      refreshToken,
+      user,
+      savedAt: Date.now(),
+    });
+    await RNFS.writeFile(SESSION_FILE_PATH, data, 'utf8');
+  } catch (err) {
+    console.warn('[authService] Failed to save session to storage:', err);
+  }
+}
+
+async function removeSessionFromStorage() {
+  try {
+    const exists = await RNFS.exists(SESSION_FILE_PATH);
+    if (exists) {
+      await RNFS.unlink(SESSION_FILE_PATH);
+    }
+  } catch (err) {
+    console.warn('[authService] Failed to remove session storage:', err);
+  }
+}
+
+export async function restoreStoredSession(): Promise<UserProfile | null> {
+  try {
+    const exists = await RNFS.exists(SESSION_FILE_PATH);
+    if (!exists) return null;
+
+    const content = await RNFS.readFile(SESSION_FILE_PATH, 'utf8');
+    const parsed = JSON.parse(content);
+
+    if (parsed && parsed.accessToken && parsed.user) {
+      setApiAccessToken(parsed.accessToken);
+      storedRefreshToken = parsed.refreshToken || null;
+      currentAuthenticatedUser = parsed.user;
+      notifyAuthChange();
+      return parsed.user;
+    }
+  } catch (err) {
+    console.warn('[authService] Error restoring session from storage:', err);
+  }
+  return null;
+}
+
 export function getStoredRefreshToken(): string | null {
   return storedRefreshToken;
+}
+
+const authChangeListeners: Set<() => void> = new Set();
+
+export function subscribeAuthChange(listener: () => void): () => void {
+  authChangeListeners.add(listener);
+  return () => {
+    authChangeListeners.delete(listener);
+  };
+}
+
+function notifyAuthChange() {
+  authChangeListeners.forEach(fn => fn());
+}
+
+export function getUserStorageKey(): string {
+  if (!currentAuthenticatedUser) return 'guest';
+  if (currentAuthenticatedUser.email) {
+    return currentAuthenticatedUser.email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  }
+  return `user_${currentAuthenticatedUser.id || 'anon'}`;
 }
 
 export function getCurrentUser(): UserProfile | null {
@@ -41,17 +111,26 @@ export function setSessionTokens(accessToken: string, refreshToken: string, user
   if (user) {
     currentAuthenticatedUser = user;
   }
+  saveSessionToStorage(accessToken, refreshToken, user || currentAuthenticatedUser || undefined);
+  notifyAuthChange();
 }
 
 export async function clearSessionTokens() {
   setApiAccessToken(DEFAULT_AUTH_TOKEN);
   storedRefreshToken = null;
   currentAuthenticatedUser = null;
+  await removeSessionFromStorage();
+  notifyAuthChange();
 
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');
     if (GoogleSignin) {
       await GoogleSignin.signOut();
+      try {
+        await GoogleSignin.revokeAccess();
+      } catch (e) {
+        // ignore
+      }
     }
   } catch (e) {
     // ignore

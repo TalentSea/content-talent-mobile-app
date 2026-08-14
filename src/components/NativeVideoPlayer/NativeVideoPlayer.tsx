@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   findNodeHandle,
   Platform,
   Pressable,
@@ -26,6 +27,7 @@ import {
 } from 'lucide-react-native';
 import RNFS from 'react-native-fs';
 import { registerInAppDownload } from '../../services/downloadService';
+import type { ApiVideo } from '../../types/video';
 
 type CaptionTrack = {
   uri?: string;
@@ -45,6 +47,11 @@ export type DownloadItem = {
 };
 
 type VideoPlayerProps = {
+  video?: ApiVideo;
+  id?: number | string;
+  category?: string;
+  thumbnailUrl?: string;
+  description?: string;
   uri: string;
   mp4Url?: string;
   downloadUrls?: DownloadItem[];
@@ -72,6 +79,11 @@ type VideoPlayerProps = {
 const RCTNativeVideoPlayer = requireNativeComponent<any>('NativeVideoPlayer');
 
 export default function NativeVideoPlayer({
+  video,
+  id,
+  category,
+  thumbnailUrl,
+  description,
   uri,
   mp4Url,
   downloadUrls = [],
@@ -134,6 +146,19 @@ export default function NativeVideoPlayer({
     setPaused(!autoStart);
     setError(null);
   }, [autoStart, uri]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState.match(/inactive|background/)) {
+        console.log('[NativeVideoPlayer] App state changed to background/inactive, pausing video');
+        setPaused(true);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     setShowControls(controls);
@@ -265,28 +290,31 @@ export default function NativeVideoPlayer({
       setIsDownloading(false);
 
       if (res.statusCode === 200 || res.statusCode === 206) {
+        const realVideoId = video?.id || (id ? Number(id) : Date.now());
+        const downloadVideoObj: ApiVideo = video || {
+          id: realVideoId,
+          title: videoTitle,
+          description: description || null,
+          main_thumbnail_url: thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+          category: category || 'General',
+          tags: [],
+          status: 'published',
+          encode_progress: 100,
+          is_playable: true,
+          views: 0,
+          duration: '00:00',
+          published_at: null,
+          scheduled_at: null,
+          created_at: new Date().toISOString(),
+        };
+
         registerInAppDownload({
-          id: Date.now(),
+          id: realVideoId,
           title: videoTitle,
           localPath: destPath,
           quality: label,
           downloadedAt: new Date().toISOString(),
-          video: {
-            id: Date.now(),
-            title: videoTitle,
-            description: null,
-            main_thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-            category: 'General',
-            tags: [],
-            status: 'published',
-            encode_progress: 100,
-            is_playable: true,
-            views: 0,
-            duration: '00:00',
-            published_at: null,
-            scheduled_at: null,
-            created_at: new Date().toISOString(),
-          },
+          video: downloadVideoObj,
         });
 
         Alert.alert(
@@ -432,12 +460,14 @@ export default function NativeVideoPlayer({
         onError={(e: any) => {
           const { message = 'Failed to load video stream', errorCode } = e.nativeEvent || {};
 
-          if (activeCaptions.length > 0 && (message.includes('404') || message.includes('BAD_HTTP_STATUS') || String(errorCode).includes('IO'))) {
-            console.warn('[NativeVideoPlayer] Side-loaded VTT returned 404, clearing side-loaded captions list...');
+          if (activeCaptions.length > 0) {
+            console.warn('[NativeVideoPlayer] Clearing side-loaded captions list to ensure smooth video stream playback...');
             setActiveCaptions([]);
             if (!hasEmbeddedCaptions) {
               setSelectedCaptionIndex(-1);
             }
+            setRetryCount(prev => prev + 1);
+            setError(null);
             return;
           }
 

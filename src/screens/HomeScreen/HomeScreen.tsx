@@ -37,7 +37,7 @@ export function HomeScreen({ navigation }: any) {
     reload,
   } = useVideos();
 
-  const { continueWatching } = useWatchHistory();
+  const { continueWatching } = useWatchHistory(videos);
 
   const {
     playingVideo,
@@ -84,10 +84,8 @@ export function HomeScreen({ navigation }: any) {
   // 2. Popular Videos: sorted by highest views engagement
   const popularVideosSorted = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0));
 
-  // 3. Continue Watching: watch history
-  const continueWatchingList = continueWatching.length > 0
-    ? continueWatching
-    : videos.slice(0, 3);
+  // 3. Continue Watching: watch history filtered to available videos
+  const continueWatchingList = continueWatching;
 
   // Multi-item Pluralsight Hero Banners from live videos
   const heroItems: HeroItem[] = [
