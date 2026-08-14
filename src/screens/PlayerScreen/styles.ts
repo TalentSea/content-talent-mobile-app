@@ -94,4 +94,9 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  fullscreenContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000000',
+  },
 });

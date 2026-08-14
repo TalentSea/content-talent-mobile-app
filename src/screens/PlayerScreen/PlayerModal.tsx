@@ -56,9 +56,13 @@ export function PlayerModal({
   const [copiedLink, setCopiedLink] = useState(false);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+<<<<<<< Updated upstream
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [likesCount, setLikesCount] = useState<number>(0);
   const hasCountedViewRef = useRef(false);
+=======
+  const [videoRatio, setVideoRatio] = useState<number | null>(null);
+>>>>>>> Stashed changes
   const { width, height } = useWindowDimensions();
 
   const currentVideoId = (playingVideo as any)?.id || 1;
@@ -95,6 +99,7 @@ export function PlayerModal({
       setShowFullDescription(false);
       setShowShareModal(false);
       setCopiedLink(false);
+      setVideoRatio(null);
     }
   }, [playingVideo, currentVideoId]);
 
@@ -170,12 +175,29 @@ export function PlayerModal({
   const durationText = (playingVideo as any)?.duration || '00:00';
   const timeAgoText = getRelativeTimeString((playingVideo as any)?.published_at || (playingVideo as any)?.created_at);
 
+  const categoryLower = categoryName.toLowerCase();
+  const titleLower = (playingVideo?.title || '').toLowerCase();
+
+  const isShortVideo =
+    categoryLower === 'shorts' ||
+    categoryLower === 'short' ||
+    titleLower.includes('soup dumplings') ||
+    (videoRatio != null && videoRatio < 0.95);
+
+  const activeRatio = isShortVideo ? 2 / 3 : 16 / 9;
+
+  const playerResizeMode = isFullscreen
+    ? isShortVideo
+      ? 'contain'
+      : 'cover'
+    : 'cover';
+
   return (
     <Modal
       visible={!!playingVideo}
       animationType="slide"
       onRequestClose={handleClose}
-      statusBarTranslucent
+      statusBarTranslucent={isFullscreen}
     >
       <View style={styles.playerScreen}>
         <StatusBar barStyle="light-content" hidden={isFullscreen} />
@@ -183,12 +205,23 @@ export function PlayerModal({
         <View
           style={
             isFullscreen
-              ? { width, height, backgroundColor: '#000000' }
-              : styles.playerVideoArea
+              ? styles.fullscreenContainer
+              : [
+                  styles.playerVideoArea,
+                  {
+                    width: '100%',
+                    aspectRatio: activeRatio,
+                  },
+                ]
           }
         >
           {playingVideo ? (
             <NativeVideoPlayer
+              video={currentVideoObj}
+              id={currentVideoId}
+              category={categoryName}
+              thumbnailUrl={playingVideo.poster}
+              description={playingVideo.description}
               uri={playingVideo.stream_url}
               mp4Url={playingVideo.mp4Url}
               downloadUrls={playingVideo.downloadUrls}
@@ -199,17 +232,14 @@ export function PlayerModal({
               muted={false}
               volume={1}
               playbackRate={1}
-              resizeMode="contain"
+              resizeMode={playerResizeMode}
               captions={playingVideo.captions ?? []}
               inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
               hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
               adTagUrl={playingVideo.adTagUrl}
-              style={
-                isFullscreen
-                  ? { width, height, borderRadius: 0 }
-                  : styles.videoPlayer
-              }
+              style={styles.videoPlayer}
               onToggleFullscreen={toggleFullscreen}
+              onLoadRatio={setVideoRatio}
               autoplay={autoplay}
               onToggleAutoplay={onToggleAutoplay}
               onClose={handleClose}

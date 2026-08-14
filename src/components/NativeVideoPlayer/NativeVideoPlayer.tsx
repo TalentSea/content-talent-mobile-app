@@ -70,6 +70,7 @@ type VideoPlayerProps = {
   autoplay?: boolean;
   onToggleAutoplay?: () => void;
   onToggleFullscreen?: () => void;
+  onLoadRatio?: (ratio: number) => void;
   style?: ViewStyle;
   onClose?: () => void;
   onEnd?: () => void;
@@ -102,6 +103,7 @@ export default function NativeVideoPlayer({
   autoplay,
   onToggleAutoplay,
   onToggleFullscreen,
+  onLoadRatio,
   style,
   onClose,
   onEnd,
@@ -345,8 +347,14 @@ export default function NativeVideoPlayer({
 
   const handleLoad = (e: any) => {
     const d = e.nativeEvent.duration || 0;
+    const w = e.nativeEvent.width || 0;
+    const h = e.nativeEvent.height || 0;
+
     if (d > 0) {
       setDuration(d);
+    }
+    if (w > 0 && h > 0 && onLoadRatio) {
+      onLoadRatio(w / h);
     }
     setIsBuffering(false);
     setError(null);
