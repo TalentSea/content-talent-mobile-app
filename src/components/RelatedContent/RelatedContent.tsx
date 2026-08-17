@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { fetchVideos } from '../../services/api/video';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
-import type { ApiVideo } from '../../types/video';
+import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { formatViews, getRelativeTimeString } from '../../utils/timeUtils';
 import { styles } from './styles';
 
@@ -158,7 +158,7 @@ export function RelatedContent({
                     {item.title}
                   </Text>
                   <Text style={styles.videoMeta} numberOfLines={1}>
-                    {item.category || 'General'} • {formatViews(item.views)}
+                    {item.category || 'General'} • {formatViews(getCleanViewCountForVideo(item.id))}
                   </Text>
                   <Text style={{ color: '#9CA3AF', fontSize: 10, marginTop: 2 }}>
                     {getRelativeTimeString(item.published_at || item.created_at)}

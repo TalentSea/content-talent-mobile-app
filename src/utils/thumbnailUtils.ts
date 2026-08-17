@@ -9,12 +9,18 @@ const DEFAULT_FALLBACK_THUMBNAILS = [
 ];
 
 export function getThumbnailForVideo(video?: ApiVideo | null, fallbackUrl?: string): string {
-  if (video?.main_thumbnail_url && typeof video.main_thumbnail_url === 'string' && video.main_thumbnail_url.trim().length > 0) {
-    return video.main_thumbnail_url;
+  const url =
+    video?.main_thumbnail_url ||
+    (video as any)?.thumbnail_url ||
+    (video as any)?.thumbnail ||
+    (video as any)?.poster_url ||
+    (video as any)?.poster ||
+    fallbackUrl;
+
+  if (url && typeof url === 'string' && url.trim().length > 0) {
+    return url;
   }
-  if (fallbackUrl && typeof fallbackUrl === 'string' && fallbackUrl.trim().length > 0) {
-    return fallbackUrl;
-  }
-  const id = video?.id || 1;
-  return DEFAULT_FALLBACK_THUMBNAILS[Math.abs(id) % DEFAULT_FALLBACK_THUMBNAILS.length];
+
+  // Consistent static dark placeholder fallback if no thumbnail is uploaded
+  return 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80';
 }

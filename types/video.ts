@@ -42,6 +42,8 @@ export type ApiVideo = {
   is_saved?: boolean;
   duration: string | null;
   main_thumbnail_url: string | null;
+  playback_url?: string | null;
+  stream_url?: string | null;
   published_at: string | null;
   scheduled_at: string | null;
   created_at: string | null;
@@ -81,6 +83,7 @@ export type PlayInfo = {
   published_at?: string;
   created_at?: string;
   stream_url: string;
+  playback_url?: string;
   mp4Url?: string;
   downloadUrls?: DownloadItem[];
   poster?: string;

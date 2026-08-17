@@ -14,8 +14,20 @@ function getActivityFilePath(): string {
   return `${RNFS.DocumentDirectoryPath}/user_activity_${userKey}.json`;
 }
 
+function getGlobalLikesFilePath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_global_likes_counts.json`;
+}
+
+function getGlobalUserLikesFilePath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_global_user_likes.json`;
+}
+
 let likedVideosStore: ApiVideo[] = [];
 let savedVideosStore: ApiVideo[] = [];
+
+let globalLikesCounts: Record<string, number> = {};
+let globalUserLikesMap: Record<string, Record<string, boolean>> = {};
+let isGlobalLikesLoaded = false;
 
 const activityListeners: Set<() => void> = new Set();
 
@@ -59,7 +71,63 @@ async function restoreUserActivityFromDisk() {
   }
 }
 
+function getOneTimeResetFlagPath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_one_time_reset_flag_v4.json`;
+}
+
+async function initGlobalLikesStore() {
+  if (isGlobalLikesLoaded) return;
+  try {
+    const flagPath = getOneTimeResetFlagPath();
+    const gPath = getGlobalLikesFilePath();
+    const uPath = getGlobalUserLikesFilePath();
+
+    const hasResetBefore = await RNFS.exists(flagPath);
+
+    if (!hasResetBefore) {
+      // ONE-TIME RESET ONLY: Purge old likes data once so every video starts at 0 for testing
+      globalLikesCounts = {};
+      globalUserLikesMap = {};
+      if (await RNFS.exists(gPath)) await RNFS.unlink(gPath);
+      if (await RNFS.exists(uPath)) await RNFS.unlink(uPath);
+    } else {
+      // Normal operation: NEVER reset counts on user switch, refresh, or app launch!
+      if (await RNFS.exists(gPath)) {
+        const content = await RNFS.readFile(gPath, 'utf8');
+        const parsed = JSON.parse(content);
+        if (typeof parsed === 'object' && parsed !== null) {
+          globalLikesCounts = { ...parsed };
+        }
+      }
+
+      if (await RNFS.exists(uPath)) {
+        const content = await RNFS.readFile(uPath, 'utf8');
+        const parsed = JSON.parse(content);
+        if (typeof parsed === 'object' && parsed !== null) {
+          globalUserLikesMap = { ...parsed };
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[userActivity] Global likes restore notice:', e);
+  } finally {
+    isGlobalLikesLoaded = true;
+  }
+}
+
+async function saveGlobalLikesToDisk() {
+  try {
+    const gPath = getGlobalLikesFilePath();
+    const uPath = getGlobalUserLikesFilePath();
+    await RNFS.writeFile(gPath, JSON.stringify(globalLikesCounts), 'utf8');
+    await RNFS.writeFile(uPath, JSON.stringify(globalUserLikesMap), 'utf8');
+  } catch (err) {
+    console.warn('[userActivity] Global likes save notice:', err);
+  }
+}
+
 export async function syncUserActivityWithBackend() {
+  await initGlobalLikesStore();
   await restoreUserActivityFromDisk();
 
   try {
@@ -69,7 +137,11 @@ export async function syncUserActivityWithBackend() {
     ]);
 
     if (likedRes.status === 'fulfilled' && likedRes.value?.items && likedRes.value.items.length > 0) {
+      const userKey = getUserStorageKey();
       for (const video of likedRes.value.items) {
+        const key = String(video.id);
+        if (!globalUserLikesMap[key]) globalUserLikesMap[key] = {};
+        globalUserLikesMap[key][userKey] = true;
         if (!likedVideosStore.some(v => v.id === video.id)) {
           likedVideosStore.push(video);
         }
@@ -86,6 +158,7 @@ export async function syncUserActivityWithBackend() {
 
     notifyActivityListeners();
     persistUserActivityToDisk();
+    saveGlobalLikesToDisk();
   } catch (err) {
     console.warn('[userActivity] Backend sync notice:', err);
   }
@@ -93,7 +166,10 @@ export async function syncUserActivityWithBackend() {
 
 // Initial restoration on startup & listener on user login/logout switch
 syncUserActivityWithBackend();
-subscribeAuthChange(() => syncUserActivityWithBackend());
+subscribeAuthChange(async () => {
+  await syncUserActivityWithBackend();
+  notifyActivityListeners();
+});
 
 export function subscribeUserActivity(listener: () => void): () => void {
   activityListeners.add(listener);
@@ -102,28 +178,82 @@ export function subscribeUserActivity(listener: () => void): () => void {
   };
 }
 
-export function isVideoLiked(videoId: number): boolean {
-  return likedVideosStore.some(v => v.id === videoId);
+export function setBackendLikesCount(videoId: number | string, count: number): void {
+  if (!videoId) return;
+  const key = String(videoId);
+  const current = globalLikesCounts[key] || 0;
+  if (count > current) {
+    globalLikesCounts[key] = count;
+    notifyActivityListeners();
+  }
 }
 
+export function getCleanLikesCountForVideo(videoId: number | string): number {
+  if (!videoId) return 0;
+  const key = String(videoId);
+  return globalLikesCounts[key] || 0;
+}
+
+export function isVideoLiked(videoId: number | string): boolean {
+  if (!videoId) return false;
+  const key = String(videoId);
+  if (getCleanLikesCountForVideo(key) <= 0) {
+    return false;
+  }
+  const userKey = getUserStorageKey();
+  if (globalUserLikesMap[key] && globalUserLikesMap[key][userKey] !== undefined) {
+    return !!globalUserLikesMap[key][userKey];
+  }
+  return likedVideosStore.some(v => String(v.id) === key);
+}
+
+const pendingLikeTogglesMap: Map<number, any> = new Map();
+
 export function toggleLikeVideo(video: ApiVideo): boolean {
-  const index = likedVideosStore.findIndex(v => v.id === video.id);
+  const key = String(video.id);
+  const userKey = getUserStorageKey();
+  const currentlyLiked = isVideoLiked(video.id);
   let isNowLiked = false;
 
-  if (index >= 0) {
-    likedVideosStore.splice(index, 1);
-    isNowLiked = false;
-  } else {
-    likedVideosStore.unshift(video);
-    isNowLiked = true;
+  if (!globalUserLikesMap[key]) {
+    globalUserLikesMap[key] = {};
   }
 
+  if (currentlyLiked) {
+    globalUserLikesMap[key][userKey] = false;
+    isNowLiked = false;
+    globalLikesCounts[key] = Math.max(0, (globalLikesCounts[key] || 1) - 1);
+    const storeIdx = likedVideosStore.findIndex(v => String(v.id) === key);
+    if (storeIdx >= 0) {
+      likedVideosStore.splice(storeIdx, 1);
+    }
+  } else {
+    globalUserLikesMap[key][userKey] = true;
+    isNowLiked = true;
+    globalLikesCounts[key] = (globalLikesCounts[key] || 0) + 1;
+    if (!likedVideosStore.some(v => String(v.id) === key)) {
+      likedVideosStore.unshift(video);
+    }
+  }
+
+  saveGlobalLikesToDisk();
   notifyActivityListeners();
   persistUserActivityToDisk();
 
-  toggleUserLikedVideoApi(video.id, isNowLiked).catch(err =>
-    console.warn('[toggleLikeVideo] API toggle notice:', err),
-  );
+  // Clear any existing pending API toggle timer for this video ID
+  if (pendingLikeTogglesMap.has(video.id)) {
+    clearTimeout(pendingLikeTogglesMap.get(video.id));
+  }
+
+  // Debounce API call by 300ms to safely collapse rapid clicks into 1 API request
+  const timer = setTimeout(() => {
+    pendingLikeTogglesMap.delete(video.id);
+    toggleUserLikedVideoApi(video.id, isNowLiked).catch(err =>
+      console.warn('[toggleLikeVideo] API toggle notice:', err),
+    );
+  }, 300);
+
+  pendingLikeTogglesMap.set(video.id, timer);
 
   return isNowLiked;
 }
@@ -169,3 +299,26 @@ export function getSavedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
   }
   return [...savedVideosStore];
 }
+
+export async function resetAllVideoLikesToZero(): Promise<void> {
+  globalLikesCounts = {};
+  globalUserLikesMap = {};
+  likedVideosStore = [];
+
+  try {
+    const gPath = getGlobalLikesFilePath();
+    const uPath = getGlobalUserLikesFilePath();
+
+    if (await RNFS.exists(gPath)) {
+      await RNFS.unlink(gPath);
+    }
+    if (await RNFS.exists(uPath)) {
+      await RNFS.unlink(uPath);
+    }
+  } catch (err) {
+    console.warn('[userActivity] resetAllVideoLikesToZero notice:', err);
+  }
+
+  notifyActivityListeners();
+}
+

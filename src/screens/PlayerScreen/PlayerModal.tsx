@@ -18,13 +18,21 @@ import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
+  getCleanLikesCountForVideo,
   isVideoLiked,
   isVideoSaved,
+  subscribeUserActivity,
   toggleLikeVideo,
   toggleSaveVideo,
 } from '../../services/userActivity';
 import { incrementVideoViewsApi } from '../../services/api/userActivityApi';
-import { hasUserViewedVideoIn24Hours, markVideoAsViewed } from '../../services/viewTracker';
+import {
+  getCleanViewCountForVideo,
+  hasUserViewedVideo,
+  initViewTracker,
+  markVideoAsViewed,
+  subscribeViewTracker,
+} from '../../services/viewTracker';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import type { PlaylistListItem } from '../../services/api/playlistApi';
 import { formatLikes, formatViews, getRelativeTimeString } from '../../utils/timeUtils';
@@ -43,7 +51,7 @@ type PlayerModalProps = {
 
 export function PlayerModal({
   playingVideo,
-  autoplay = false,
+  autoplay = true,
   hasNextVideo = false,
   onToggleAutoplay,
   onVideoEnd,
@@ -86,9 +94,10 @@ export function PlayerModal({
 
   useEffect(() => {
     if (playingVideo) {
+      initViewTracker();
       hasCountedViewRef.current = false;
-      const initialViews = (playingVideo as any)?.views ?? 0;
-      const initialLikes = (playingVideo as any)?.likes ?? (playingVideo as any)?.likes_count ?? 0;
+      const initialViews = getCleanViewCountForVideo(currentVideoId);
+      const initialLikes = getCleanLikesCountForVideo(currentVideoId);
       setViewsCount(initialViews);
       setLikesCount(initialLikes);
 
@@ -102,28 +111,66 @@ export function PlayerModal({
     }
   }, [playingVideo, currentVideoId]);
 
-  function handlePlayerProgress(currentTime: number, duration: number) {
-    // Watch rule: 30 seconds OR 50% of the video duration, whichever happens first.
-    const requiredWatchSeconds = duration > 0 ? Math.min(30, duration * 0.5) : 30;
-    const hasReachedThreshold = currentTime >= requiredWatchSeconds;
+  useEffect(() => {
+    if (!playingVideo) return;
 
-    if (hasReachedThreshold && !hasCountedViewRef.current) {
+    const unsubView = subscribeViewTracker(() => {
+      setViewsCount(getCleanViewCountForVideo(currentVideoId));
+    });
+
+    const unsubActivity = subscribeUserActivity(() => {
+      setLikesCount(getCleanLikesCountForVideo(currentVideoId));
+      setLiked(isVideoLiked(currentVideoId));
+    });
+
+    return () => {
+      unsubView();
+      unsubActivity();
+    };
+  }, [playingVideo, currentVideoId]);
+
+function parseDurationInSeconds(durationVal?: string | number | null): number {
+  if (typeof durationVal === 'number' && !isNaN(durationVal) && durationVal > 0) {
+    return durationVal;
+  }
+  if (typeof durationVal === 'string' && durationVal.trim().length > 0) {
+    const parts = durationVal.trim().split(':').map(p => parseInt(p, 10));
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return parts[0] * 60 + parts[1];
+    }
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    }
+    const parsedNum = parseFloat(durationVal);
+    if (!isNaN(parsedNum) && parsedNum > 0) return parsedNum;
+  }
+  return 0;
+}
+
+  function handlePlayerProgress(currentTime: number, duration?: number) {
+    if (hasCountedViewRef.current) {
+      return;
+    }
+
+    const effectiveDuration = (typeof duration === 'number' && duration > 0)
+      ? duration
+      : parseDurationInSeconds((playingVideo as any)?.duration);
+
+    const requiredWatchTime = (effectiveDuration > 0 && effectiveDuration < 30)
+      ? (effectiveDuration * 0.5)
+      : 30;
+
+    if (currentTime >= requiredWatchTime) {
       hasCountedViewRef.current = true;
-      if (!hasUserViewedVideoIn24Hours(currentVideoId)) {
-        markVideoAsViewed(currentVideoId);
-        setViewsCount(prev => prev + 1);
-        incrementVideoViewsApi(currentVideoId).catch(err =>
-          console.warn('[PlayerModal] Notice incrementing view count:', err),
-        );
-      }
+      markVideoAsViewed(currentVideoId);
+      setViewsCount(getCleanViewCountForVideo(currentVideoId));
     }
   }
 
   function handleToggleLike() {
-    const isCurrentlyLiked = liked;
     const nextLikedState = toggleLikeVideo(currentVideoObj);
     setLiked(nextLikedState);
-    setLikesCount(prev => (isCurrentlyLiked ? Math.max(0, prev - 1) : prev + 1));
+    setLikesCount(getCleanLikesCountForVideo(currentVideoId));
   }
 
   function handleToggleSave() {
@@ -232,7 +279,7 @@ export function PlayerModal({
               category={categoryName}
               thumbnailUrl={playingVideo.poster}
               description={playingVideo.description}
-              uri={playingVideo.stream_url}
+              uri={playingVideo.stream_url || playingVideo.playback_url || ''}
               mp4Url={playingVideo.mp4Url}
               downloadUrls={playingVideo.downloadUrls}
               title={playingVideo.title}

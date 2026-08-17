@@ -16,6 +16,8 @@ import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { styles } from './styles';
 
+import { getCleanViewCountForVideo } from '../../services/viewTracker';
+
 const CATEGORIES = ['All', 'Popular', 'Recent', 'Tech', 'Sci-Fi', 'Animation'];
 
 export function VideoGridScreen({ route, navigation }: any) {
@@ -31,7 +33,7 @@ export function VideoGridScreen({ route, navigation }: any) {
   const title = isPopular ? 'Popular Videos' : isRecent ? 'Recently Added Videos' : 'Processing Videos';
 
   let baseVideos = isPopular
-    ? [...popularVideos].sort((a, b) => (b.views || 0) - (a.views || 0))
+    ? [...popularVideos].sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id))
     : isRecent
     ? [...videos].sort((a, b) => {
         const timeA = new Date(a.published_at || a.created_at || 0).getTime();

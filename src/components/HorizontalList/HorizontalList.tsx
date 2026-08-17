@@ -51,7 +51,6 @@ export function HorizontalList({
               title={item.title}
               thumbnailUrl={item.main_thumbnail_url || undefined}
               category={item.category || undefined}
-              views={item.views != null ? `${item.views} views` : undefined}
               durationText={item.duration || undefined}
               badgeText={item.status}
               isContinueWatching={isContinueWatchingList}

@@ -34,7 +34,7 @@ export function formatViews(views?: number): string {
   if (views >= 1000) {
     return `${(views / 1000).toFixed(1)}K views`;
   }
-  return `${views} views`;
+  return `${views} ${views === 1 ? 'view' : 'views'}`;
 }
 
 export function formatLikes(likes?: number): string {

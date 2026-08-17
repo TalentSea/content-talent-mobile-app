@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable, getStatusDisplay } from '../../constants/videoStatus';
 import { getRelativeTimeString, formatViews, formatLikes, formatDurationString } from '../../utils/timeUtils';
 import { useWatchHistory } from '../../hooks/useWatchHistory';
-import { isVideoLiked } from '../../services/userActivity';
-import { styles } from './styles';
-
+import { getCleanLikesCountForVideo, isVideoLiked } from '../../services/userActivity';
+import { getCleanViewCountForVideo, subscribeViewTracker } from '../../services/viewTracker';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
+import { styles } from './styles';
 
 export type VideoCardProps = {
   video?: ApiVideo;
@@ -30,7 +30,7 @@ export type VideoCardProps = {
 
 export function VideoCard({
   video,
-  id: _id,
+  id: propId,
   title,
   thumbnailUrl,
   category,
@@ -46,7 +46,9 @@ export function VideoCard({
   onDelete,
 }: VideoCardProps) {
   const { history } = useWatchHistory();
-  const currentVideoId = video?.id || (_id ? parseInt(_id) : 1);
+  const currentVideoId = video?.id || (propId ? parseInt(String(propId), 10) : 1);
+
+
 
   // Find progress percentage from watch history
   const watchHistoryItem = history.find(h => h.video.id === currentVideoId);
@@ -58,14 +60,11 @@ export function VideoCard({
   const streamable = video ? isStreamable(video.status) : true;
   const statusInfo = video ? getStatusDisplay(video.status) : null;
   const isEncoding = video?.status?.trim().toUpperCase() === 'ENCODING';
+  const rawViews = getCleanViewCountForVideo(currentVideoId);
+  const rawLikes = getCleanLikesCountForVideo(currentVideoId);
 
-  const rawViews = video?.views ?? (video as any)?.views_count ?? 0;
-  const rawLikes = video?.likes ?? (video as any)?.likes_count ?? 0;
-  const isLikedByMe = video ? isVideoLiked(video.id) : false;
-  const effectiveLikes = isLikedByMe ? Math.max(1, rawLikes) : rawLikes;
-
-  const displayViews = views || formatViews(rawViews);
-  const displayLikes = likes || (effectiveLikes > 0 ? `${formatLikes(effectiveLikes)} ${effectiveLikes === 1 ? 'like' : 'likes'}` : '0 likes');
+  const displayViews = formatViews(rawViews);
+  const displayLikes = rawLikes > 0 ? `${formatLikes(rawLikes)} ${rawLikes === 1 ? 'like' : 'likes'}` : '0 likes';
   const displayDuration = formatDurationString(durationText || video?.duration);
   const uploadedTimeAgo = getRelativeTimeString(video?.published_at || video?.created_at);
 

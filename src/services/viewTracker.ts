@@ -1,74 +1,199 @@
 import RNFS from 'react-native-fs';
+import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+import { clearUserWatchHistoryApi, incrementVideoViewsApi } from './api/userActivityApi';
 
-const VIEWS_TRACKER_FILE = `${RNFS.DocumentDirectoryPath}/streamr_viewed_videos_24h.json`;
-const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
+function getGlobalCountsFilePath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_global_unique_views.json`;
+}
 
-// Stores videoId (as String key) -> timestamp (ms)
-let viewedVideoTimestamps: Record<string, number> = {};
-let isInitialized = false;
+function getGlobalUserViewsFilePath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_global_user_views.json`;
+}
+
+function getOneTimeResetFlagPath(): string {
+  return `${RNFS.DocumentDirectoryPath}/streamr_one_time_reset_flag_v4.json`;
+}
+
+// Global unique view counter store: videoId (string) -> count (number)
+let globalUniqueViewCounts: Record<string, number> = {};
+// Global user views map: videoId (string) -> Record<userKey, boolean>
+let globalUserViewsMap: Record<string, Record<string, boolean>> = {};
+let isGlobalCountsLoaded = false;
 
 export async function initViewTracker(): Promise<void> {
-  if (isInitialized) return;
+  if (isGlobalCountsLoaded) return;
+
   try {
-    const exists = await RNFS.exists(VIEWS_TRACKER_FILE);
-    if (exists) {
-      const content = await RNFS.readFile(VIEWS_TRACKER_FILE, 'utf8');
-      const parsed = JSON.parse(content);
-      if (typeof parsed === 'object' && parsed !== null) {
-        viewedVideoTimestamps = parsed;
+    const flagPath = getOneTimeResetFlagPath();
+    const gPath = getGlobalCountsFilePath();
+    const uPath = getGlobalUserViewsFilePath();
+
+    const hasResetBefore = await RNFS.exists(flagPath);
+
+    if (!hasResetBefore) {
+      // ONE-TIME RESET ONLY: Purge old data once so every video starts at 0 for testing
+      globalUniqueViewCounts = {};
+      globalUserViewsMap = {};
+      if (await RNFS.exists(gPath)) await RNFS.unlink(gPath);
+      if (await RNFS.exists(uPath)) await RNFS.unlink(uPath);
+      await RNFS.writeFile(flagPath, JSON.stringify({ done: true, timestamp: Date.now() }), 'utf8');
+    } else {
+      // Normal operation: NEVER reset counts on user switch, refresh, or app launch!
+      if (await RNFS.exists(gPath)) {
+        const gContent = await RNFS.readFile(gPath, 'utf8');
+        const gParsed = JSON.parse(gContent);
+        if (typeof gParsed === 'object' && gParsed !== null) {
+          globalUniqueViewCounts = { ...gParsed };
+        }
+      }
+
+      if (await RNFS.exists(uPath)) {
+        const uContent = await RNFS.readFile(uPath, 'utf8');
+        const uParsed = JSON.parse(uContent);
+        if (typeof uParsed === 'object' && uParsed !== null) {
+          globalUserViewsMap = { ...uParsed };
+        }
       }
     }
-  } catch (err) {
-    console.warn('[viewTracker] Disk restore notice:', err);
+  } catch (e) {
+    console.warn('[viewTracker] Disk restore notice:', e);
   } finally {
-    isInitialized = true;
+    isGlobalCountsLoaded = true;
   }
 }
+
+// Re-init on user auth change
+subscribeAuthChange(async () => {
+  await initViewTracker();
+  notifyViewListeners();
+});
 
 // Initial restoration
 initViewTracker();
 
-export function hasUserViewedVideoIn24Hours(videoId: number | string): boolean {
+export function hasUserViewedVideo(videoId: number | string): boolean {
+  if (!videoId) return false;
   const key = String(videoId);
-  const lastViewedAt = viewedVideoTimestamps[key];
-  if (!lastViewedAt) return false;
-  const elapsed = Date.now() - Number(lastViewedAt);
-  return elapsed < TWENTY_FOUR_HOURS_MS;
+  const userKey = getUserStorageKey();
+  return !!(globalUserViewsMap[key] && globalUserViewsMap[key][userKey]);
 }
 
-export async function markVideoAsViewed(videoId: number | string): Promise<void> {
-  await initViewTracker();
-  const key = String(videoId);
-  const now = Date.now();
-  viewedVideoTimestamps[key] = now;
+// Backward compatibility alias for hasUserViewedVideo
+export function hasUserViewedVideoIn24Hours(videoId: number | string): boolean {
+  return hasUserViewedVideo(videoId);
+}
 
-  // Prune entries older than 30 days to keep json file clean
-  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-  for (const idStr in viewedVideoTimestamps) {
-    if (now - Number(viewedVideoTimestamps[idStr]) > THIRTY_DAYS_MS) {
-      delete viewedVideoTimestamps[idStr];
+const viewListeners: Set<() => void> = new Set();
+
+function notifyViewListeners() {
+  viewListeners.forEach(fn => {
+    try {
+      fn();
+    } catch (e) {
+      console.warn('[viewTracker] Listener notice:', e);
     }
-  }
+  });
+}
 
+export function subscribeViewTracker(listener: () => void): () => void {
+  viewListeners.add(listener);
+  return () => {
+    viewListeners.delete(listener);
+  };
+}
+
+export function setBackendViewCount(videoId: number | string, count: number): void {
+  if (!videoId) return;
+  const key = String(videoId);
+  const current = globalUniqueViewCounts[key] || 0;
+  if (count > current) {
+    globalUniqueViewCounts[key] = count;
+    notifyViewListeners();
+  }
+}
+
+export function getCleanViewCountForVideo(videoId: number | string): number {
+  if (!videoId) return 0;
+  const key = String(videoId);
+  return globalUniqueViewCounts[key] || 0;
+}
+
+async function saveGlobalViewsToDisk() {
   try {
-    await RNFS.writeFile(
-      VIEWS_TRACKER_FILE,
-      JSON.stringify(viewedVideoTimestamps),
-      'utf8',
-    );
+    const gPath = getGlobalCountsFilePath();
+    const uPath = getGlobalUserViewsFilePath();
+    await RNFS.writeFile(gPath, JSON.stringify(globalUniqueViewCounts), 'utf8');
+    await RNFS.writeFile(uPath, JSON.stringify(globalUserViewsMap), 'utf8');
   } catch (err) {
     console.warn('[viewTracker] Disk save notice:', err);
   }
 }
 
-export async function resetViewTracker(): Promise<void> {
-  viewedVideoTimestamps = {};
-  try {
-    const exists = await RNFS.exists(VIEWS_TRACKER_FILE);
-    if (exists) {
-      await RNFS.unlink(VIEWS_TRACKER_FILE);
-    }
-  } catch (err) {
-    console.warn('[viewTracker] Reset notice:', err);
+const pendingViewIncrementsSet: Set<string> = new Set();
+
+export function markVideoAsViewed(videoId: number | string): boolean {
+  if (!videoId) return false;
+  const key = String(videoId);
+  const userKey = getUserStorageKey();
+
+  if (!globalUserViewsMap[key]) {
+    globalUserViewsMap[key] = {};
   }
+
+  const alreadyViewedByUser = !!globalUserViewsMap[key][userKey];
+
+  if (!alreadyViewedByUser) {
+    globalUserViewsMap[key][userKey] = true;
+    globalUniqueViewCounts[key] = (globalUniqueViewCounts[key] || 0) + 1;
+
+    saveGlobalViewsToDisk();
+    notifyViewListeners();
+
+    incrementVideoViewsApi(Number(videoId)).catch(err =>
+      console.warn('[markVideoAsViewed] API notice:', err),
+    );
+  }
+
+  // Handle concurrent request lock
+  if (!pendingViewIncrementsSet.has(key)) {
+    pendingViewIncrementsSet.add(key);
+    setTimeout(() => {
+      pendingViewIncrementsSet.delete(key);
+    }, 2000);
+    return true;
+  }
+
+  return false;
 }
+
+export async function resetViewTracker(): Promise<void> {
+  await resetAllVideoViewsToZero();
+}
+
+/**
+ * Reset all existing video view counts and related view records to a clean state of 0 views.
+ */
+export async function resetAllVideoViewsToZero(): Promise<void> {
+  globalUniqueViewCounts = {};
+  globalUserViewsMap = {};
+
+  try {
+    const gPath = getGlobalCountsFilePath();
+    const uPath = getGlobalUserViewsFilePath();
+
+    if (await RNFS.exists(gPath)) {
+      await RNFS.unlink(gPath);
+    }
+    if (await RNFS.exists(uPath)) {
+      await RNFS.unlink(uPath);
+    }
+
+    // Clear backend watch history feed
+    await clearUserWatchHistoryApi();
+  } catch (err) {
+    console.warn('[viewTracker] resetAllVideoViewsToZero notice:', err);
+  }
+
+  notifyViewListeners();
+}
+

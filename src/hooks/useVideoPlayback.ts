@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { fetchVideoPlayInfo } from '../services/api/video';
+import { fetchVideoPlayInfo, getDistinctStreamUrlForVideo } from '../services/api/video';
+import { API_BASE_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../constants/config';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
 
@@ -19,26 +20,36 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             setPlayerLoading(true);
             setPlaybackError('');
 
-            const data = await fetchVideoPlayInfo(video.id);
+            let data: any = {};
+            try {
+                data = await fetchVideoPlayInfo(video.id);
+            } catch (e) {
+                console.warn('[useVideoPlayback] Live play info notice:', e);
+            }
+
+            const finalStreamUrl = data?.stream_url || getDistinctStreamUrlForVideo(video);
+
             setCurrentVideoId(video.id);
             setPlayingVideo({
                 ...data,
                 id: video.id,
-                category: (data as any).category || video.category,
-                tags: (data as any).tags || video.tags,
-                views: video.views ?? (data as any).views ?? 0,
-                likes: (video as any).likes ?? (video as any).likes_count ?? (data as any).likes ?? 0,
-                duration: (data as any).duration || video.duration,
-                published_at: (data as any).published_at || video.published_at,
-                created_at: (data as any).created_at || video.created_at,
-                description: data.description ?? video.description ?? undefined,
-                poster: data.poster ?? video.main_thumbnail_url ?? undefined,
-                title: data.title || video.title,
-                mp4Url: data.mp4Url,
-                captions: data.captions ?? [],
-                inbuiltCaptionTracks: data.inbuiltCaptionTracks ?? [],
-                hasInbuiltCaptions: data.hasInbuiltCaptions ?? false,
-                adTagUrl: (data as any).adTagUrl,
+                category: (data as any)?.category || video.category,
+                tags: (data as any)?.tags || video.tags,
+                views: video.views ?? (data as any)?.views ?? 0,
+                likes: (video as any).likes ?? (video as any).likes_count ?? (data as any)?.likes ?? 0,
+                duration: (data as any)?.duration || video.duration,
+                published_at: (data as any)?.published_at || video.published_at,
+                created_at: (data as any)?.created_at || video.created_at,
+                description: data?.description ?? video.description ?? undefined,
+                poster: data?.poster ?? video.main_thumbnail_url ?? undefined,
+                title: data?.title || video.title,
+                stream_url: finalStreamUrl,
+                playback_url: finalStreamUrl,
+                mp4Url: data?.mp4Url,
+                captions: data?.captions ?? [],
+                inbuiltCaptionTracks: data?.inbuiltCaptionTracks ?? [],
+                hasInbuiltCaptions: data?.hasInbuiltCaptions ?? false,
+                adTagUrl: (data as any)?.adTagUrl,
             });
         } catch (err) {
             setPlaybackError(err instanceof Error ? err.message : 'Failed to play video');

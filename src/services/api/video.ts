@@ -2,6 +2,8 @@ import { apiGet } from './client';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
+import { getCleanViewCountForVideo, setBackendViewCount } from '../viewTracker';
+import { getCleanLikesCountForVideo, setBackendLikesCount } from '../userActivity';
 import type {
   PaginatedVideosResponse,
   VideoDetails,
@@ -16,19 +18,90 @@ export type FetchVideosParams = {
   limit?: number;
 };
 
+const DISTINCT_STREAM_FALLBACKS = [
+  'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+  'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+  'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+];
+
+export function getDistinctStreamUrlForVideo(video: any): string {
+  let url =
+    video?.hls_stream_url ||
+    video?.playback_url ||
+    video?.stream_url ||
+    video?.hls_url ||
+    video?.video_url ||
+    video?.play_url ||
+    video?.url ||
+    video?.file_url ||
+    video?.stream_path ||
+    video?.file_path ||
+    null;
+
+  const libraryId = video?.bunny_library_id || video?.library_id;
+  const videoIdStr = video?.bunny_video_id || video?.video_id;
+
+  if (!url && videoIdStr && libraryId) {
+    return `https://vz-${libraryId}.b-cdn.net/${videoIdStr}/playlist.m3u8`;
+  }
+
+  // Extract Bunny CDN playlist URL from thumbnail_url GUID if stream URL is missing
+  const thumbUrl = video?.thumbnail_url || video?.main_thumbnail_url;
+  if (!url && thumbUrl && typeof thumbUrl === 'string' && thumbUrl.includes('.b-cdn.net/')) {
+    const guidMatch = thumbUrl.match(/\.b-cdn\.net\/([a-f0-9\-]+)\//i);
+    if (guidMatch && guidMatch[1]) {
+      return `https://talentsea6777.b-cdn.net/${guidMatch[1]}/playlist.m3u8`;
+    }
+  }
+
+  if (url && typeof url === 'string' && url.trim().length > 0 && url !== API_BASE_URL) {
+    url = url.trim();
+    if (url.startsWith('/')) {
+      return `${API_BASE_URL}${url}`;
+    }
+    return url;
+  }
+
+  const idNum = typeof video?.id === 'number' ? video.id : 1;
+  return DISTINCT_STREAM_FALLBACKS[Math.abs(idNum) % DISTINCT_STREAM_FALLBACKS.length];
+}
+
 export function normalizeVideoItem(item: any): import('../../../types/video').ApiVideo {
   if (!item) return item;
-  const rawViews = item.views ?? item.views_count ?? item.view_count ?? 0;
-  const rawLikes = item.likes ?? item.likes_count ?? item.like_count ?? 0;
-  const parsedViews = typeof rawViews === 'number' ? rawViews : parseInt(String(rawViews), 10) || 0;
-  const parsedLikes = typeof rawLikes === 'number' ? rawLikes : parseInt(String(rawLikes), 10) || 0;
+
+  const finalViews = item.id ? getCleanViewCountForVideo(item.id) : 0;
+  const finalLikes = item.id ? getCleanLikesCountForVideo(item.id) : 0;
+
+  // Extract real thumbnail URL sent by FastAPI backend (thumbnail_url):
+  let thumbUrl =
+    item.thumbnail_url ||
+    item.main_thumbnail_url ||
+    item.thumbnail ||
+    item.poster_url ||
+    item.poster ||
+    item.main_thumbnail ||
+    null;
+
+  if (thumbUrl && typeof thumbUrl === 'string') {
+    thumbUrl = thumbUrl.trim();
+    if (thumbUrl.startsWith('/')) {
+      thumbUrl = `${API_BASE_URL}${thumbUrl}`;
+    }
+  }
+
+  const streamUrl = getDistinctStreamUrlForVideo(item);
 
   return {
     ...item,
-    views: parsedViews,
-    likes: parsedLikes,
-    views_count: parsedViews,
-    likes_count: parsedLikes,
+    views: finalViews,
+    likes: finalLikes,
+    views_count: finalViews,
+    likes_count: finalLikes,
+    main_thumbnail_url: thumbUrl,
+    playback_url: streamUrl,
+    stream_url: streamUrl,
   };
 }
 
@@ -82,20 +155,20 @@ export async function fetchVideos(
     }
 
     return {
-      total: MOCK_VIDEOS_LIST.length,
+      total: 0,
       page: 1,
       limit: 50,
       total_pages: 1,
-      items: MOCK_VIDEOS_LIST.map(normalizeVideoItem),
+      items: [],
     };
   } catch (error) {
     console.warn('[fetchVideos] Live API notice:', error);
     return {
-      total: MOCK_VIDEOS_LIST.length,
+      total: 0,
       page: 1,
       limit: 50,
       total_pages: 1,
-      items: MOCK_VIDEOS_LIST.map(normalizeVideoItem),
+      items: [],
     };
   }
 }
@@ -107,7 +180,7 @@ export async function fetchVideoDetails(
     // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
     try {
       const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
-      if (mobileRes && mobileRes.playback_url && mobileRes.playback_url.trim() !== '') {
+      if (mobileRes) {
         return normalizeVideoItem(mobileRes) as VideoDetails;
       }
     } catch (e) {
@@ -116,33 +189,42 @@ export async function fetchVideoDetails(
 
     // 2. Fallback: Admin Video Details (/api/v1/admin/videos/{id})
     const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
-    if (adminRes && adminRes.playback_url && adminRes.playback_url.trim() !== '') {
+    if (adminRes) {
       return normalizeVideoItem(adminRes) as VideoDetails;
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);
   }
 
-  // 3. Fallback: Demo streamable video details if video is not in DB yet or playback_url is empty
-  const fallback = MOCK_VIDEO_DETAILS_MAP[videoId] || MOCK_VIDEO_DETAILS_MAP[1];
+  // Fallback: minimal streamable structure if server details missing
   return normalizeVideoItem({
-    ...fallback,
     id: videoId,
-    playback_url: fallback.playback_url && fallback.playback_url.trim() !== '' ? fallback.playback_url : MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
+    title: `Video ${videoId}`,
+    description: null,
+    category: 'General',
+    tags: [],
+    status: 'published',
+    encode_progress: 100,
+    is_playable: true,
+    views: 0,
+    likes: 0,
+    duration: '00:00',
+    main_thumbnail_url: null,
+    published_at: new Date().toISOString(),
+    scheduled_at: null,
+    created_at: new Date().toISOString(),
+    playback_url: MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
   }) as VideoDetails;
 }
 
 export async function fetchVideoPlayInfo(videoId: number) {
   const video = await fetchVideoDetails(videoId);
-
-  if (!video.playback_url || video.playback_url.trim() === '' || video.playback_url === API_BASE_URL) {
-    video.playback_url = MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS;
-  }
+  let playUrl = getDistinctStreamUrlForVideo(video);
 
   const captions: import('../../../types/video').CaptionTrack[] = [];
   
-  const tokenParams = video.playback_url.includes('?')
-    ? video.playback_url.split('?')[1]
+  const tokenParams = playUrl.includes('?')
+    ? playUrl.split('?')[1]
     : '';
 
   if (Array.isArray(video.captions_data) && video.captions_data.length > 0) {
@@ -150,8 +232,8 @@ export async function fetchVideoPlayInfo(videoId: number) {
       if (cap.url) {
         let captionUri = cap.url.startsWith('http')
           ? cap.url
-          : video.main_thumbnail_url
-            ? video.main_thumbnail_url.replace(/thumb_[0-9]+\.(jpg|png|jpeg)(\?.*)?/, cap.url.replace(/^(\.\.\/)+/, ''))
+          : cap.url.startsWith('/')
+            ? `${API_BASE_URL}${cap.url}`
             : cap.url;
 
         if (tokenParams && !captionUri.includes('token=')) {
@@ -210,9 +292,9 @@ export async function fetchVideoPlayInfo(videoId: number) {
 
   const hlsCaptionInfo = await fetchHLSCaptions(videoId);
 
-  const streamUrl = video.playback_url.startsWith('http')
-    ? video.playback_url
-    : `${API_BASE_URL}${video.playback_url}`;
+  const streamUrl = playUrl.startsWith('http')
+    ? playUrl
+    : `${API_BASE_URL}${playUrl}`;
 
   const mp4Url = (video as any).mp4_download_url || (streamUrl.includes('.m3u8') ? streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') : streamUrl);
 
@@ -248,9 +330,10 @@ export async function fetchVideoPlayInfo(videoId: number) {
     published_at: video.published_at,
     created_at: video.created_at,
     stream_url: streamUrl,
+    playback_url: streamUrl,
     mp4Url,
     downloadUrls,
-    poster: video.main_thumbnail_url,
+    poster: video.main_thumbnail_url || undefined,
     captions,
     inbuiltCaptionTracks: hlsCaptionInfo.inbuiltCaptionTracks,
     hasInbuiltCaptions: hlsCaptionInfo.hasInbuiltCaptions,

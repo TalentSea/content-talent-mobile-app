@@ -111,7 +111,6 @@ export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse
 }
 
 export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean = true) {
-  toggleMockVideoLike(videoId, isLiked);
   try {
     // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/like
     await apiRequest(`/api/v1/mobile/videos/${videoId}/like`, { method: 'POST' });
@@ -147,7 +146,6 @@ export async function toggleUserSavedVideoApi(videoId: number) {
 }
 
 export async function incrementVideoViewsApi(videoId: number) {
-  incrementMockVideoViews(videoId);
   try {
     // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/views
     await apiRequest(`/api/v1/mobile/videos/${videoId}/views`, { method: 'POST' });

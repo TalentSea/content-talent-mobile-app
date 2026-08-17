@@ -32,6 +32,7 @@ import {
 } from '../../services/api/playlistApi';
 import type { ApiVideo } from '../../types/video';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
+import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { formatViews, getRelativeTimeString } from '../../utils/timeUtils';
 import { styles } from './styles';
 
@@ -154,7 +155,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
                 </View>
                 <Text style={styles.heroMetaText}>{finalVideos.length} videos</Text>
                 <Text style={styles.dotMeta}>•</Text>
-                <Text style={styles.heroMetaText}>4.8M views</Text>
+                <Text style={styles.heroMetaText}>{formatViews(finalVideos.reduce((acc, v) => acc + (getCleanViewCountForVideo(v.id) || 0), 0))}</Text>
                 <Text style={styles.dotMeta}>•</Text>
                 <Text style={styles.heroMetaText}>2 months ago</Text>
               </View>

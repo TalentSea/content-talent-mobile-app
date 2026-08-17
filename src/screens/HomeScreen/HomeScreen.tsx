@@ -22,7 +22,9 @@ import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { fetchUserCategoriesApi, MobileCategoryItem } from '../../services/api/userActivityApi';
 import { getCurrentUser } from '../../services/api/authService';
+import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import type { ApiVideo } from '../../types/video';
+import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { styles } from './styles';
 
 export function HomeScreen({ navigation }: any) {
@@ -82,53 +84,25 @@ export function HomeScreen({ navigation }: any) {
   });
 
   // 2. Popular Videos: sorted by highest views engagement
-  const popularVideosSorted = [...videos].sort((a, b) => (b.views || 0) - (a.views || 0));
+  const popularVideosSorted = [...videos].sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id));
 
   // 3. Continue Watching: watch history filtered to available videos
   const continueWatchingList = continueWatching;
 
-  // Multi-item Pluralsight Hero Banners from live videos
-  const heroItems: HeroItem[] = [
-    {
-      id: 'creator_overview_1',
-      type: 'video',
-      title: 'Alex OTT Creator • Instructor Profile',
-      description: 'Senior Mobile Architect leading masterclasses in React Native, HLS Video Streaming, and Microservices.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-      category: 'Creator Profile',
-      badgeLabel: 'CREATOR SPOTLIGHT',
-      duration: 'Instructor',
-      creatorName: 'Alex OTT Creator',
-      creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      rawVideo: videos[0],
-    },
-    {
-      id: 'segment_1',
-      type: 'video',
-      title: 'React Native Architecture & Performance Masterclass',
-      description: 'Segment #1: Fabric renderer, TurboModules, and zero-bridge native execution.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
-      category: 'Development',
-      badgeLabel: 'PLURALSIGHT PATH',
-      duration: '22:15',
-      creatorName: 'Alex OTT Creator',
-      creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      rawVideo: videos.find(v => v.id === 5) || videos[0],
-    },
-    {
-      id: 'segment_2',
-      type: 'trailer',
-      title: 'Tears of Steel - Official Sci-Fi Open Movie Segment',
-      description: 'Segment #2: High-octane HLS stream preview featuring embedded subtitle track switching.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-      category: 'Sci-Fi',
-      badgeLabel: 'FEATURED CLIP',
-      duration: '12:14',
-      creatorName: 'Alex OTT Creator',
-      creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      rawVideo: videos.find(v => v.id === 1) || videos[0],
-    },
-  ];
+  // Build Hero Banner Carousel items dynamically from live uploaded videos
+  const heroItems: HeroItem[] = (videos && videos.length > 0 ? videos.slice(0, 5) : []).map((v, idx) => ({
+    id: `hero_${v.id}`,
+    type: 'video',
+    title: v.title,
+    description: v.description || 'Watch now in high-definition video stream.',
+    thumbnail_url: getThumbnailForVideo(v),
+    category: v.category || 'Featured',
+    badgeLabel: idx === 0 ? 'FEATURED' : 'TRENDING NOW',
+    duration: v.duration || '00:00',
+    creatorName: 'Creator Studio',
+    creatorAvatar: getThumbnailForVideo(v),
+    rawVideo: v,
+  }));
 
   function handleSelectPlaylist(playlistId: number, playlistTitle: string) {
     navigation.navigate('CategoryDetail', {
