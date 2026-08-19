@@ -28,7 +28,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const { videos, loading, reload } = useVideos();
   const { likedVideos, savedVideos } = useUserActivity(videos);
-  const { continueWatching, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
+  const { continueWatching, history, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
   const { downloadedVideos } = useDownloads(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
@@ -41,9 +41,11 @@ export function ProfileScreen({ navigation }: any) {
     role: 'guest',
   };
 
+  const historyVideos: ApiVideo[] = history.map(h => h.video);
+
   const userVideos: ApiVideo[] =
     activeTab === 'history'
-      ? continueWatching
+      ? historyVideos
       : activeTab === 'liked'
       ? likedVideos
       : activeTab === 'saved'
@@ -241,13 +243,13 @@ export function ProfileScreen({ navigation }: any) {
               ]}
               numberOfLines={1}
             >
-              History ({continueWatching.length})
+              History ({history.length})
             </Text>
           </Pressable>
         </View>
 
         {/* Clear All History Header Action Button */}
-        {activeTab === 'history' && continueWatching.length > 0 ? (
+        {activeTab === 'history' && history.length > 0 ? (
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 }}>
             <Pressable
               style={({ pressed }) => [{

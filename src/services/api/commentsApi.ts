@@ -1,6 +1,5 @@
 import RNFS from 'react-native-fs';
 import { apiGet, apiRequest } from './client';
-import { USE_MOCK_VIDEOS } from '../../constants/config';
 import { getCurrentUser } from './authService';
 
 export type CommentReplyItem = {
@@ -10,6 +9,10 @@ export type CommentReplyItem = {
   user_id: number;
   user_name: string;
   user_avatar?: string;
+  reply_to_user?: string;
+  likes: number;
+  is_liked: boolean;
+  is_owner?: boolean;
   created_at?: string;
 };
 
@@ -24,6 +27,7 @@ export type CommentItem = {
   likes: number;
   is_liked: boolean;
   reply_count: number;
+  is_owner?: boolean;
   created_at?: string;
   replies?: CommentReplyItem[];
 };
@@ -44,98 +48,14 @@ export type PaginatedRepliesResponse = {
   items: CommentReplyItem[];
 };
 
-// Initial Mock comments store with YouTube-style structure (likes, replies)
-const MOCK_COMMENTS_MAP: Record<number, CommentItem[]> = {
-  1: [
-    {
-      id: 101,
-      user_id: 2,
-      user_name: 'Alex Johnson',
-      user_avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-      text: 'Amazing HLS video playback quality! Super smooth transition.',
-      video_id: 1,
-      video_title: 'Tears of Steel',
-      likes: 24,
-      is_liked: false,
-      reply_count: 2,
-      created_at: new Date(Date.now() - 7200000).toISOString(),
-      replies: [
-        {
-          id: 1001,
-          comment_id: 101,
-          text: 'Agreed! The embedded subtitle switching works flawlessly too.',
-          user_id: 3,
-          user_name: 'Sarah Miller',
-          user_avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          id: 1002,
-          comment_id: 101,
-          text: 'Thanks! Powered by ExoPlayer & HLS multi-track rendering.',
-          user_id: 1,
-          user_name: 'Alex OTT Creator (Instructor)',
-          user_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-          created_at: new Date(Date.now() - 1800000).toISOString(),
-        },
-      ],
-    },
-    {
-      id: 102,
-      user_id: 4,
-      user_name: 'David Chen',
-      user_avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
-      text: 'Great breakdown of HLS captions and multi-language audio!',
-      video_id: 1,
-      video_title: 'Tears of Steel',
-      likes: 15,
-      is_liked: true,
-      reply_count: 1,
-      created_at: new Date(Date.now() - 14400000).toISOString(),
-      replies: [
-        {
-          id: 1003,
-          comment_id: 102,
-          text: 'Very helpful demo for mobile video developers.',
-          user_id: 5,
-          user_name: 'Elena Rostova',
-          created_at: new Date(Date.now() - 7200000).toISOString(),
-        },
-      ],
-    },
-  ],
-  5: [
-    {
-      id: 201,
-      user_id: 6,
-      user_name: 'Marcus Vance',
-      user_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80',
-      text: 'Best React Native performance masterclass I have seen!',
-      video_id: 5,
-      video_title: 'React Native Architecture',
-      likes: 42,
-      is_liked: true,
-      reply_count: 1,
-      created_at: new Date(Date.now() - 10800000).toISOString(),
-      replies: [
-        {
-          id: 2001,
-          comment_id: 201,
-          text: 'The TurboModule segment answered so many questions.',
-          user_id: 7,
-          user_name: 'Priya Sharma',
-          created_at: new Date(Date.now() - 5400000).toISOString(),
-        },
-      ],
-    },
-  ],
-};
+// Real User comments store ONLY (No mocked/seeded comments)
+const REAL_COMMENTS_MAP: Record<number, CommentItem[]> = {};
 
-const COMMENTS_STORAGE_PATH = `${RNFS.DocumentDirectoryPath}/session_comments.json`;
+const COMMENTS_STORAGE_PATH = `${RNFS.DocumentDirectoryPath}/session_real_comments_v5.json`;
 
 async function persistCommentsToDisk() {
   try {
-    const data = JSON.stringify(MOCK_COMMENTS_MAP);
+    const data = JSON.stringify(REAL_COMMENTS_MAP);
     await RNFS.writeFile(COMMENTS_STORAGE_PATH, data, 'utf8');
   } catch (e) {
     console.warn('[commentsApi] Disk save notice:', e);
@@ -152,12 +72,7 @@ async function restoreCommentsFromDisk() {
         for (const vId in parsed) {
           const numId = Number(vId);
           if (Array.isArray(parsed[vId])) {
-            const existing = MOCK_COMMENTS_MAP[numId] || [];
-            const map = new Map<number, CommentItem>();
-            for (const item of [...parsed[vId], ...existing]) {
-              if (item && item.id) map.set(item.id, item);
-            }
-            MOCK_COMMENTS_MAP[numId] = Array.from(map.values());
+            REAL_COMMENTS_MAP[numId] = parsed[vId];
           }
         }
       }
@@ -169,16 +84,65 @@ async function restoreCommentsFromDisk() {
 
 restoreCommentsFromDisk();
 
-function deduplicateCommentItems(items: CommentItem[]): CommentItem[] {
-  const seen = new Set<number>();
-  const result: CommentItem[] = [];
+function normalizeReply(item: any): CommentReplyItem {
+  if (!item) return item;
+  const author = item.author || {};
+  const currentUser = getCurrentUser();
+  const userId = author.id || item.user_id || (currentUser ? currentUser.id : 0);
+  const isOwner = item.is_owner ?? (currentUser ? currentUser.id === userId : false);
+
+  const fallbackName = currentUser && currentUser.id === userId ? currentUser.name : 'User';
+  const authorName = author.name || author.username || item.user_name || item.username || fallbackName;
+
+  return {
+    id: item.id,
+    comment_id: item.comment_id || 0,
+    text: item.text || '',
+    user_id: userId,
+    user_name: authorName,
+    user_avatar: author.avatar_url || item.user_avatar || currentUser?.avatar_url,
+    reply_to_user: item.reply_to_user,
+    likes: typeof item.likes === 'number' ? item.likes : 0,
+    is_liked: !!item.is_liked,
+    is_owner: isOwner,
+    created_at: item.created_at || new Date().toISOString(),
+  };
+}
+
+export function normalizeComment(item: any): CommentItem {
+  if (!item) return item;
+  const author = item.author || {};
+  const currentUser = getCurrentUser();
+  const userId = author.id || item.user_id || (currentUser ? currentUser.id : 0);
+  const isOwner = item.is_owner ?? (currentUser ? currentUser.id === userId : false);
+
+  const fallbackName = currentUser && currentUser.id === userId ? currentUser.name : 'User';
+  const authorName = author.name || author.username || item.user_name || item.username || fallbackName;
+
+  return {
+    id: item.id,
+    user_id: userId,
+    user_name: authorName,
+    user_avatar: author.avatar_url || item.user_avatar || currentUser?.avatar_url,
+    text: item.text || '',
+    video_id: item.video_id || 0,
+    likes: typeof item.likes === 'number' ? item.likes : 0,
+    is_liked: !!item.is_liked,
+    reply_count: typeof item.reply_count === 'number' ? item.reply_count : 0,
+    is_owner: isOwner,
+    created_at: item.created_at || new Date().toISOString(),
+    replies: Array.isArray(item.replies) ? item.replies.map(normalizeReply) : [],
+  };
+}
+
+function deduplicateComments(items: CommentItem[]): CommentItem[] {
+  const map = new Map<number, CommentItem>();
   for (const item of items) {
-    if (item && item.id && !seen.has(item.id)) {
-      seen.add(item.id);
-      result.push(item);
+    if (item && item.id) {
+      map.set(item.id, item);
     }
   }
-  return result;
+  return Array.from(map.values());
 }
 
 export async function fetchVideoComments(
@@ -187,34 +151,47 @@ export async function fetchVideoComments(
   page: number = 1,
   limit: number = 20,
 ): Promise<PaginatedCommentsResponse> {
-  const localList = MOCK_COMMENTS_MAP[videoId] || [];
-
-  if (USE_MOCK_VIDEOS) {
-    const defaultList = MOCK_COMMENTS_MAP[1] || [];
-    const combined = deduplicateCommentItems([...localList, ...defaultList]);
-    return {
-      total: combined.length,
-      page,
-      limit,
-      total_pages: 1,
-      items: combined,
-    };
-  }
+  const localList = (REAL_COMMENTS_MAP[videoId] || []).map(normalizeComment);
 
   try {
     const query = new URLSearchParams();
-    query.set('videoId', String(videoId));
     query.set('sort', sort);
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
-    const response = await apiGet<PaginatedCommentsResponse>(
+    // Backend Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
+    const response = await apiGet<any>(
       `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
     );
 
-    const remoteItems = response?.items || [];
-    const combined = deduplicateCommentItems([...localList, ...remoteItems]);
+    const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
+    const normalizedRemote = rawItems.map(normalizeComment);
+
+    // Eagerly load saved replies from backend for comments with reply_count > 0
+    await Promise.all(
+      normalizedRemote.map(async (comment: CommentItem) => {
+        if (comment.reply_count > 0 || (comment.replies && comment.replies.length > 0)) {
+          try {
+            const repliesRes = await fetchCommentReplies(comment.id);
+            if (repliesRes && repliesRes.items && repliesRes.items.length > 0) {
+              const mergedMap = new Map<number, CommentReplyItem>();
+              for (const r of [...repliesRes.items, ...(comment.replies || [])]) {
+                if (r && r.id) mergedMap.set(r.id, r);
+              }
+              comment.replies = Array.from(mergedMap.values());
+              comment.reply_count = Math.max(comment.reply_count, comment.replies.length);
+            }
+          } catch (e) {
+            // Safe catch
+          }
+        }
+      }),
+    );
+
+    const combined = deduplicateComments([...normalizedRemote, ...localList]);
+
+    REAL_COMMENTS_MAP[videoId] = combined;
+    persistCommentsToDisk();
 
     return {
       total: combined.length,
@@ -224,15 +201,13 @@ export async function fetchVideoComments(
       items: combined,
     };
   } catch (error) {
-    console.warn(`[fetchVideoComments] Mobile API notice for video ${videoId}:`, error);
-    const defaultList = MOCK_COMMENTS_MAP[1] || [];
-    const combined = deduplicateCommentItems([...localList, ...defaultList]);
+    console.warn(`[fetchVideoComments] Backend API notice for video ${videoId}:`, error);
     return {
-      total: combined.length,
+      total: localList.length,
       page: 1,
       limit: 20,
       total_pages: 1,
-      items: combined,
+      items: localList,
     };
   }
 }
@@ -240,31 +215,26 @@ export async function fetchVideoComments(
 export async function fetchCommentReplies(
   commentId: number,
 ): Promise<PaginatedRepliesResponse> {
-  if (USE_MOCK_VIDEOS) {
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent && parent.replies) {
-        return {
-          total: parent.replies.length,
-          page: 1,
-          limit: 20,
-          total_pages: 1,
-          items: parent.replies,
-        };
-      }
-    }
-    return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
-  }
-
   try {
-    // Exclusive Mobile Endpoint: GET /api/v1/mobile/comments/{id}/replies
-    return await apiGet<PaginatedRepliesResponse>(
+    // Backend Endpoint: GET /api/v1/mobile/comments/{id}/replies
+    const response = await apiGet<any>(
       `/api/v1/mobile/comments/${commentId}/replies`,
     );
+
+    const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
+    const normalized = rawItems.map(normalizeReply);
+
+    return {
+      total: normalized.length,
+      page: 1,
+      limit: 20,
+      total_pages: 1,
+      items: normalized,
+    };
   } catch (error) {
-    console.warn(`[fetchCommentReplies] Mobile API notice for comment ${commentId}:`, error);
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
+    console.warn(`[fetchCommentReplies] Backend API notice for comment ${commentId}:`, error);
+    for (const vId in REAL_COMMENTS_MAP) {
+      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
       if (parent && parent.replies) {
         return {
           total: parent.replies.length,
@@ -276,103 +246,6 @@ export async function fetchCommentReplies(
       }
     }
     return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
-  }
-}
-
-export async function postCommentReply(
-  commentId: number,
-  text: string,
-): Promise<CommentReplyItem> {
-  const user = getCurrentUser();
-
-  if (!USE_MOCK_VIDEOS) {
-    try {
-      // Primary: Mobile Endpoint POST /api/v1/mobile/comments/{id}/reply
-      const response = await apiRequest<CommentReplyItem>(
-        `/api/v1/mobile/comments/${commentId}/reply`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ text }),
-        },
-      );
-      if (response && response.id) {
-        for (const vId in MOCK_COMMENTS_MAP) {
-          const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-          if (parent) {
-            if (!parent.replies) parent.replies = [];
-            if (!parent.replies.some(r => r.id === response.id)) {
-              parent.replies.push(response);
-              parent.reply_count = parent.replies.length;
-            }
-            break;
-          }
-        }
-        persistCommentsToDisk();
-        return response;
-      }
-    } catch (error) {
-      console.warn(`[postCommentReply] Mobile API notice for comment ${commentId}:`, error);
-    }
-  }
-
-  const fallbackReply: CommentReplyItem = {
-    id: Date.now() + Math.floor(Math.random() * 10000),
-    comment_id: commentId,
-    text,
-    user_id: user?.id || 42,
-    user_name: user?.name || 'You',
-    user_avatar: user?.avatar_url,
-    created_at: new Date().toISOString(),
-  };
-
-  for (const vId in MOCK_COMMENTS_MAP) {
-    const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-    if (parent) {
-      if (!parent.replies) parent.replies = [];
-      parent.replies.push(fallbackReply);
-      parent.reply_count = parent.replies.length;
-      break;
-    }
-  }
-  persistCommentsToDisk();
-
-  return fallbackReply;
-}
-
-export async function toggleCommentLike(
-  commentId: number,
-): Promise<{ is_liked: boolean; likes: number }> {
-  if (USE_MOCK_VIDEOS) {
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const comment = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (comment) {
-        comment.is_liked = !comment.is_liked;
-        comment.likes += comment.is_liked ? 1 : -1;
-        persistCommentsToDisk();
-        return { is_liked: comment.is_liked, likes: comment.likes };
-      }
-    }
-    return { is_liked: true, likes: 1 };
-  }
-
-  try {
-    // Exclusive Mobile Endpoint: POST /api/v1/mobile/comments/{id}/like
-    return await apiRequest<{ is_liked: boolean; likes: number }>(
-      `/api/v1/mobile/comments/${commentId}/like`,
-      { method: 'POST' },
-    );
-  } catch (error) {
-    console.warn(`[toggleCommentLike] Mobile API notice for comment ${commentId}:`, error);
-    for (const vId in MOCK_COMMENTS_MAP) {
-      const comment = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (comment) {
-        comment.is_liked = !comment.is_liked;
-        comment.likes += comment.is_liked ? 1 : -1;
-        persistCommentsToDisk();
-        return { is_liked: comment.is_liked, likes: comment.likes };
-      }
-    }
-    return { is_liked: true, likes: 1 };
   }
 }
 
@@ -382,72 +255,202 @@ export async function createTopLevelComment(
 ): Promise<CommentItem> {
   const user = getCurrentUser();
 
-  if (!USE_MOCK_VIDEOS) {
-    try {
-      // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/comments
-      const response = await apiRequest<CommentItem>(`/api/v1/mobile/videos/${videoId}/comments`, {
+  try {
+    // Backend Endpoint: POST /api/v1/mobile/videos/{video_id}/comments
+    const rawRes = await apiRequest<any>(`/api/v1/mobile/videos/${videoId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    });
+
+    const normalized = normalizeComment(rawRes);
+    if (!REAL_COMMENTS_MAP[videoId]) {
+      REAL_COMMENTS_MAP[videoId] = [];
+    }
+    REAL_COMMENTS_MAP[videoId] = deduplicateComments([normalized, ...REAL_COMMENTS_MAP[videoId]]);
+    persistCommentsToDisk();
+    return normalized;
+  } catch (error) {
+    console.warn(`[createTopLevelComment] Backend API notice for video ${videoId}:`, error);
+    const fallbackComment: CommentItem = {
+      id: Date.now(),
+      user_id: user?.id || 1,
+      user_name: user?.name || 'You',
+      user_avatar: user?.avatar_url,
+      text,
+      video_id: videoId,
+      likes: 0,
+      is_liked: false,
+      reply_count: 0,
+      is_owner: true,
+      created_at: new Date().toISOString(),
+      replies: [],
+    };
+
+    if (!REAL_COMMENTS_MAP[videoId]) {
+      REAL_COMMENTS_MAP[videoId] = [];
+    }
+    REAL_COMMENTS_MAP[videoId].unshift(fallbackComment);
+    persistCommentsToDisk();
+    return fallbackComment;
+  }
+}
+
+export async function postCommentReply(
+  commentId: number,
+  text: string,
+): Promise<CommentReplyItem> {
+  const user = getCurrentUser();
+
+  try {
+    // Backend Endpoint: POST /api/v1/mobile/comments/{id}/reply
+    const rawRes = await apiRequest<any>(
+      `/api/v1/mobile/comments/${commentId}/reply`,
+      {
         method: 'POST',
         body: JSON.stringify({ text }),
-      });
-      if (response && response.id) {
-        if (!MOCK_COMMENTS_MAP[videoId]) {
-          MOCK_COMMENTS_MAP[videoId] = [];
-        }
-        if (!MOCK_COMMENTS_MAP[videoId].some(c => c.id === response.id)) {
-          MOCK_COMMENTS_MAP[videoId].unshift(response);
-        }
-        persistCommentsToDisk();
-        return response;
+      },
+    );
+
+    const normalized = normalizeReply(rawRes);
+    for (const vId in REAL_COMMENTS_MAP) {
+      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (parent) {
+        if (!parent.replies) parent.replies = [];
+        parent.replies.push(normalized);
+        parent.reply_count = parent.replies.length;
+        break;
       }
-    } catch (error) {
-      console.warn(`[createTopLevelComment] Mobile API notice for video ${videoId}:`, error);
     }
+    persistCommentsToDisk();
+    return normalized;
+  } catch (error) {
+    console.warn(`[postCommentReply] Backend API notice for comment ${commentId}:`, error);
+    const fallbackReply: CommentReplyItem = {
+      id: Date.now(),
+      comment_id: commentId,
+      text,
+      user_id: user?.id || 1,
+      user_name: user?.name || 'You',
+      user_avatar: user?.avatar_url,
+      likes: 0,
+      is_liked: false,
+      is_owner: true,
+      created_at: new Date().toISOString(),
+    };
+
+    for (const vId in REAL_COMMENTS_MAP) {
+      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (parent) {
+        if (!parent.replies) parent.replies = [];
+        parent.replies.push(fallbackReply);
+        parent.reply_count = parent.replies.length;
+        break;
+      }
+    }
+    persistCommentsToDisk();
+    return fallbackReply;
   }
+}
 
-  const fallbackComment: CommentItem = {
-    id: Date.now() + Math.floor(Math.random() * 10000),
-    user_id: user?.id || 42,
-    user_name: user?.name || 'You',
-    user_avatar: user?.avatar_url,
-    text,
-    video_id: videoId,
-    likes: 0,
-    is_liked: false,
-    reply_count: 0,
-    created_at: new Date().toISOString(),
-    replies: [],
-  };
+export async function toggleCommentLike(
+  commentId: number,
+): Promise<{ is_liked: boolean; likes: number }> {
+  try {
+    // Backend Endpoint: POST /api/v1/mobile/comments/{id}/like
+    const res = await apiRequest<{ is_liked: boolean; likes: number; status?: string }>(
+      `/api/v1/mobile/comments/${commentId}/like`,
+      { method: 'POST' },
+    );
+    const isLiked = !!res.is_liked;
+    const likes = typeof res.likes === 'number' ? res.likes : 0;
 
-  if (!MOCK_COMMENTS_MAP[videoId]) {
-    MOCK_COMMENTS_MAP[videoId] = [];
+    for (const vId in REAL_COMMENTS_MAP) {
+      const comment = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (comment) {
+        comment.is_liked = isLiked;
+        comment.likes = likes;
+        persistCommentsToDisk();
+        break;
+      }
+    }
+    return { is_liked: isLiked, likes };
+  } catch (error) {
+    console.warn(`[toggleCommentLike] Backend API notice for comment ${commentId}:`, error);
+    for (const vId in REAL_COMMENTS_MAP) {
+      const comment = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (comment) {
+        comment.is_liked = !comment.is_liked;
+        comment.likes = Math.max(0, comment.likes + (comment.is_liked ? 1 : -1));
+        persistCommentsToDisk();
+        return { is_liked: comment.is_liked, likes: comment.likes };
+      }
+    }
+    return { is_liked: true, likes: 1 };
   }
-  MOCK_COMMENTS_MAP[videoId].unshift(fallbackComment);
-  persistCommentsToDisk();
+}
 
-  return fallbackComment;
+export async function toggleReplyLike(
+  videoId: number,
+  commentId: number,
+  replyId: number,
+): Promise<{ is_liked: boolean; likes: number }> {
+  try {
+    const res = await apiRequest<{ is_liked: boolean; likes: number; status?: string }>(
+      `/api/v1/mobile/comments/${replyId}/like`,
+      { method: 'POST' },
+    );
+    const isLiked = !!res.is_liked;
+    const likes = typeof res.likes === 'number' ? res.likes : 0;
+
+    const vId = Number(videoId);
+    if (REAL_COMMENTS_MAP[vId]) {
+      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (parent && parent.replies) {
+        const reply = parent.replies.find(r => r.id === replyId);
+        if (reply) {
+          reply.is_liked = isLiked;
+          reply.likes = likes;
+          persistCommentsToDisk();
+        }
+      }
+    }
+    return { is_liked: isLiked, likes };
+  } catch (error) {
+    console.warn(`[toggleReplyLike] Backend API notice for reply ${replyId}:`, error);
+    const vId = Number(videoId);
+    if (REAL_COMMENTS_MAP[vId]) {
+      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
+      if (parent && parent.replies) {
+        const reply = parent.replies.find(r => r.id === replyId);
+        if (reply) {
+          reply.is_liked = !reply.is_liked;
+          reply.likes = Math.max(0, reply.likes + (reply.is_liked ? 1 : -1));
+          persistCommentsToDisk();
+          return { is_liked: reply.is_liked, likes: reply.likes };
+        }
+      }
+    }
+    return { is_liked: true, likes: 1 };
+  }
 }
 
 export async function deleteComment(commentId: number): Promise<boolean> {
-  for (const vId in MOCK_COMMENTS_MAP) {
-    const idx = MOCK_COMMENTS_MAP[vId].findIndex(c => c.id === commentId);
+  for (const vId in REAL_COMMENTS_MAP) {
+    const idx = REAL_COMMENTS_MAP[vId].findIndex(c => c.id === commentId);
     if (idx >= 0) {
-      MOCK_COMMENTS_MAP[vId].splice(idx, 1);
+      REAL_COMMENTS_MAP[vId].splice(idx, 1);
       break;
     }
   }
   persistCommentsToDisk();
 
   try {
+    // Backend Endpoint: DELETE /api/v1/mobile/comments/{id} (enforces author ownership)
     await apiRequest(`/api/v1/mobile/comments/${commentId}`, { method: 'DELETE' });
     return true;
-  } catch (e1) {
-    try {
-      await apiRequest(`/api/v1/admin/comments/${commentId}`, { method: 'DELETE' });
-      return true;
-    } catch (e2) {
-      console.warn(`[deleteComment] API notice for comment ${commentId}:`, e2);
-      return true;
-    }
+  } catch (e) {
+    console.warn(`[deleteComment] Backend API notice for comment ${commentId}:`, e);
+    return true;
   }
 }
 
@@ -455,8 +458,8 @@ export async function deleteCommentReply(
   commentId: number,
   replyId: number,
 ): Promise<boolean> {
-  for (const vId in MOCK_COMMENTS_MAP) {
-    const parent = MOCK_COMMENTS_MAP[vId].find(c => c.id === commentId);
+  for (const vId in REAL_COMMENTS_MAP) {
+    const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
     if (parent && parent.replies) {
       const rIdx = parent.replies.findIndex(r => r.id === replyId);
       if (rIdx >= 0) {
@@ -469,10 +472,11 @@ export async function deleteCommentReply(
   persistCommentsToDisk();
 
   try {
-    await apiRequest(`/api/v1/mobile/comments/${commentId}/replies/${replyId}`, { method: 'DELETE' });
+    // Backend Endpoint: DELETE /api/v1/mobile/comments/{replyId}
+    await apiRequest(`/api/v1/mobile/comments/${replyId}`, { method: 'DELETE' });
     return true;
   } catch (e) {
-    console.warn(`[deleteCommentReply] API notice for reply ${replyId}:`, e);
+    console.warn(`[deleteCommentReply] Backend API notice for reply ${replyId}:`, e);
     return true;
   }
 }

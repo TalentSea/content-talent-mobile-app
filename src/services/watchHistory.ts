@@ -50,7 +50,7 @@ async function restoreWatchHistoryFromDisk() {
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
         watchHistoryStore = parsed.filter(
-          item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
+          item => (item.progressPercentage ?? 0) > 0,
         );
         notifyListeners();
         return;
@@ -74,22 +74,21 @@ export async function syncWatchHistoryWithBackend() {
       fetchUserContinueWatchingApi(),
     ]);
 
-    const combinedItems: ApiVideo[] = [];
+    const remoteItems: ApiVideo[] = [];
 
     if (historyRes.status === 'fulfilled' && historyRes.value?.items) {
-      combinedItems.push(...historyRes.value.items);
+      remoteItems.push(...historyRes.value.items);
     }
     if (continueRes.status === 'fulfilled' && continueRes.value?.items) {
-      combinedItems.push(...continueRes.value.items);
+      remoteItems.push(...continueRes.value.items);
     }
 
-    if (combinedItems.length > 0) {
-      for (const video of combinedItems) {
-        const prog = (video as any).progress_percentage ?? (video as any).watch_progress ?? 0;
+    if (remoteItems.length > 0) {
+      for (const video of remoteItems) {
+        const prog = (video as any).progress_percentage ?? (video as any).watch_progress ?? 100;
         const pos = (video as any).last_position_seconds ?? (video as any).progress_seconds ?? 0;
 
-        // ONLY add if user started watching (> 0%) AND has NOT completed (< 98%)
-        if (prog > 0 && prog < 98) {
+        if (prog > 0) {
           const existingIndex = watchHistoryStore.findIndex(item => item.video.id === video.id);
           if (existingIndex < 0) {
             watchHistoryStore.push({
@@ -98,6 +97,9 @@ export async function syncWatchHistoryWithBackend() {
               progressPercentage: prog,
               lastPositionSeconds: pos,
             });
+          } else {
+            watchHistoryStore[existingIndex].progressPercentage = prog;
+            watchHistoryStore[existingIndex].lastPositionSeconds = pos;
           }
         }
       }
@@ -116,13 +118,7 @@ export function recordWatchHistory(
 ) {
   if (!video || !video.id) return;
 
-  // If user completed the video (>= 98%), remove from Continue Watching!
-  if (progressPercentage >= 98) {
-    removeWatchHistoryItem(video.id);
-    return;
-  }
-
-  // If unwatched (0%), do not add to Continue Watching
+  // Unwatched (0%) videos must NEVER be recorded in History or Continue Watching
   if (progressPercentage <= 0) {
     return;
   }
@@ -150,16 +146,17 @@ export function recordWatchHistory(
   );
 }
 
+// History contains EVERY video the user started watching (> 0%), whether completed (100%) or stopped midway (< 98%)
 export function getWatchHistory(availableVideos?: ApiVideo[]): WatchHistoryItem[] {
+  const startedItems = watchHistoryStore.filter(item => (item.progressPercentage ?? 0) > 0);
   if (!availableVideos || availableVideos.length === 0) {
-    return watchHistoryStore.filter(item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98);
+    return startedItems;
   }
   const availableIds = new Set(availableVideos.map(v => v.id));
-  return watchHistoryStore.filter(
-    item => availableIds.has(item.video.id) && (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
-  );
+  return startedItems.filter(item => availableIds.has(item.video.id));
 }
 
+// Continue Watching contains ONLY videos that were started (> 0%) but NOT completed (< 98%)
 export function getContinueWatchingVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
   const activeItems = watchHistoryStore.filter(
     item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,

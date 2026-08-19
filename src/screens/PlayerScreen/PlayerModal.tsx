@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  BackHandler,
   Modal,
   ScrollView,
   Share,
@@ -8,6 +9,8 @@ import {
   Pressable,
   View,
   useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
@@ -91,6 +94,31 @@ export function PlayerModal({
     scheduled_at: null,
     created_at: (playingVideo as any)?.created_at || new Date().toISOString(),
   };
+
+  // Hardware Back Handler for Android Phone Back Button
+  useEffect(() => {
+    if (!playingVideo) return;
+
+    const onHardwareBackPress = () => {
+      if (isFullscreen) {
+        setIsFullscreen(false);
+        try {
+          Orientation.lockToPortrait();
+        } catch (e) {
+          // Safe catch
+        }
+        return true;
+      } else {
+        handleClose();
+        return true;
+      }
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onHardwareBackPress);
+    return () => {
+      subscription.remove();
+    };
+  }, [playingVideo, isFullscreen]);
 
   useEffect(() => {
     if (playingVideo) {
@@ -258,11 +286,26 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
     <Modal
       visible={!!playingVideo}
       animationType="slide"
-      onRequestClose={handleClose}
+      onRequestClose={() => {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+          try {
+            Orientation.lockToPortrait();
+          } catch (e) {
+            // Safe catch
+          }
+        } else {
+          handleClose();
+        }
+      }}
       statusBarTranslucent={isFullscreen}
     >
       <SafeAreaView style={styles.playerScreen} edges={isFullscreen ? [] : ['top', 'bottom']}>
         <StatusBar barStyle="light-content" hidden={isFullscreen} backgroundColor="#000000" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ flex: 1 }}
+        >
 
         {/* Dynamic Player Frame Box */}
         <View
@@ -317,6 +360,8 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
             style={styles.playerInfoScroll}
             contentContainerStyle={styles.playerInfoContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           >
             {/* 1. Title */}
             <Text style={styles.playerTitle} numberOfLines={2}>
@@ -464,6 +509,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
             </View>
           </View>
         </Modal>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>
   );
