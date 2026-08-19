@@ -101,7 +101,6 @@ export function PlayerModal({
       setViewsCount(initialViews);
       setLikesCount(initialLikes);
 
-      recordWatchHistory(currentVideoObj, 45);
       setLiked(isVideoLiked(currentVideoId));
       setSaved(isVideoSaved(currentVideoId));
       setShowFullDescription(false);
@@ -148,22 +147,29 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
 }
 
   function handlePlayerProgress(currentTime: number, duration?: number) {
-    if (hasCountedViewRef.current) {
-      return;
-    }
-
     const effectiveDuration = (typeof duration === 'number' && duration > 0)
       ? duration
       : parseDurationInSeconds((playingVideo as any)?.duration);
 
-    const requiredWatchTime = (effectiveDuration > 0 && effectiveDuration < 30)
-      ? (effectiveDuration * 0.5)
-      : 30;
+    const progressPercentage = effectiveDuration > 0
+      ? Math.round((currentTime / effectiveDuration) * 100)
+      : 0;
 
-    if (currentTime >= requiredWatchTime) {
-      hasCountedViewRef.current = true;
-      markVideoAsViewed(currentVideoId);
-      setViewsCount(getCleanViewCountForVideo(currentVideoId));
+    // Record user-specific watch progress dynamically as the user watches
+    if (currentTime > 2) {
+      recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
+    }
+
+    if (!hasCountedViewRef.current) {
+      const requiredWatchTime = (effectiveDuration > 0 && effectiveDuration < 30)
+        ? (effectiveDuration * 0.5)
+        : 30;
+
+      if (currentTime >= requiredWatchTime) {
+        hasCountedViewRef.current = true;
+        markVideoAsViewed(currentVideoId);
+        setViewsCount(getCleanViewCountForVideo(currentVideoId));
+      }
     }
   }
 

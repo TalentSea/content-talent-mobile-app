@@ -10,7 +10,7 @@ import {
 import { fetchVideos } from '../../services/api/video';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
-import { formatViews, getRelativeTimeString } from '../../utils/timeUtils';
+import { formatViews, getRelativeTimeString, formatDurationString } from '../../utils/timeUtils';
 import { styles } from './styles';
 
 type RelatedContentProps = {
@@ -149,7 +149,7 @@ export function RelatedContent({
                   />
                   {item.duration ? (
                     <View style={styles.videoDurationBadge}>
-                      <Text style={styles.durationText}>{item.duration}</Text>
+                      <Text style={styles.durationText}>{formatDurationString(item.duration)}</Text>
                     </View>
                   ) : null}
                 </View>

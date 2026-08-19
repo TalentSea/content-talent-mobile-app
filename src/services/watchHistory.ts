@@ -49,7 +49,9 @@ async function restoreWatchHistoryFromDisk() {
       const content = await RNFS.readFile(filePath, 'utf8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
-        watchHistoryStore = parsed;
+        watchHistoryStore = parsed.filter(
+          item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
+        );
         notifyListeners();
         return;
       }
@@ -83,14 +85,20 @@ export async function syncWatchHistoryWithBackend() {
 
     if (combinedItems.length > 0) {
       for (const video of combinedItems) {
-        const existingIndex = watchHistoryStore.findIndex(item => item.video.id === video.id);
-        if (existingIndex < 0) {
-          watchHistoryStore.push({
-            video,
-            watchedAt: video.published_at || new Date().toISOString(),
-            progressPercentage: (video as any).progress_percentage || (video as any).watch_progress || 45,
-            lastPositionSeconds: (video as any).last_position_seconds || (video as any).progress_seconds || 120,
-          });
+        const prog = (video as any).progress_percentage ?? (video as any).watch_progress ?? 0;
+        const pos = (video as any).last_position_seconds ?? (video as any).progress_seconds ?? 0;
+
+        // ONLY add if user started watching (> 0%) AND has NOT completed (< 98%)
+        if (prog > 0 && prog < 98) {
+          const existingIndex = watchHistoryStore.findIndex(item => item.video.id === video.id);
+          if (existingIndex < 0) {
+            watchHistoryStore.push({
+              video,
+              watchedAt: video.published_at || new Date().toISOString(),
+              progressPercentage: prog,
+              lastPositionSeconds: pos,
+            });
+          }
         }
       }
       notifyListeners();
@@ -103,10 +111,21 @@ export async function syncWatchHistoryWithBackend() {
 
 export function recordWatchHistory(
   video: ApiVideo,
-  progressPercentage: number = 50,
-  lastPositionSeconds: number = 120,
+  progressPercentage: number = 0,
+  lastPositionSeconds: number = 0,
 ) {
   if (!video || !video.id) return;
+
+  // If user completed the video (>= 98%), remove from Continue Watching!
+  if (progressPercentage >= 98) {
+    removeWatchHistoryItem(video.id);
+    return;
+  }
+
+  // If unwatched (0%), do not add to Continue Watching
+  if (progressPercentage <= 0) {
+    return;
+  }
 
   const existingIndex = watchHistoryStore.findIndex(item => item.video.id === video.id);
 
@@ -133,18 +152,24 @@ export function recordWatchHistory(
 
 export function getWatchHistory(availableVideos?: ApiVideo[]): WatchHistoryItem[] {
   if (!availableVideos || availableVideos.length === 0) {
-    return [...watchHistoryStore];
+    return watchHistoryStore.filter(item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98);
   }
   const availableIds = new Set(availableVideos.map(v => v.id));
-  return watchHistoryStore.filter(item => availableIds.has(item.video.id));
+  return watchHistoryStore.filter(
+    item => availableIds.has(item.video.id) && (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
+  );
 }
 
 export function getContinueWatchingVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
+  const activeItems = watchHistoryStore.filter(
+    item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
+  );
+
   if (!availableVideos || availableVideos.length === 0) {
-    return watchHistoryStore.map(item => item.video);
+    return activeItems.map(item => item.video);
   }
   const availableIds = new Set(availableVideos.map(v => v.id));
-  return watchHistoryStore
+  return activeItems
     .filter(item => availableIds.has(item.video.id))
     .map(item => item.video);
 }

@@ -48,14 +48,34 @@ export function formatLikes(likes?: number): string {
   return `${likes}`;
 }
 
-export function formatDurationString(duration?: string | null): string {
-  if (!duration) return '12:00';
+export function formatDurationString(duration?: string | number | null): string {
+  if (duration == null) return '00:00';
   const trimmed = String(duration).trim();
-  if (!trimmed) return '12:00';
-  if (trimmed.includes(':')) return trimmed;
-  const num = parseInt(trimmed, 10);
-  if (isNaN(num)) return '12:00';
-  const mins = Math.floor(num / 60);
-  const secs = num % 60;
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return '00:00';
+
+  if (trimmed.includes(':')) {
+    const parts = trimmed.split(':').map(p => p.trim());
+    if (parts.length === 2) {
+      const m = parseInt(parts[0], 10) || 0;
+      const s = parseInt(parts[1], 10) || 0;
+      return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    if (parts.length === 3) {
+      const h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
+      const s = parseInt(parts[2], 10) || 0;
+      if (h === 0) {
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return trimmed;
+  }
+
+  const num = parseFloat(trimmed);
+  if (isNaN(num) || num < 0) return '00:00';
+  const totalSeconds = Math.floor(num);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
