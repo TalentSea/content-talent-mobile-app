@@ -14,11 +14,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
-import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X } from 'lucide-react-native';
+import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X, Sparkles, Lock } from 'lucide-react-native';
 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
+import { isUserSubscribed, subscribeAuthChange } from '../../services/api/authService';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
@@ -49,6 +50,7 @@ type PlayerModalProps = {
   onVideoEnd?: () => void;
   onSelectVideo?: (video: ApiVideo) => void;
   onSelectPlaylist?: (playlist: PlaylistListItem) => void;
+  onUpgradeSubscription?: () => void;
   onClose: () => void;
 };
 
@@ -60,6 +62,7 @@ export function PlayerModal({
   onVideoEnd,
   onSelectVideo,
   onSelectPlaylist,
+  onUpgradeSubscription,
   onClose,
 }: PlayerModalProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -74,6 +77,15 @@ export function PlayerModal({
   const hasCountedViewRef = useRef(false);
   const [videoRatio, setVideoRatio] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
+  const [isSubscribed, setIsSubscribed] = useState(isUserSubscribed());
+
+  useEffect(() => {
+    setIsSubscribed(isUserSubscribed());
+    const unsubscribe = subscribeAuthChange(() => {
+      setIsSubscribed(isUserSubscribed());
+    });
+    return unsubscribe;
+  }, []);
 
   const currentVideoId = (playingVideo as any)?.id || 1;
 
@@ -321,7 +333,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                 ]
           }
         >
-          {playingVideo ? (
+          {playingVideo && isSubscribed ? (
             <NativeVideoPlayer
               video={currentVideoObj}
               id={currentVideoId}
@@ -352,6 +364,27 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               onEnd={onVideoEnd}
               onProgress={handlePlayerProgress}
             />
+          ) : playingVideo ? (
+            <View style={{ flex: 1, backgroundColor: '#0A0A10', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+              <Lock size={44} color="#6366F1" style={{ marginBottom: 12 }} />
+              <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16, textAlign: 'center', marginBottom: 6 }}>
+                VIP Subscription Required
+              </Text>
+              <Text style={{ color: '#9CA3AF', fontSize: 12, textAlign: 'center', marginBottom: 16 }}>
+                Subscribe to unlock ad-free 4K video playback.
+              </Text>
+              <Pressable
+                style={{ backgroundColor: '#6366F1', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
+                onPress={() => {
+                  handleClose();
+                  if (onUpgradeSubscription) onUpgradeSubscription();
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14 }}>
+                  Subscribe Now
+                </Text>
+              </Pressable>
+            </View>
           ) : null}
         </View>
 
@@ -452,8 +485,61 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               </Pressable>
             </View>
 
+            {/* VIP Upgrade Subscription Banner when Video is Selected */}
+            <View style={{
+              backgroundColor: 'rgba(99, 102, 241, 0.15)',
+              borderColor: '#6366F1',
+              borderWidth: 1.5,
+              borderRadius: 14,
+              padding: 12,
+              marginTop: 12,
+              marginBottom: 8,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                <View style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  backgroundColor: '#6366F1',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Sparkles size={18} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                    Upgrade to VIP Access
+                  </Text>
+                  <Text style={{ color: '#A5B4FC', fontSize: 11, marginTop: 1 }}>
+                    Ad-Free 4K Ultra HD • ₹99/mo via Razorpay UPI
+                  </Text>
+                </View>
+              </View>
+
+              {onUpgradeSubscription ? (
+                <Pressable
+                  style={({ pressed }) => [{
+                    backgroundColor: '#6366F1',
+                    borderRadius: 10,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    opacity: pressed ? 0.8 : 1,
+                  }]}
+                  onPress={onUpgradeSubscription}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>
+                    Upgrade
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+
             {/* Render Comments Section ONLY when selected */}
             {showComments ? <CommentsSection videoId={currentVideoId} /> : null}
+
 
             {/* Related Videos & Playlists Section */}
             <RelatedContent

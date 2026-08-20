@@ -278,8 +278,13 @@ export function HomeScreen({ navigation }: any) {
         playingVideo={playingVideo}
         onSelectVideo={playVideo}
         onSelectPlaylist={(p) => handleSelectPlaylist(p.id, p.name)}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation?.navigate('Subscription');
+        }}
         onClose={closePlayer}
       />
+
     </SafeAreaView>
   );
 }

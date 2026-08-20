@@ -1,10 +1,14 @@
 import { useCallback, useState } from 'react';
+import { Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { fetchVideoPlayInfo, getDistinctStreamUrlForVideo } from '../services/api/video';
 import { API_BASE_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../constants/config';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
+import { isUserSubscribed } from '../services/api/authService';
 
 export function useVideoPlayback(videoList: ApiVideo[] = []) {
+    const navigation = useNavigation<any>();
     const [playingVideo, setPlayingVideo] = useState<PlayInfo | null>(null);
     const [currentVideoId, setCurrentVideoId] = useState<number | null>(null);
     const [playerLoading, setPlayerLoading] = useState(false);
@@ -13,6 +17,25 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
 
     const playVideo = useCallback(async (video: ApiVideo) => {
         if (!isStreamable(video.status)) {
+            return;
+        }
+
+        if (!isUserSubscribed()) {
+            Alert.alert(
+                'Subscription Required',
+                'Video playback requires an active VIP Subscription. Upgrade now to stream unlimited videos.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Subscribe Now',
+                        onPress: () => {
+                            if (navigation && typeof navigation.navigate === 'function') {
+                                navigation.navigate('Subscription');
+                            }
+                        },
+                    },
+                ],
+            );
             return;
         }
 

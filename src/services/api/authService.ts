@@ -105,6 +105,33 @@ export function getCurrentUser(): UserProfile | null {
   return currentAuthenticatedUser;
 }
 
+export function isUserSubscribed(): boolean {
+  if (!currentAuthenticatedUser) return false;
+  const role = currentAuthenticatedUser.role?.toLowerCase() || '';
+  return ['subscriber', 'premium', 'admin', 'creator', 'vip'].includes(role);
+}
+
+export function activateSubscription(role: 'subscriber' | 'premium' = 'subscriber'): UserProfile {
+  const updatedUser: UserProfile = currentAuthenticatedUser
+    ? { ...currentAuthenticatedUser, role }
+    : {
+        id: 101,
+        name: 'VIP Member',
+        email: 'vip@streamr.app',
+        provider: 'guest',
+        role,
+      };
+
+  currentAuthenticatedUser = updatedUser;
+  saveSessionToStorage(
+    DEFAULT_AUTH_TOKEN,
+    storedRefreshToken || `sub_refresh_${Date.now()}`,
+    updatedUser,
+  );
+  notifyAuthChange();
+  return updatedUser;
+}
+
 export function setSessionTokens(accessToken: string, refreshToken: string, user?: UserProfile) {
   setApiAccessToken(accessToken);
   storedRefreshToken = refreshToken;

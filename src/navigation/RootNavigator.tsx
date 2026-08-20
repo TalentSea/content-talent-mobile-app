@@ -15,6 +15,7 @@ import { VideoGridScreen } from '../screens/VideoGridScreen/VideoGridScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen/NotificationsScreen';
 import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
+import { SubscriptionScreen } from '../screens/SubscriptionScreen/SubscriptionScreen';
 import { LibraryProvider } from '../contexts/LibraryContext';
 import { restoreStoredSession } from '../services/api/authService';
 import type { RootStackParamList } from './types';
@@ -59,28 +60,29 @@ export function RootNavigator() {
 
     return (
         <LibraryProvider>
-        <NavigationContainer>
-            <Stack.Navigator
-                initialRouteName={initialRoute}
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: '#05050A' },
-                }}
-            >
-                <Stack.Screen name="Login" component={LoginScreen} />
-                <Stack.Screen name="Home" component={HomeScreen} />
-                <Stack.Screen name="CategoryVideos" component={CategoryVideosScreen} />
-                <Stack.Screen name="Playlist" component={PlaylistScreen} />
-                <Stack.Screen name="Search" component={SearchScreen} />
-                <Stack.Screen name="Categories" component={CategoriesScreen} />
-                <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
-                <Stack.Screen name="Profile" component={ProfileScreen} />
-                <Stack.Screen name="Settings" component={SettingsScreen} />
-                <Stack.Screen name="Notifications" component={NotificationsScreen} />
-                <Stack.Screen name="Library" component={LibraryScreen} />
-                <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
-            </Stack.Navigator>
-        </NavigationContainer>
+            <NavigationContainer>
+                <Stack.Navigator
+                    initialRouteName={initialRoute}
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: '#05050A' },
+                    }}
+                >
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="CategoryVideos" component={CategoryVideosScreen} />
+                    <Stack.Screen name="Playlist" component={PlaylistScreen} />
+                    <Stack.Screen name="Search" component={SearchScreen} />
+                    <Stack.Screen name="Categories" component={CategoriesScreen} />
+                    <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+                    <Stack.Screen name="Profile" component={ProfileScreen} />
+                    <Stack.Screen name="Settings" component={SettingsScreen} />
+                    <Stack.Screen name="Notifications" component={NotificationsScreen} />
+                    <Stack.Screen name="Library" component={LibraryScreen} />
+                    <Stack.Screen name="VideoGrid" component={VideoGridScreen} />
+                    <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+                </Stack.Navigator>
+            </NavigationContainer>
         </LibraryProvider>
     );
 }

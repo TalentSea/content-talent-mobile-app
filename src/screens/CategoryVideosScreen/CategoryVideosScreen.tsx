@@ -67,7 +67,15 @@ export function CategoryVideosScreen({ route, navigation }: any) {
         emptyText={`No videos found in ${selectedCategory}.`}
       />
 
-      <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
+      <PlayerModal
+        playingVideo={playingVideo}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation?.navigate('Subscription');
+        }}
+        onClose={closePlayer}
+      />
+
     </SafeAreaView>
   );
 }

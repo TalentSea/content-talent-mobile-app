@@ -21,4 +21,5 @@ export type RootStackParamList = {
     VideoGrid: {
         section: VideoSectionKey;
     };
+    Subscription: undefined;
 };

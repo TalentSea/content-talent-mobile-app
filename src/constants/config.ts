@@ -1,6 +1,9 @@
 export const API_BASE_URL = 'http://138.68.140.83:8000';
 export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
 
+
+
+export const RAZORPAY_KEY_ID = 'rzp_test_TRDlW57SfahBup';
 /**
  * Flags to enable mock API for videos and HLS inbuilt captions.
  * Set to `false` to query live server http://138.68.140.83:8000 with talentsea_secret_api_key_2026 credentials.

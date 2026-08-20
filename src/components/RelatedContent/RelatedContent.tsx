@@ -11,7 +11,9 @@ import { fetchVideos } from '../../services/api/video';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { formatViews, getRelativeTimeString, formatDurationString } from '../../utils/timeUtils';
+import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
+
 
 type RelatedContentProps = {
   currentVideoId?: number;
@@ -69,7 +71,8 @@ export function RelatedContent({
           if (category && v.category && v.category.toLowerCase() === category.toLowerCase()) {
             return true;
           }
-          if (tags && tags.length > 0 && v.tags && v.tags.some(t => tags.includes(t))) {
+          if (tags && tags.length > 0 && v.tags && v.tags.some((t: string) => tags.includes(t))) {
+
             return true;
           }
           return false;

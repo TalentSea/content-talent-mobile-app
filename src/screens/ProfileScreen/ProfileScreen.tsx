@@ -47,12 +47,12 @@ export function ProfileScreen({ navigation }: any) {
     activeTab === 'history'
       ? historyVideos
       : activeTab === 'liked'
-      ? likedVideos
-      : activeTab === 'saved'
-      ? savedVideos
-      : downloadedVideos
-          .map((item: DownloadedVideoItem) => item?.video || (item as any))
-          .filter((v: ApiVideo) => v && v.id);
+        ? likedVideos
+        : activeTab === 'saved'
+          ? savedVideos
+          : downloadedVideos
+            .map((item: DownloadedVideoItem) => item?.video || (item as any))
+            .filter((v: ApiVideo) => v && v.id);
 
   const handleLogout = async () => {
     await clearSessionTokens();
@@ -291,7 +291,15 @@ export function ProfileScreen({ navigation }: any) {
       <BottomNavBar activeTab="Profile" navigation={navigation} />
 
       {/* Video Player Modal */}
-      <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
+      <PlayerModal
+        playingVideo={playingVideo}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation?.navigate('Subscription');
+        }}
+        onClose={closePlayer}
+      />
+
     </SafeAreaView>
   );
 }

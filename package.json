@@ -20,6 +20,7 @@
     "react-native-auth0": "^5.10.0",
     "react-native-fs": "^2.20.0",
     "react-native-orientation-locker": "^1.7.0",
+    "react-native-purchases": "^10.7.1",
     "react-native-safe-area-context": "^5.8.0",
     "react-native-screens": "^4.26.0",
     "react-native-svg": "^15.15.5"
