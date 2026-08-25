@@ -46,6 +46,50 @@ export type DownloadItem = {
   url: string;
 };
 
+type SubtitleCue = {
+  start: number;
+  end: number;
+  text: string;
+};
+
+function parseVTTOrSRT(content: string): SubtitleCue[] {
+  const cues: SubtitleCue[] = [];
+  if (!content) return cues;
+  const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+  let i = 0;
+
+  function parseTime(timeStr: string): number {
+    const parts = timeStr.trim().replace(',', '.').split(':');
+    if (parts.length === 3) {
+      return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+    } else if (parts.length === 2) {
+      return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+    }
+    return 0;
+  }
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line.includes('-->')) {
+      const [startStr, endStr] = line.split('-->');
+      const start = parseTime(startStr);
+      const end = parseTime(endStr);
+      i++;
+      let text = '';
+      while (i < lines.length && lines[i].trim() !== '') {
+        text += (text ? '\n' : '') + lines[i].trim();
+        i++;
+      }
+      if (text && end > start) {
+        const cleanText = text.replace(/<[^>]*>/g, '');
+        cues.push({ start, end, text: cleanText });
+      }
+    }
+    i++;
+  }
+  return cues;
+}
+
 type VideoPlayerProps = {
   video?: ApiVideo;
   id?: number | string;
@@ -68,6 +112,7 @@ type VideoPlayerProps = {
   resizeMode?: 'contain' | 'cover' | 'stretch';
   title?: string;
   autoplay?: boolean;
+  isFullscreen?: boolean;
   onToggleAutoplay?: () => void;
   onToggleFullscreen?: () => void;
   onLoadRatio?: (ratio: number) => void;
@@ -99,6 +144,7 @@ export default function NativeVideoPlayer({
   resizeMode = 'contain',
   title,
   autoplay,
+  isFullscreen = false,
   onToggleAutoplay,
   onToggleFullscreen,
   onLoadRatio,
@@ -134,13 +180,47 @@ export default function NativeVideoPlayer({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadingLabel, setDownloadingLabel] = useState('');
+  const [subtitleCues, setSubtitleCues] = useState<SubtitleCue[]>([]);
 
   useEffect(() => {
     setActiveCaptions(captions);
     if (inbuiltCaptionTracks.length > 0 || hasInbuiltCaptionsProp) {
       setHasEmbeddedCaptions(true);
     }
+    if (selectedCaptionIndex === -1 && (captions.length > 0 || inbuiltCaptionTracks.length > 0)) {
+      setSelectedCaptionIndex(0);
+    }
   }, [captions, inbuiltCaptionTracks, hasInbuiltCaptionsProp]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const currentTrack = activeCaptions[selectedCaptionIndex];
+
+    if (selectedCaptionIndex !== -1 && currentTrack && currentTrack.uri) {
+      fetch(currentTrack.uri)
+        .then(res => res.text())
+        .then(vttText => {
+          if (isMounted) {
+            const parsed = parseVTTOrSRT(vttText);
+            setSubtitleCues(parsed);
+          }
+        })
+        .catch(err => {
+          console.warn('[NativeVideoPlayer] Notice loading VTT subtitle URI:', err);
+          if (isMounted) setSubtitleCues([]);
+        });
+    } else {
+      setSubtitleCues([]);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCaptionIndex, activeCaptions]);
+
+  const activeCueText = selectedCaptionIndex !== -1
+    ? subtitleCues.find(c => currentTime >= c.start && currentTime <= c.end)?.text
+    : null;
 
   useEffect(() => {
     setPaused(!autoStart);
@@ -396,34 +476,29 @@ export default function NativeVideoPlayer({
   const getSelectedTextTrack = () => {
     if (selectedCaptionIndex === -1) return { type: 'disabled' };
 
+    let lang = 'en';
+    let label = 'English';
+
     if (nativeTextTracks.length > 0 && nativeTextTracks[selectedCaptionIndex]) {
       const track = nativeTextTracks[selectedCaptionIndex];
-      return {
-        type: 'language',
-        value: track.language || track.label || track.title || 'en',
-        index: selectedCaptionIndex,
-      };
-    }
-
-    if (activeCaptions.length > 0 && activeCaptions[selectedCaptionIndex]) {
+      lang = track.language || track.label || track.title || 'en';
+      label = track.label || track.title || 'English';
+    } else if (activeCaptions.length > 0 && activeCaptions[selectedCaptionIndex]) {
       const track = activeCaptions[selectedCaptionIndex];
-      return {
-        type: 'language',
-        value: track.language || 'en',
-        index: selectedCaptionIndex,
-      };
-    }
-
-    if (inbuiltCaptionTracks.length > 0 && inbuiltCaptionTracks[selectedCaptionIndex]) {
+      lang = track.language || 'en';
+      label = track.label || 'English';
+    } else if (inbuiltCaptionTracks.length > 0 && inbuiltCaptionTracks[selectedCaptionIndex]) {
       const track = inbuiltCaptionTracks[selectedCaptionIndex];
-      return {
-        type: 'language',
-        value: track.language || track.label || 'en',
-        index: selectedCaptionIndex,
-      };
+      lang = track.language || track.label || 'en';
+      label = track.label || 'English';
     }
 
-    return { type: 'disabled' };
+    return {
+      type: 'language',
+      value: lang,
+      title: label,
+      index: selectedCaptionIndex,
+    };
   };
 
   const formattedTextTracks = activeCaptions.map(c => ({
@@ -466,22 +541,22 @@ export default function NativeVideoPlayer({
         selectedTextTrack={getSelectedTextTrack()}
         onError={(e: any) => {
           const { message = 'Failed to load video stream', errorCode } = e.nativeEvent || {};
-
-          if (activeCaptions.length > 0) {
-            console.warn('[NativeVideoPlayer] Clearing side-loaded captions list to ensure smooth video stream playback...');
-            setActiveCaptions([]);
-            if (!hasEmbeddedCaptions) {
-              setSelectedCaptionIndex(-1);
-            }
-            setRetryCount(prev => prev + 1);
-            setError(null);
-            return;
+          console.warn('[NativeVideoPlayer] Stream notice:', message, errorCode);
+          if (!hasSentLoadEvent && errorCode) {
+            setError(errorCode ? `${errorCode}: ${message}` : message);
+            setShowControls(true);
           }
-
-          setError(errorCode ? `${errorCode}: ${message}` : message);
-          setShowControls(true);
         }}
       />
+
+      {/* Subtitle Cue Text Overlay */}
+      {selectedCaptionIndex !== -1 && activeCueText ? (
+        <View style={styles.subtitleOverlayContainer} pointerEvents="none">
+          <View style={styles.subtitleTextBackground}>
+            <Text style={styles.subtitleText}>{activeCueText}</Text>
+          </View>
+        </View>
+      ) : null}
       {controls ? (
         <Pressable
           style={styles.touchOverlay}
@@ -544,7 +619,9 @@ export default function NativeVideoPlayer({
                   onPress={() => {
                     const tracksList = nativeTextTracks.length > 0
                       ? nativeTextTracks
-                      : (activeCaptions.length > 0 ? activeCaptions : inbuiltCaptionTracks);
+                      : (activeCaptions.length > 0 || inbuiltCaptionTracks.length > 0
+                        ? [...activeCaptions, ...inbuiltCaptionTracks.filter(inb => !activeCaptions.some(act => act.language === inb.language))]
+                        : []);
                     const availableTracksCount = tracksList.length;
                     if (availableTracksCount <= 1) {
                       setSelectedCaptionIndex(prev => (prev === -1 ? 0 : -1));
@@ -603,7 +680,7 @@ export default function NativeVideoPlayer({
           </View>
 
           {/* Bottom Control Panel */}
-          <View style={styles.bottomPanel} pointerEvents="box-none">
+          <View style={[styles.bottomPanel, isFullscreen ? { paddingBottom: 28, paddingHorizontal: 28 } : null]} pointerEvents="box-none">
             {/* Duration Time Text and Progress Bar in the same horizontal line */}
             <View style={styles.progressRow}>
               <Text style={styles.timeText}>
@@ -771,7 +848,9 @@ export default function NativeVideoPlayer({
                 {(() => {
                   const tracksList = nativeTextTracks.length > 0
                     ? nativeTextTracks
-                    : (activeCaptions.length > 0 ? activeCaptions : inbuiltCaptionTracks);
+                    : (activeCaptions.length > 0 || inbuiltCaptionTracks.length > 0
+                      ? [...activeCaptions, ...inbuiltCaptionTracks.filter(inb => !activeCaptions.some(act => act.language === inb.language))]
+                      : []);
                   return tracksList.map((track: any, idx: number) => {
                     let baseLabel = track.label || track.title || (track.language ? track.language.toUpperCase() : `Track ${idx + 1}`);
                     if (track.isInbuilt && !baseLabel.includes('(Inbuilt)')) {

@@ -190,6 +190,7 @@ export function setBackendLikesCount(videoId: number | string, count: number): v
   const current = globalLikesCounts[key] || 0;
   if (count > current) {
     globalLikesCounts[key] = count;
+    saveGlobalLikesToDisk();
     notifyActivityListeners();
   }
 }

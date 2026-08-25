@@ -315,7 +315,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
       <SafeAreaView style={styles.playerScreen} edges={isFullscreen ? [] : ['top', 'bottom']}>
         <StatusBar barStyle="light-content" hidden={isFullscreen} backgroundColor="#000000" />
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
 
@@ -356,6 +356,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
               adTagUrl={playingVideo.adTagUrl}
               style={styles.videoPlayer}
+              isFullscreen={isFullscreen}
               onToggleFullscreen={toggleFullscreen}
               onLoadRatio={setVideoRatio}
               autoplay={autoplay}

@@ -71,8 +71,28 @@ export function getDistinctStreamUrlForVideo(video: any): string {
 export function normalizeVideoItem(item: any): import('../../../types/video').ApiVideo {
   if (!item) return item;
 
-  const finalViews = item.id ? getCleanViewCountForVideo(item.id) : 0;
-  const finalLikes = item.id ? getCleanLikesCountForVideo(item.id) : 0;
+  const rawApiViews = typeof item.views === 'number'
+    ? item.views
+    : (typeof item.views_count === 'number'
+      ? item.views_count
+      : (typeof item.view_count === 'number' ? item.view_count : 0));
+
+  const rawApiLikes = typeof item.likes === 'number'
+    ? item.likes
+    : (typeof item.likes_count === 'number'
+      ? item.likes_count
+      : (typeof item.like_count === 'number' ? item.like_count : 0));
+
+  if (item.id && rawApiViews > 0) {
+    setBackendViewCount(item.id, rawApiViews);
+  }
+
+  if (item.id && rawApiLikes > 0) {
+    setBackendLikesCount(item.id, rawApiLikes);
+  }
+
+  const finalViews = item.id ? Math.max(getCleanViewCountForVideo(item.id), rawApiViews) : rawApiViews;
+  const finalLikes = item.id ? Math.max(getCleanLikesCountForVideo(item.id), rawApiLikes) : rawApiLikes;
 
   // Extract real thumbnail URL sent by FastAPI backend (thumbnail_url):
   let thumbUrl =
@@ -132,7 +152,7 @@ export async function fetchVideos(
       const response = await apiGet<PaginatedVideosResponse>(
         `/api/v1/mobile/videos?${query.toString()}`,
       );
-      if (response && Array.isArray(response.items) && response.items.length > 0) {
+      if (response && Array.isArray(response.items)) {
         return {
           ...response,
           items: response.items.map(normalizeVideoItem),
@@ -142,15 +162,15 @@ export async function fetchVideos(
       // Mobile endpoint notice
     }
 
-    // 2. Fallback: Admin Videos Endpoint (/api/v1/admin/videos) to guarantee videos are always fetched!
-    const adminResponse = await apiGet<PaginatedVideosResponse>(
-      `/api/v1/admin/videos?${query.toString()}`,
+    // 2. Secondary: Public Videos Endpoint (/api/v1/videos)
+    const publicResponse = await apiGet<PaginatedVideosResponse>(
+      `/api/v1/videos?${query.toString()}`,
     );
 
-    if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+    if (publicResponse && Array.isArray(publicResponse.items) && publicResponse.items.length > 0) {
       return {
-        ...adminResponse,
-        items: adminResponse.items.map(normalizeVideoItem),
+        ...publicResponse,
+        items: publicResponse.items.map(normalizeVideoItem),
       };
     }
 
@@ -187,10 +207,10 @@ export async function fetchVideoDetails(
       // Mobile details fallback
     }
 
-    // 2. Fallback: Admin Video Details (/api/v1/admin/videos/{id})
-    const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
-    if (adminRes) {
-      return normalizeVideoItem(adminRes) as VideoDetails;
+    // 2. Secondary: Public Video Details (/api/v1/videos/{id})
+    const publicRes = await apiGet<VideoDetails>(`/api/v1/videos/${videoId}`);
+    if (publicRes) {
+      return normalizeVideoItem(publicRes) as VideoDetails;
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);

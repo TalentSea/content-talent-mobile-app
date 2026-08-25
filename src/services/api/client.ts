@@ -79,9 +79,9 @@ export async function apiRequest<T>(
     }
   }
 
-  // Handle 403 Forbidden -> Fallback to master API key for video/playlist catalog endpoints
-  if (response.status === 403 && path.includes('/admin/') && accessToken !== DEFAULT_AUTH_TOKEN && !isRetry) {
-    console.warn(`[client.ts] 403 Forbidden on ${path} with subscriber JWT token. Retrying catalog query with master API key.`);
+  // Handle 403 Forbidden -> Fallback retry with default authorization header
+  if (response.status === 403 && accessToken !== DEFAULT_AUTH_TOKEN && !isRetry) {
+    console.warn(`[client.ts] 403 Forbidden on ${path} with current token. Retrying with default API key.`);
     const masterHeaders = new Headers(requestHeaders);
     masterHeaders.set('Authorization', `Bearer ${DEFAULT_AUTH_TOKEN}`);
     

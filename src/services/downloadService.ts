@@ -83,9 +83,15 @@ export function subscribeDownloads(listener: () => void): () => void {
 export function getDownloadedVideos(availableVideos?: ApiVideo[]): DownloadedVideoItem[] {
   const normalized = downloadedVideosStore.map(item => {
     const v: ApiVideo = (item as any)?.video || (item as any);
+    const localPath = item?.localFilePath || `${DOWNLOAD_DIR}/video_${v?.id || 1}.mp4`;
     return {
-      video: v,
-      localFilePath: item?.localFilePath || `${DOWNLOAD_DIR}/video_${v?.id || 1}.mp4`,
+      video: {
+        ...v,
+        stream_url: (v as any)?.stream_url || localPath,
+        playback_url: (v as any)?.playback_url || localPath,
+        localFilePath: localPath,
+      },
+      localFilePath: localPath,
       downloadedAt: item?.downloadedAt || new Date().toISOString(),
       fileSizeMB: item?.fileSizeMB || 28.5,
       resolution: item?.resolution || '720p HD',
@@ -93,9 +99,22 @@ export function getDownloadedVideos(availableVideos?: ApiVideo[]): DownloadedVid
   });
 
   if (availableVideos && availableVideos.length > 0) {
-    const availableIds = new Set(availableVideos.map(v => v.id));
-    return normalized.filter(item => item.video && availableIds.has(item.video.id));
+    const videoMap = new Map(availableVideos.map(v => [v.id, v]));
+    return normalized.map(item => {
+      if (item.video && videoMap.has(item.video.id)) {
+        return {
+          ...item,
+          video: {
+            ...item.video,
+            ...videoMap.get(item.video.id),
+            localFilePath: item.localFilePath,
+          },
+        };
+      }
+      return item;
+    });
   }
+
   return normalized;
 }
 

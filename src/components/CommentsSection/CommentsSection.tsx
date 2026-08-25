@@ -4,6 +4,8 @@ import {
   Alert,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Text,
   TextInput,
   Pressable,
@@ -461,49 +463,55 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
         })
       )}
 
-      {/* Bottom Sticky Input Bar */}
-      <View style={styles.bottomInputBar}>
-        {/* Reply Prompt Pill */}
-        {replyTarget && (
-          <View style={styles.replyTargetPill}>
-            <Text style={styles.replyTargetText}>Replying to @{replyTarget.userName}</Text>
-            <Pressable onPress={() => setReplyTarget(null)} hitSlop={6}>
-              <X size={14} color="#9CA3AF" />
+      {/* Clean Bottom Input Dock Container (Anchored Above Keyboard) */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+        <View style={styles.bottomDockContainer}>
+          {/* Replying to Header Line */}
+          {replyTarget && (
+            <View style={styles.replyHeaderRow}>
+              <Text style={styles.replyHeaderText}>Replying to {replyTarget.userName}</Text>
+              <Pressable onPress={() => setReplyTarget(null)} hitSlop={8}>
+                <X size={16} color="#9CA3AF" />
+              </Pressable>
+            </View>
+          )}
+
+          {/* Input Field Row */}
+          <View style={styles.inputFieldRow}>
+            <Image
+              source={{
+                uri:
+                  currentUser?.avatar_url ||
+                  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+              }}
+              style={styles.inputUserAvatar}
+            />
+
+            <View style={styles.inputPillContainer}>
+              <TextInput
+                ref={inputRef}
+                style={styles.textInput}
+                placeholder={replyTarget ? 'Add a reply...' : 'Add a comment...'}
+                placeholderTextColor="#6B7280"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline={false}
+              />
+            </View>
+
+            <Pressable
+              style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
+              onPress={handleSendComment}
+              disabled={!inputText.trim()}
+            >
+              <Send size={15} color="#FFFFFF" />
             </Pressable>
           </View>
-        )}
-
-        <View style={styles.inputBarInner}>
-          <Image
-            source={{
-              uri:
-                currentUser?.avatar_url ||
-                'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-            }}
-            style={styles.inputUserAvatar}
-          />
-          <TextInput
-            ref={inputRef}
-            style={styles.textInput}
-            placeholder={
-              replyTarget
-                ? `Reply to @${replyTarget.userName}...`
-                : 'What do you think of this?'
-            }
-            placeholderTextColor="#6B7280"
-            value={inputText}
-            onChangeText={setInputText}
-            multiline={false}
-          />
-          <Pressable
-            style={[styles.sendBtn, !inputText.trim() && styles.sendBtnDisabled]}
-            onPress={handleSendComment}
-            disabled={!inputText.trim()}
-          >
-            <Send size={16} color="#FFFFFF" />
-          </Pressable>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

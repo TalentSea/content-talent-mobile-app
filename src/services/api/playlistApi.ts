@@ -46,20 +46,20 @@ export async function fetchPlaylists(
       const response = await apiGet<PaginatedPlaylistsResponse>(
         `/api/v1/mobile/playlists?${query.toString()}`,
       );
-      if (response && Array.isArray(response.items) && response.items.length > 0) {
+      if (response && Array.isArray(response.items)) {
         return response;
       }
     } catch (err) {
       // Mobile playlists fallback
     }
 
-    // 2. Secondary: Admin Playlists Endpoint (/api/v1/admin/playlists)
-    const adminResponse = await apiGet<PaginatedPlaylistsResponse>(
-      `/api/v1/admin/playlists?${query.toString()}`,
+    // 2. Secondary: Public Playlists Endpoint (/api/v1/playlists)
+    const publicResponse = await apiGet<PaginatedPlaylistsResponse>(
+      `/api/v1/playlists?${query.toString()}`,
     );
 
-    if (adminResponse && Array.isArray(adminResponse.items)) {
-      return adminResponse;
+    if (publicResponse && Array.isArray(publicResponse.items)) {
+      return publicResponse;
     }
 
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
@@ -80,8 +80,8 @@ export async function fetchPlaylistDetails(
       // Fallback
     }
 
-    // 2. Secondary: Admin Playlist Details API
-    return await apiGet<PlaylistDetails>(`/api/v1/admin/playlists/${playlistId}`);
+    // 2. Secondary: Public Playlist Details API
+    return await apiGet<PlaylistDetails>(`/api/v1/playlists/${playlistId}`);
   } catch (error) {
     console.warn(`[fetchPlaylistDetails] API notice for playlist ${playlistId}:`, error);
     throw error;
@@ -110,13 +110,13 @@ export async function fetchPlaylistVideos(
       // Fallback
     }
 
-    // 2. Secondary: Admin Playlist Videos API
-    const adminResponse = await apiGet<PaginatedPlaylistVideosResponse>(
-      `/api/v1/admin/playlists/${playlistId}/videos?${query.toString()}`,
+    // 2. Secondary: Public Playlist Videos API
+    const publicResponse = await apiGet<PaginatedPlaylistVideosResponse>(
+      `/api/v1/playlists/${playlistId}/videos?${query.toString()}`,
     );
 
-    if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
-      return adminResponse;
+    if (publicResponse && Array.isArray(publicResponse.items) && publicResponse.items.length > 0) {
+      return publicResponse;
     }
   } catch (error) {
     console.warn(`[fetchPlaylistVideos] API notice for playlist ${playlistId} videos:`, error);

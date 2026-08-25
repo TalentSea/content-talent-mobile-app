@@ -2,11 +2,11 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1E1E2A',
-    paddingBottom: 20,
+    borderTopColor: '#242436',
+    paddingBottom: 24,
   },
   sectionHeader: {
     color: '#FFFFFF',
@@ -144,30 +144,27 @@ export const styles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: 2,
   },
-  bottomInputBar: {
+  bottomDockContainer: {
     marginTop: 16,
-    paddingTop: 12,
+    paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#1E1E2A',
+    borderTopColor: '#262638',
+    backgroundColor: '#161622',
   },
-  replyTargetPill: {
+  replyHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    borderColor: '#6366F1',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 6,
     marginBottom: 8,
   },
-  replyTargetText: {
-    color: '#818CF8',
-    fontSize: 11,
-    fontWeight: '600',
+  replyHeaderText: {
+    color: '#D1D5DB',
+    fontSize: 13,
+    fontWeight: '500',
   },
-  inputBarInner: {
+  inputFieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -178,16 +175,22 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#374151',
   },
+  inputPillContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1C28',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#2E2E42',
+    paddingHorizontal: 14,
+    paddingVertical: 2,
+  },
   textInput: {
     flex: 1,
-    backgroundColor: '#181824',
     color: '#FFFFFF',
     fontSize: 13,
-    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#2D2D3F',
   },
   sendBtn: {
     backgroundColor: '#6366F1',

@@ -50,7 +50,7 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
                 console.warn('[useVideoPlayback] Live play info notice:', e);
             }
 
-            const finalStreamUrl = data?.stream_url || getDistinctStreamUrlForVideo(video);
+            const finalStreamUrl = (video as any)?.localFilePath || data?.stream_url || getDistinctStreamUrlForVideo(video);
 
             setCurrentVideoId(video.id);
             setPlayingVideo({

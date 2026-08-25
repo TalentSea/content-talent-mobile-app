@@ -1,28 +1,34 @@
 import RNFS from 'react-native-fs';
-import { apiRequest, setApiAccessToken } from './client';
+import { apiRequest, setApiAccessToken, getApiAccessToken } from './client';
 import { USE_MOCK_VIDEOS, DEFAULT_AUTH_TOKEN } from '../../constants/config';
+import { getOrCreateDeviceId, getDeviceInfo } from '../../utils/deviceIdHelper';
 
 export type SocialProvider = 'google' | 'facebook' | 'guest';
 
 export type UserProfile = {
   id: number;
   name: string;
-  email: string;
-  avatar_url?: string;
-  provider: string;
-  role: string; // 'guest' | 'subscriber' | 'premium' | 'admin' | 'creator'
+  email: string | null;
+  avatar_url?: string | null;
+  provider: 'google' | 'facebook' | 'guest' | string;
+  role: 'guest' | 'subscriber' | 'premium' | 'admin' | string;
+  created_at?: string;
 };
 
 export type AuthResponse = {
   access_token: string;
   refresh_token: string;
   token_type?: string;
+  expires_in?: number;
   user: UserProfile;
 };
 
 export type RefreshTokenResponse = {
   access_token: string;
   refresh_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  user?: UserProfile;
 };
 
 let storedRefreshToken: string | null = null;
@@ -58,22 +64,30 @@ async function removeSessionFromStorage() {
 export async function restoreStoredSession(): Promise<UserProfile | null> {
   try {
     const exists = await RNFS.exists(SESSION_FILE_PATH);
-    if (!exists) return null;
+    if (exists) {
+      const content = await RNFS.readFile(SESSION_FILE_PATH, 'utf8');
+      const parsed = JSON.parse(content);
 
-    const content = await RNFS.readFile(SESSION_FILE_PATH, 'utf8');
-    const parsed = JSON.parse(content);
-
-    if (parsed && parsed.accessToken && parsed.user) {
-      setApiAccessToken(parsed.accessToken);
-      storedRefreshToken = parsed.refreshToken || null;
-      currentAuthenticatedUser = parsed.user;
-      notifyAuthChange();
-      return parsed.user;
+      if (parsed && parsed.accessToken && parsed.user) {
+        setApiAccessToken(parsed.accessToken);
+        storedRefreshToken = parsed.refreshToken || null;
+        currentAuthenticatedUser = parsed.user;
+        notifyAuthChange();
+        return parsed.user;
+      }
     }
   } catch (err) {
     console.warn('[authService] Error restoring session from storage:', err);
   }
-  return null;
+
+  // Auto-provision guest JWT session token on initial launch if no stored session
+  try {
+    const guestAuth = await loginAsGuest();
+    return guestAuth.user;
+  } catch (e) {
+    console.warn('[authService] Initial guest auto-provision notice:', e);
+    return null;
+  }
 }
 
 export function getStoredRefreshToken(): string | null {
@@ -142,12 +156,190 @@ export function setSessionTokens(accessToken: string, refreshToken: string, user
   notifyAuthChange();
 }
 
+/**
+ * 1. POST /api/v1/auth/guest — Anonymous Guest Session ("Skip Signup")
+ * Issues an application JWT session for anonymous guest users skipping social login on app launch.
+ */
+export async function loginAsGuest(
+  customDeviceInfo?: string,
+  creatorId: number = 1
+): Promise<AuthResponse> {
+  const deviceId = await getOrCreateDeviceId();
+  const info = customDeviceInfo || getDeviceInfo();
+
+  const fallbackGuestProfile: UserProfile = {
+    id: 99,
+    name: 'Guest User',
+    email: null,
+    avatar_url: null,
+    provider: 'guest',
+    role: 'guest',
+  };
+
+  try {
+    const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({
+        creator_id: creatorId,
+        device_id: deviceId,
+        device_info: info,
+      }),
+    });
+
+    const activeUser = response.user || fallbackGuestProfile;
+    setSessionTokens(response.access_token, response.refresh_token, activeUser);
+    return response;
+  } catch (error) {
+    console.warn('[loginAsGuest] Server guest endpoint notice (using fallback):', error);
+    const guestAuth: AuthResponse = {
+      access_token: DEFAULT_AUTH_TOKEN,
+      refresh_token: `guest_refresh_${Date.now()}`,
+      token_type: 'bearer',
+      expires_in: 1800,
+      user: fallbackGuestProfile,
+    };
+    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, guestAuth.user);
+    return guestAuth;
+  }
+}
+
+/**
+ * 2 & 3. POST /api/v1/auth/google & POST /api/v1/auth/facebook — Sign-In & Account Upgrade
+ * Exchanges Google OIDC id_token or Facebook access_token for application JWT.
+ * If header Authorization: Bearer <guest_access_token> is present, the backend upgrades the existing guest account into a permanent subscriber account!
+ */
+export async function loginWithSocial(
+  provider: SocialProvider,
+  token: string,
+  customDeviceInfo?: string,
+  userProfileOverride?: UserProfile,
+  creatorId: number = 1
+): Promise<AuthResponse> {
+  if (provider === 'guest') {
+    return loginAsGuest(customDeviceInfo, creatorId);
+  }
+
+  const info = customDeviceInfo || getDeviceInfo();
+
+  if (USE_MOCK_VIDEOS) {
+    const mockAuth: AuthResponse = {
+      access_token: `mock_access_token_${Date.now()}`,
+      refresh_token: `mock_refresh_token_${Date.now()}`,
+      token_type: 'bearer',
+      expires_in: 1800,
+      user: userProfileOverride || {
+        id: 99,
+        name: provider === 'google' ? 'Jane Doe' : 'John Smith',
+        email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
+        avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
+        provider,
+        role: 'subscriber',
+      },
+    };
+    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
+    return mockAuth;
+  }
+
+  const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
+  const body =
+    provider === 'google'
+      ? JSON.stringify({ creator_id: creatorId, id_token: token, device_info: info })
+      : JSON.stringify({ creator_id: creatorId, access_token: token, device_info: info });
+
+  // Pass current guest token in Authorization header if upgrading an active Guest session
+  const currentToken = getApiAccessToken();
+  const isGuestUpgrade = currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN;
+
+  try {
+    const response = await apiRequest<AuthResponse>(endpoint, {
+      method: 'POST',
+      authenticated: isGuestUpgrade,
+      body,
+    });
+
+    const activeUser = userProfileOverride || response.user;
+    setSessionTokens(response.access_token, response.refresh_token, activeUser);
+    return response;
+  } catch (error) {
+    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
+    const mockAuth: AuthResponse = {
+      access_token: DEFAULT_AUTH_TOKEN,
+      refresh_token: `mock_refresh_token_${Date.now()}`,
+      token_type: 'bearer',
+      expires_in: 1800,
+      user: userProfileOverride || currentAuthenticatedUser || {
+        id: 99,
+        name: provider === 'google' ? 'Jane Doe' : 'John Smith',
+        email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
+        avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
+        provider,
+        role: 'subscriber',
+      },
+    };
+    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
+    return mockAuth;
+  }
+}
+
+/**
+ * 4. POST /api/v1/auth/refresh — Refresh Access Token
+ * Rotates a 60-day Refresh Token to issue a fresh 30-minute Access Token.
+ */
+export async function refreshAccessToken(): Promise<string> {
+  if (!storedRefreshToken || storedRefreshToken.startsWith('mock_') || storedRefreshToken.startsWith('guest_')) {
+    try {
+      const guestRes = await loginAsGuest();
+      return guestRes.access_token;
+    } catch (e) {
+      setApiAccessToken(DEFAULT_AUTH_TOKEN);
+      return DEFAULT_AUTH_TOKEN;
+    }
+  }
+
+  try {
+    const response = await apiRequest<RefreshTokenResponse>('/api/v1/auth/refresh', {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({
+        refresh_token: storedRefreshToken,
+      }),
+    });
+
+    setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken, response.user || currentAuthenticatedUser || undefined);
+    return response.access_token;
+  } catch (error) {
+    console.warn('[refreshAccessToken] Failed to refresh token, auto-issuing guest session token:', error);
+    try {
+      const guestRes = await loginAsGuest();
+      return guestRes.access_token;
+    } catch (e) {
+      setApiAccessToken(DEFAULT_AUTH_TOKEN);
+      return DEFAULT_AUTH_TOKEN;
+    }
+  }
+}
+
+/**
+ * 5. POST /api/v1/auth/logout — Revoke Session
+ * Revokes the refresh token and terminates the subscriber's session.
+ */
 export async function clearSessionTokens() {
-  setApiAccessToken(DEFAULT_AUTH_TOKEN);
+  if (storedRefreshToken && !storedRefreshToken.startsWith('mock_') && !storedRefreshToken.startsWith('guest_')) {
+    try {
+      await apiRequest<{ success: boolean; message?: string }>('/api/v1/auth/logout', {
+        method: 'POST',
+        authenticated: true,
+        body: JSON.stringify({ refresh_token: storedRefreshToken }),
+      });
+    } catch (err) {
+      console.warn('[clearSessionTokens] Logout API notice:', err);
+    }
+  }
+
   storedRefreshToken = null;
   currentAuthenticatedUser = null;
   await removeSessionFromStorage();
-  notifyAuthChange();
 
   try {
     const { GoogleSignin } = require('@react-native-google-signin/google-signin');
@@ -162,138 +354,33 @@ export async function clearSessionTokens() {
   } catch (e) {
     // ignore
   }
-}
 
-/**
- * Creates an anonymous Guest Access Token for unauthenticated visitors.
- * Grants access to public catalog feeds while assigning role="guest".
- */
-export async function loginAsGuest(deviceInfo: string = 'Mobile Device'): Promise<AuthResponse> {
-  const guestProfile: UserProfile = {
-    id: 0,
-    name: 'Guest Visitor',
-    email: 'guest@streamr.app',
-    avatar_url: undefined,
-    provider: 'guest',
-    role: 'guest',
-  };
-
+  // Auto-issue a fresh Guest JWT token so catalog endpoints remain 200 OK
   try {
-    const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
-      method: 'POST',
-      authenticated: false,
-      body: JSON.stringify({ device_info: deviceInfo }),
-    });
-
-    setSessionTokens(response.access_token, response.refresh_token, response.user || guestProfile);
-    return response;
-  } catch (error) {
-    console.warn('[loginAsGuest] Server guest endpoint fallback to master token:', error);
-    const guestAuth: AuthResponse = {
-      access_token: DEFAULT_AUTH_TOKEN,
-      refresh_token: `guest_refresh_${Date.now()}`,
-      token_type: 'bearer',
-      user: guestProfile,
-    };
-    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, guestAuth.user);
-    return guestAuth;
+    await loginAsGuest();
+  } catch (e) {
+    setApiAccessToken(DEFAULT_AUTH_TOKEN);
+    notifyAuthChange();
   }
 }
 
 /**
- * Executes Social Authentication Token Exchange with FastAPI Backend according to spec:
- * - POST /api/v1/auth/google { id_token } (Google OIDC RSA token)
- * - POST /api/v1/auth/facebook { access_token } (Facebook OAuth2 token)
+ * 6. GET /api/v1/auth/me — Get Subscriber Profile
+ * Returns current subscriber identity details.
  */
-export async function loginWithSocial(
-  provider: SocialProvider,
-  token: string,
-  deviceInfo: string = 'Mobile App',
-  userProfileOverride?: UserProfile,
-): Promise<AuthResponse> {
-  if (provider === 'guest') {
-    return loginAsGuest(deviceInfo);
-  }
-
-  if (USE_MOCK_VIDEOS) {
-    const mockAuth: AuthResponse = {
-      access_token: `mock_access_token_${Date.now()}`,
-      refresh_token: `mock_refresh_token_${Date.now()}`,
-      token_type: 'bearer',
-      user: userProfileOverride || {
-        id: 42,
-        name: provider === 'google' ? 'Google Subscriber' : 'Facebook Subscriber',
-        email: `subscriber@${provider}.com`,
-        avatar_url: 'https://via.placeholder.com/100x100/6366F1/FFFFFF?text=U',
-        provider,
-        role: 'subscriber',
-      },
-    };
-    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
-    return mockAuth;
-  }
-
-  const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
-  const body =
-    provider === 'google'
-      ? JSON.stringify({ id_token: token, device_info: deviceInfo })
-      : JSON.stringify({ access_token: token, device_info: deviceInfo });
-
+export async function fetchUserProfileApi(): Promise<UserProfile | null> {
   try {
-    const response = await apiRequest<AuthResponse>(endpoint, {
-      method: 'POST',
-      authenticated: false,
-      body,
+    const profile = await apiRequest<UserProfile>('/api/v1/auth/me', {
+      method: 'GET',
+      authenticated: true,
     });
-
-    const activeUser = userProfileOverride || response.user;
-    setSessionTokens(response.access_token, response.refresh_token, activeUser);
-    return response;
-  } catch (error) {
-    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
-    const mockAuth: AuthResponse = {
-      access_token: DEFAULT_AUTH_TOKEN,
-      refresh_token: `mock_refresh_token_${Date.now()}`,
-      token_type: 'bearer',
-      user: userProfileOverride || currentAuthenticatedUser || {
-        id: 42,
-        name: provider === 'google' ? 'Google Subscriber' : 'Facebook Subscriber',
-        email: `subscriber@${provider}.com`,
-        avatar_url: 'https://via.placeholder.com/100x100/6366F1/FFFFFF?text=U',
-        provider,
-        role: 'subscriber',
-      },
-    };
-    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
-    return mockAuth;
+    if (profile) {
+      currentAuthenticatedUser = profile;
+      notifyAuthChange();
+      return profile;
+    }
+  } catch (err) {
+    console.warn('[fetchUserProfileApi] Error fetching current user profile:', err);
   }
-}
-
-export async function refreshAccessToken(): Promise<string> {
-  if (!storedRefreshToken) {
-    setApiAccessToken(DEFAULT_AUTH_TOKEN);
-    return DEFAULT_AUTH_TOKEN;
-  }
-
-  if (USE_MOCK_VIDEOS || storedRefreshToken.startsWith('mock_') || storedRefreshToken.startsWith('guest_')) {
-    setApiAccessToken(DEFAULT_AUTH_TOKEN);
-    return DEFAULT_AUTH_TOKEN;
-  }
-
-  try {
-    const response = await apiRequest<RefreshTokenResponse>('/api/v1/auth/refresh', {
-      method: 'POST',
-      authenticated: false,
-      body: JSON.stringify({
-        refresh_token: storedRefreshToken,
-      }),
-    });
-
-    setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken);
-    return response.access_token;
-  } catch (error) {
-    console.warn('[refreshAccessToken] Failed to refresh token, falling back to master API key:', error);
-    clearSessionTokens();
-    return DEFAULT_AUTH_TOKEN;
-  }
+  return currentAuthenticatedUser;
 }

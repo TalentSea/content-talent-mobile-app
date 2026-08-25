@@ -64,9 +64,13 @@ export function ProfileScreen({ navigation }: any) {
     }
   };
 
-  const handleLoginRedirect = () => {
+  const handleLoginRedirect = async () => {
+    await clearSessionTokens();
     if (navigation) {
-      navigation.navigate('Login');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
     }
   };
 
@@ -112,25 +116,54 @@ export function ProfileScreen({ navigation }: any) {
             )}
           </View>
 
-          <Text style={styles.profileNameText}>
-            {currentUser.name && currentUser.name !== 'User' ? currentUser.name : 'Streamr Creator'}
-          </Text>
+          {currentUser.provider === 'guest' || currentUser.role === 'guest' ? (
+            <Text style={styles.profileNameText}>Guest User</Text>
+          ) : (
+            <>
+              <Text style={styles.profileNameText}>
+                {currentUser.name || 'Streamr Subscriber'}
+              </Text>
 
-          <Text style={styles.profileEmailText}>
-            {currentUser.email && currentUser.email !== 'user@streamr.app' ? currentUser.email : 'creator@streamr.app'}
-          </Text>
+              {currentUser.email ? (
+                <Text style={styles.profileEmailText}>{currentUser.email}</Text>
+              ) : null}
 
-          <View style={styles.verifiedBadgePill}>
-            <CheckCircle color="#10B981" size={14} />
-            <Text style={styles.verifiedBadgeText}>
-              {isLoggedIn ? 'Verified creator' : 'Guest visitor'}
-            </Text>
-          </View>
+              <View style={styles.verifiedBadgePill}>
+                <CheckCircle color="#10B981" size={14} />
+                <Text style={styles.verifiedBadgeText}>
+                  {currentUser.provider === 'google'
+                    ? 'Google Subscriber'
+                    : currentUser.provider === 'facebook'
+                    ? 'Facebook Subscriber'
+                    : 'Verified Subscriber'}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Login or Logout Action Button */}
         <View style={{ marginTop: 12, marginBottom: 6, width: '100%' }}>
-          {isLoggedIn ? (
+          {currentUser.provider === 'guest' || currentUser.role === 'guest' ? (
+            <Pressable
+              style={({ pressed }) => [{
+                backgroundColor: '#6366F1',
+                borderRadius: 12,
+                paddingVertical: 12,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={handleLoginRedirect}
+            >
+              <LogIn color="#FFFFFF" size={18} />
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 15 }}>
+                Log In
+              </Text>
+            </Pressable>
+          ) : (
             <Pressable
               style={({ pressed }) => [{
                 backgroundColor: 'rgba(239, 68, 68, 0.15)',
@@ -149,25 +182,6 @@ export function ProfileScreen({ navigation }: any) {
               <LogOut color="#EF4444" size={18} />
               <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 14 }}>
                 Log Out
-              </Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              style={({ pressed }) => [{
-                backgroundColor: '#6366F1',
-                borderRadius: 12,
-                paddingVertical: 10,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                opacity: pressed ? 0.8 : 1,
-              }]}
-              onPress={handleLoginRedirect}
-            >
-              <LogIn color="#FFFFFF" size={18} />
-              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
-                Log In with Google or Facebook
               </Text>
             </Pressable>
           )}

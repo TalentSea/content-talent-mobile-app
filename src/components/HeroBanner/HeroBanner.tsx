@@ -12,13 +12,15 @@ import {
 import { Play, Film, Award } from 'lucide-react-native';
 import type { ApiVideo } from '../../types/video';
 import type { PlaylistListItem } from '../../services/api/playlistApi';
+import type { MobileBrandingResponse } from '../../services/api/brandingApi';
+import { API_BASE_URL } from '../../constants/config';
 import { styles } from './styles';
 
 const { width } = Dimensions.get('window');
 
 export type HeroItem = {
   id: string | number;
-  type: 'video' | 'playlist' | 'trailer';
+  type: 'branding' | 'video' | 'playlist' | 'trailer';
   title: string;
   description: string;
   thumbnail_url: string;
@@ -27,6 +29,7 @@ export type HeroItem = {
   badgeLabel?: string;
   creatorName?: string;
   creatorAvatar?: string;
+  tagline?: string;
   rawVideo?: ApiVideo;
   rawPlaylist?: PlaylistListItem;
 };
@@ -34,6 +37,7 @@ export type HeroItem = {
 type HeroBannerProps = {
   video?: ApiVideo | null;
   heroItems?: HeroItem[];
+  branding?: MobileBrandingResponse | null;
   onPlayVideo?: (video: ApiVideo) => void;
   onSelectPlaylist?: (playlistId: number, title: string) => void;
 };
@@ -77,36 +81,149 @@ const DEFAULT_HERO_ITEMS: HeroItem[] = [
   },
 ];
 
+function resolveImageUrl(
+  url?: string | null,
+  fallback: string = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+): string {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
+    return fallback;
+  }
+  let clean = url.trim();
+
+  // Replace localhost or 127.0.0.1 with live server IP
+  if (clean.includes('localhost:8000') || clean.includes('127.0.0.1:8000')) {
+    clean = clean.replace(/http:\/\/(localhost|127\.0\.0\.1):8000/g, API_BASE_URL);
+  }
+
+  if (clean.startsWith('http://') || clean.startsWith('https://')) {
+    return clean;
+  }
+  if (clean.startsWith('/')) {
+    return `${API_BASE_URL}${clean}`;
+  }
+  return `${API_BASE_URL}/${clean}`;
+}
+
+function HeroBannerSlideItem({
+  item,
+  onPress,
+}: {
+  item: HeroItem;
+  onPress: (item: HeroItem) => void;
+}) {
+  const defaultFallback = item.type === 'branding'
+    ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
+    : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80';
+
+  const [imgUri, setImgUri] = useState<string>(() => resolveImageUrl(item.thumbnail_url, defaultFallback));
+  const [avatarUri, setAvatarUri] = useState<string>(() => resolveImageUrl(item.creatorAvatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'));
+
+  useEffect(() => {
+    setImgUri(resolveImageUrl(item.thumbnail_url, defaultFallback));
+    setAvatarUri(resolveImageUrl(item.creatorAvatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'));
+  }, [item.thumbnail_url, item.creatorAvatar]);
+
+  return (
+    <Pressable style={styles.bannerSlide} onPress={() => onPress(item)}>
+      <Image
+        source={{ uri: imgUri }}
+        style={styles.backgroundImage}
+        onError={() => {
+          console.warn('[HeroBanner] Image load notice for:', item.title, '-> using fallback.');
+          setImgUri(defaultFallback);
+        }}
+      />
+      <View style={styles.gradientOverlay}>
+        {item.type === 'branding' ? (
+          <View style={styles.brandingHeaderContent}>
+            <Image
+              source={{ uri: avatarUri }}
+              style={styles.brandingLogo}
+              onError={() => {
+                setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80');
+              }}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.brandingTitleText} numberOfLines={1}>
+                {item.creatorName || item.title || 'Naa Anveshana'}
+              </Text>
+              {item.tagline ? (
+                <Text style={styles.brandingTaglineText} numberOfLines={2}>
+                  {item.tagline}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.videoTitleText} numberOfLines={2}>
+            {item.title}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 export function HeroBanner({
   video,
   heroItems,
+  branding,
   onPlayVideo,
   onSelectPlaylist,
 }: HeroBannerProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  // Combine provided items or build from video fallback
-  const items: HeroItem[] = heroItems && heroItems.length > 0
+  const fallbackBanner = (heroItems && heroItems.length > 0 && heroItems[0].thumbnail_url)
+    ? heroItems[0].thumbnail_url
+    : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
+
+  const bannerImageUri = resolveImageUrl(
+    branding?.banner_url || (branding as any)?.creator_banner || (branding as any)?.cover_banner,
+    fallbackBanner,
+  );
+
+  const logoImageUri = resolveImageUrl(
+    branding?.logo_url || (branding as any)?.creator_logo || (branding as any)?.logo,
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
+  );
+
+  // Build branding slide items (Slide 1: Studio Branding, Next Slides: Featured Videos)
+  const brandingSlide: HeroItem = {
+    id: 'hero_branding_0',
+    type: 'branding',
+    title: branding?.creator_name || 'Naa Anveshana',
+    tagline: branding?.tagline || 'Going different countries and eating.',
+    description: branding?.description || '',
+    thumbnail_url: bannerImageUri,
+    creatorAvatar: logoImageUri,
+    creatorName: branding?.creator_name || 'Naa Anveshana',
+    badgeLabel: 'STUDIO BRANDING',
+    category: 'OFFICIAL',
+  };
+
+  const videoSlides: HeroItem[] = heroItems && heroItems.length > 0
     ? heroItems
     : video
       ? [
-          {
-            id: video.id,
-            type: 'video',
-            title: video.title,
-            description: video.description || 'Featured high-definition video stream.',
-            thumbnail_url: video.main_thumbnail_url || DEFAULT_HERO_ITEMS[0].thumbnail_url,
-            category: video.category || 'Featured',
-            badgeLabel: 'PLURALSIGHT SPOTLIGHT',
-            duration: video.duration || 'Stream',
-            creatorName: 'Alex OTT Creator',
-            creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-            rawVideo: video,
-          },
-          ...DEFAULT_HERO_ITEMS.slice(1),
-        ]
+        {
+          id: video.id,
+          type: 'video',
+          title: video.title,
+          description: video.description || 'Featured high-definition video stream.',
+          thumbnail_url: video.main_thumbnail_url || DEFAULT_HERO_ITEMS[0].thumbnail_url,
+          category: video.category || 'Featured',
+          badgeLabel: 'SPOTLIGHT',
+          duration: video.duration || 'Stream',
+          creatorName: branding?.creator_name || 'OTT Master Creator',
+          creatorAvatar: logoImageUri,
+          rawVideo: video,
+        },
+        ...DEFAULT_HERO_ITEMS.slice(1),
+      ]
       : DEFAULT_HERO_ITEMS;
+
+  const items: HeroItem[] = [brandingSlide, ...videoSlides];
 
   useEffect(() => {
     // Auto-advance banner every 6 seconds
@@ -125,24 +242,23 @@ export function HeroBanner({
     return () => clearInterval(timer);
   }, [items.length]);
 
-  function handleScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const slideWidth = width - 32;
-    const offset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offset / slideWidth);
-    if (index >= 0 && index < items.length && index !== activeIndex) {
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const slideSize = event.nativeEvent.layoutMeasurement.width;
+    const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
+    if (index !== activeIndex && index >= 0 && index < items.length) {
       setActiveIndex(index);
     }
-  }
+  };
 
-  function handleItemPress(item: HeroItem) {
+  const handleItemPress = (item: HeroItem) => {
     if (item.rawVideo && onPlayVideo) {
       onPlayVideo(item.rawVideo);
     } else if (item.rawPlaylist && onSelectPlaylist) {
-      onSelectPlaylist(item.rawPlaylist.id, item.rawPlaylist.name);
-    } else if (onPlayVideo && video) {
-      onPlayVideo(video);
+      onSelectPlaylist(Number(item.rawPlaylist.id), item.rawPlaylist.title);
+    } else if (onSelectPlaylist) {
+      onSelectPlaylist(1, item.title);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -158,65 +274,7 @@ export function HeroBanner({
         snapToInterval={width - 32}
         decelerationRate="fast"
         renderItem={({ item }) => (
-          <View style={styles.bannerSlide}>
-            <Image
-              source={{ uri: item.thumbnail_url }}
-              style={styles.backgroundImage}
-            />
-            <View style={styles.gradientOverlay}>
-              {/* Top Branding Row */}
-              <View style={styles.brandingBadgeRow}>
-                <View style={styles.pluralsightBadge}>
-                  <Award size={12} color="#FFFFFF" />
-                  <Text style={styles.pluralsightBadgeText}>
-                    {item.badgeLabel || 'PLURALSIGHT PATH'}
-                  </Text>
-                </View>
-                <View style={styles.clipBadge}>
-                  <Text style={styles.clipBadgeText}>
-                    🎬 {item.type === 'trailer' ? 'CLIP / TRAILER' : item.category || 'PREVIEW'}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Creator Profile Row */}
-              <View style={styles.creatorRow}>
-                <Image
-                  source={{ uri: item.creatorAvatar || 'https://via.placeholder.com/100' }}
-                  style={styles.creatorAvatar}
-                />
-                <View>
-                  <Text style={styles.creatorName}>{item.creatorName || 'OTT Master Creator'}</Text>
-                  <Text style={styles.creatorBio}>Expert Instructor • {item.duration}</Text>
-                </View>
-              </View>
-
-              <Text style={styles.title} numberOfLines={1}>
-                {item.title}
-              </Text>
-              <Text style={styles.description} numberOfLines={2}>
-                {item.description}
-              </Text>
-
-              <View style={styles.buttonRow}>
-                <Pressable
-                  style={styles.playButton}
-                  onPress={() => handleItemPress(item)}
-                >
-                  <Play size={14} color="#000000" fill="#000000" />
-                  <Text style={styles.playButtonText}>Watch Now</Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.trailerButton}
-                  onPress={() => handleItemPress(item)}
-                >
-                  <Film size={14} color="#FFFFFF" />
-                  <Text style={styles.trailerButtonText}>Clip / Trailer</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
+          <HeroBannerSlideItem item={item} onPress={handleItemPress} />
         )}
       />
 

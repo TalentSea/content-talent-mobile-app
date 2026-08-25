@@ -21,6 +21,7 @@ import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { fetchUserCategoriesApi, MobileCategoryItem } from '../../services/api/userActivityApi';
+import { fetchMobileBrandingApi, fetchMobileBannersApi, MobileBrandingResponse, MobileBannerItem } from '../../services/api/brandingApi';
 import { getCurrentUser } from '../../services/api/authService';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import type { ApiVideo } from '../../types/video';
@@ -32,6 +33,8 @@ export function HomeScreen({ navigation }: any) {
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [playlistsLoading, setPlaylistsLoading] = useState(true);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
+  const [branding, setBranding] = useState<MobileBrandingResponse | null>(null);
+  const [apiBanners, setApiBanners] = useState<MobileBannerItem[]>([]);
 
   const {
     videos,
@@ -50,13 +53,23 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => {
     async function loadLiveMobileData() {
       try {
-        const [playlistsRes, categoriesRes] = await Promise.allSettled([
+        const [playlistsRes, categoriesRes, brandingRes, bannersRes] = await Promise.allSettled([
           fetchPlaylists(undefined, 1, 10),
           fetchUserCategoriesApi(),
+          fetchMobileBrandingApi(),
+          fetchMobileBannersApi(),
         ]);
 
         if (playlistsRes.status === 'fulfilled' && playlistsRes.value?.items) {
           setPlaylists(playlistsRes.value.items);
+        }
+
+        if (brandingRes.status === 'fulfilled' && brandingRes.value) {
+          setBranding(brandingRes.value);
+        }
+
+        if (bannersRes.status === 'fulfilled' && bannersRes.value && bannersRes.value.length > 0) {
+          setApiBanners(bannersRes.value);
         }
 
         if (categoriesRes.status === 'fulfilled' && categoriesRes.value && categoriesRes.value.length > 0) {
@@ -89,20 +102,41 @@ export function HomeScreen({ navigation }: any) {
   // 3. Continue Watching: watch history filtered to available videos
   const continueWatchingList = continueWatching;
 
-  // Build Hero Banner Carousel items dynamically from live uploaded videos
-  const heroItems: HeroItem[] = (videos && videos.length > 0 ? videos.slice(0, 5) : []).map((v, idx) => ({
-    id: `hero_${v.id}`,
-    type: 'video',
-    title: v.title,
-    description: v.description || 'Watch now in high-definition video stream.',
-    thumbnail_url: getThumbnailForVideo(v),
-    category: v.category || 'Featured',
-    badgeLabel: idx === 0 ? 'FEATURED' : 'TRENDING NOW',
-    duration: v.duration || '00:00',
-    creatorName: 'Creator Studio',
-    creatorAvatar: getThumbnailForVideo(v),
-    rawVideo: v,
-  }));
+  // Extract custom featured banners configured in branding admin settings
+  const featuredBannersList: MobileBannerItem[] = (branding?.featured_videos && branding.featured_videos.length > 0)
+    ? branding.featured_videos
+    : apiBanners;
+
+  // Build Hero Banner Carousel items dynamically from live admin banners or uploaded videos
+  const heroItems: HeroItem[] = featuredBannersList.length > 0
+    ? featuredBannersList.map((b, idx) => {
+        const matchingVideo = videos.find(v => v.id === b.video_id || v.title.toLowerCase() === b.title.toLowerCase());
+        return {
+          id: `hero_banner_${b.id}`,
+          type: 'video',
+          title: b.title,
+          description: b.description || 'Watch now in high-definition video stream.',
+          thumbnail_url: b.image_url,
+          category: b.category || 'Featured',
+          badgeLabel: idx === 0 ? 'FEATURED' : 'SPOTLIGHT',
+          creatorName: branding?.creator_name || 'Creator Studio',
+          creatorAvatar: branding?.logo_url || b.image_url,
+          rawVideo: matchingVideo,
+        };
+      })
+    : (videos && videos.length > 0 ? [videos[0]] : []).map((v, idx) => ({
+        id: `hero_${v.id}`,
+        type: 'video',
+        title: v.title,
+        description: v.description || 'Watch now in high-definition video stream.',
+        thumbnail_url: getThumbnailForVideo(v),
+        category: v.category || 'Featured',
+        badgeLabel: idx === 0 ? 'FEATURED' : 'TRENDING NOW',
+        duration: v.duration || '00:00',
+        creatorName: branding?.creator_name || 'Creator Studio',
+        creatorAvatar: branding?.logo_url || getThumbnailForVideo(v),
+        rawVideo: v,
+      }));
 
   function handleSelectPlaylist(playlistId: number, playlistTitle: string) {
     navigation.navigate('CategoryDetail', {
@@ -152,6 +186,7 @@ export function HomeScreen({ navigation }: any) {
         {!loading && (
           <HeroBanner
             heroItems={heroItems}
+            branding={branding}
             onPlayVideo={playVideo}
             onSelectPlaylist={handleSelectPlaylist}
           />

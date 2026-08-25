@@ -41,8 +41,8 @@ export function LoginScreen({ navigation }: any) {
 
             try {
                 const restoredUser = await restoreStoredSession();
-                if (restoredUser && isMounted) {
-                    console.log('[LoginScreen] Auto-login restored user:', restoredUser.name);
+                if (restoredUser && restoredUser.provider !== 'guest' && isMounted) {
+                    console.log('[LoginScreen] Auto-login restored subscriber user:', restoredUser.name);
                     if (navigation) {
                         navigation.reset({
                             index: 0,
@@ -153,23 +153,29 @@ export function LoginScreen({ navigation }: any) {
             }
 
             const sendToken = realToken || `mock_google_${realProfile?.email || 'user'}`;
-            const authRes = await loginWithSocial(provider, sendToken, 'Mobile App', realProfile);
+            const authRes = await loginWithSocial(provider, sendToken, undefined, realProfile, 1);
 
-            if (realProfile) {
+            if (realProfile && authRes.user) {
                 setSessionTokens(
                     authRes.access_token || DEFAULT_AUTH_TOKEN,
                     authRes.refresh_token || `${provider}_session`,
-                    realProfile,
+                    authRes.user,
                 );
             }
 
             if (navigation) {
-                navigation.navigate('Home');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
             }
         } catch (error) {
             console.warn(`[LoginScreen] ${provider} social login notice:`, error);
             if (navigation) {
-                navigation.navigate('Home');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
             }
         } finally {
             setLoadingProvider(null);
@@ -207,23 +213,29 @@ export function LoginScreen({ navigation }: any) {
             };
 
             const sendToken = `mock_facebook_${input.replace(/[^a-zA-Z0-9]/g, '_')}`;
-            const authRes = await loginWithSocial('facebook', sendToken, 'Mobile App', fbProfile);
+            const authRes = await loginWithSocial('facebook', sendToken, undefined, fbProfile, 1);
 
             setSessionTokens(
                 authRes.access_token || DEFAULT_AUTH_TOKEN,
                 authRes.refresh_token || 'facebook_session',
-                fbProfile,
+                authRes.user || fbProfile,
             );
 
             setShowFacebookModal(false);
             if (navigation) {
-                navigation.navigate('Home');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
             }
         } catch (err) {
             console.warn('[FacebookModal] error:', err);
             setShowFacebookModal(false);
             if (navigation) {
-                navigation.navigate('Home');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
             }
         } finally {
             setFbLoggingIn(false);
@@ -233,13 +245,16 @@ export function LoginScreen({ navigation }: any) {
     const handleContinueAsGuest = async () => {
         try {
             setLoadingProvider('guest');
-            await loginAsGuest('Mobile App Guest');
+            await loginAsGuest(undefined, 1);
         } catch (e) {
             console.warn('[handleContinueAsGuest] notice:', e);
         } finally {
             setLoadingProvider(null);
             if (navigation) {
-                navigation.navigate('Home');
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
             }
         }
     };

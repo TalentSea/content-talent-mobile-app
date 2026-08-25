@@ -181,8 +181,14 @@ export const styles = StyleSheet.create({
   bottomPanel: {
     paddingHorizontal: 14,
     paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 12,
     backgroundColor: 'transparent',
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
   },
   progressAndTimeRow: {
     flexDirection: 'row',
@@ -202,6 +208,11 @@ export const styles = StyleSheet.create({
     color: '#FF0000',
     fontSize: 11,
     fontWeight: '700',
+  },
+  progressBarWrapperFlex: {
+    flex: 1,
+    height: 22,
+    justifyContent: 'center',
   },
   progressBarWrapperInLine: {
     flex: 1,
@@ -233,6 +244,11 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    gap: 8,
+  },
+  bottomRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   actionButton: {
@@ -444,5 +460,36 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  /* Subtitle Text Overlay */
+  subtitleOverlayContainer: {
+    position: 'absolute',
+    bottom: 58,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 900,
+    elevation: 900,
+  },
+  subtitleTextBackground: {
+    backgroundColor: 'rgba(0, 0, 0, 0.78)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    maxWidth: '92%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  subtitleText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 20,
+    textShadowColor: '#000000',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });

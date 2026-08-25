@@ -108,6 +108,7 @@ export function setBackendViewCount(videoId: number | string, count: number): vo
   const current = globalUniqueViewCounts[key] || 0;
   if (count > current) {
     globalUniqueViewCounts[key] = count;
+    saveGlobalViewsToDisk();
     notifyViewListeners();
   }
 }
