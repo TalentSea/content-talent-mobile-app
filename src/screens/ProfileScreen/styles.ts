@@ -2,39 +2,74 @@ import { StyleSheet } from 'react-native';
 import { colors } from '../../constants/colors';
 
 export const styles = StyleSheet.create({
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   screen: {
     flex: 1,
-    backgroundColor: '#0A0A10',
+    backgroundColor: colors.background || '#05050A',
+  },
+  header: {
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#161622',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#161622',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingHorizontal: 16,
   },
-  // Profile Header Card (Matching Screenshot)
+
+  // New Top Profile Card (Gradient Avatar, Name, Email, Membership Role)
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#141420',
-    borderRadius: 24,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.07)',
-    marginBottom: 20,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginTop: 8,
+    marginBottom: 14,
   },
   avatarGradientBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
     backgroundColor: '#C026D3',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 14,
   },
   avatarImage: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 18,
   },
   avatarInitials: {
     color: '#FFFFFF',
@@ -47,9 +82,9 @@ export const styles = StyleSheet.create({
   },
   userNameText: {
     color: '#FFFFFF',
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '800',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   userEmailText: {
     color: '#64748B',
@@ -61,7 +96,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 6,
+    marginTop: 5,
   },
   membershipText: {
     color: '#A855F7',
@@ -72,49 +107,31 @@ export const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  // Menu List Items
-  menuList: {
-    gap: 4,
-  },
-  menuItemRow: {
+  // Tab Switcher Styles (Liked | Saved | Downloads | History)
+  tabContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 4,
+    backgroundColor: '#141422',
+    borderRadius: 10,
+    padding: 4,
+    marginVertical: 10,
   },
-  menuIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#181926',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  menuItemTitle: {
+  tabButton: {
     flex: 1,
-    color: '#F1F5F9',
-    fontSize: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTabButton: {
+    backgroundColor: colors.primary || '#6366F1',
+  },
+  tabText: {
+    color: '#9CA3AF',
+    fontSize: 11,
     fontWeight: '600',
   },
-  menuItemChevron: {
-    marginLeft: 8,
-  },
-
-  // Sub-Section for Selected Video List (History/Liked/Saved/Downloads)
-  activeSectionContainer: {
-    marginTop: 16,
-    flex: 1,
-  },
-  activeSectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  activeSectionTitle: {
+  activeTabText: {
     color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '700',
   },
 });

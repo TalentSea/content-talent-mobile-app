@@ -1,25 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
   Pressable,
-  ScrollView,
   StatusBar,
   Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  Bookmark,
+  Bell,
+  ChevronLeft,
   ChevronRight,
-  Clock,
   Crown,
-  Download,
-  Heart,
-  HelpCircle,
+  LogIn,
   LogOut,
   Settings,
-  X,
+  Trash2,
 } from 'lucide-react-native';
 import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
@@ -51,7 +47,7 @@ function getInitials(name?: string | null): string {
 
 export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
-  const [selectedFeed, setSelectedFeed] = useState<'none' | 'history' | 'liked' | 'saved' | 'downloads'>('none');
+  const [activeTab, setActiveTab] = useState<'liked' | 'saved' | 'downloads' | 'history'>('liked');
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -62,7 +58,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const { videos, loading, reload } = useVideos();
   const { likedVideos, savedVideos } = useUserActivity(videos);
-  const { history, removeWatchHistoryItem } = useWatchHistory(videos);
+  const { history, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
   const { downloadedVideos } = useDownloads(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
@@ -78,42 +74,35 @@ export function ProfileScreen({ navigation }: any) {
 
   const historyVideos: ApiVideo[] = history.map(h => h.video);
 
-  const activeVideos: ApiVideo[] =
-    selectedFeed === 'history'
+  const userVideos: ApiVideo[] =
+    activeTab === 'history'
       ? historyVideos
-      : selectedFeed === 'liked'
+      : activeTab === 'liked'
       ? likedVideos
-      : selectedFeed === 'saved'
+      : activeTab === 'saved'
       ? savedVideos
       : downloadedVideos
           .map((item: DownloadedVideoItem) => item?.video || (item as any))
           .filter((v: ApiVideo) => v && v.id);
 
   const handleLogout = async () => {
-    Alert.alert('Log Out', 'Are you sure you want to log out of your account?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await clearSessionTokens();
-          if (navigation) {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          }
-        },
-      },
-    ]);
+    await clearSessionTokens();
+    if (navigation) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   };
 
-  const handleSupportPress = () => {
-    Alert.alert(
-      'Help & Support',
-      'For assistance, feedback, or subscription queries, contact our support team at support@streamr.app or visit streamr.app/help.',
-      [{ text: 'OK' }],
-    );
+  const handleLoginRedirect = async () => {
+    await clearSessionTokens();
+    if (navigation) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    }
   };
 
   const membershipLabel = userIsSubscribed
@@ -128,176 +117,242 @@ export function ProfileScreen({ navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          {/* Top Profile Card matching Screenshot */}
+      {/* Header Bar */}
+      <View style={styles.header}>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <ChevronLeft color="#FFFFFF" size={20} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Pressable
-            style={styles.userCard}
-            onPress={() => navigation?.navigate('Subscription')}
+            style={styles.headerIconButton}
+            onPress={() => navigation.navigate('Notifications')}
           >
-            <View style={styles.avatarGradientBox}>
-              {currentUser.avatar_url ? (
-                <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
-              ) : (
-                <Text style={styles.avatarInitials}>
-                  {getInitials(currentUser.name || 'Alex Kumar')}
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.userInfoContainer}>
-              <Text style={styles.userNameText}>
-                {currentUser.name || 'Alex Kumar'}
-              </Text>
-              <Text style={styles.userEmailText}>
-                {currentUser.email || 'alex.kumar@gmail.com'}
-              </Text>
-              <View style={styles.membershipRow}>
-                <Crown size={14} color="#A855F7" />
-                <Text style={styles.membershipText}>{membershipLabel}</Text>
-              </View>
-            </View>
-
-            <ChevronRight color="#475569" size={20} style={styles.cardChevron} />
+            <Bell color="#FFFFFF" size={18} />
           </Pressable>
+          <Pressable
+            style={styles.headerIconButton}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Settings color="#FFFFFF" size={18} />
+          </Pressable>
+        </View>
+      </View>
 
-          {/* Menu Items List */}
-          <View style={styles.menuList}>
-            {/* 1. My Subscription */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() => navigation?.navigate('Subscription')}
-            >
-              <View style={styles.menuIconCircle}>
-                <Crown size={20} color="#A855F7" />
-              </View>
-              <Text style={styles.menuItemTitle}>My Subscription</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 2. Watch History */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() =>
-                setSelectedFeed(prev => (prev === 'history' ? 'none' : 'history'))
-              }
-            >
-              <View style={styles.menuIconCircle}>
-                <Clock size={20} color="#38BDF8" />
-              </View>
-              <Text style={styles.menuItemTitle}>Watch History</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 3. Liked Videos */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() =>
-                setSelectedFeed(prev => (prev === 'liked' ? 'none' : 'liked'))
-              }
-            >
-              <View style={styles.menuIconCircle}>
-                <Heart size={20} color="#F43F5E" />
-              </View>
-              <Text style={styles.menuItemTitle}>Liked Videos</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 4. Saved Videos */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() =>
-                setSelectedFeed(prev => (prev === 'saved' ? 'none' : 'saved'))
-              }
-            >
-              <View style={styles.menuIconCircle}>
-                <Bookmark size={20} color="#F59E0B" />
-              </View>
-              <Text style={styles.menuItemTitle}>Saved Videos</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 5. Downloads */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() =>
-                setSelectedFeed(prev => (prev === 'downloads' ? 'none' : 'downloads'))
-              }
-            >
-              <View style={styles.menuIconCircle}>
-                <Download size={20} color="#10B981" />
-              </View>
-              <Text style={styles.menuItemTitle}>Downloads</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 6. Settings */}
-            <Pressable
-              style={styles.menuItemRow}
-              onPress={() => navigation?.navigate('Settings')}
-            >
-              <View style={styles.menuIconCircle}>
-                <Settings size={20} color="#A1A1AA" />
-              </View>
-              <Text style={styles.menuItemTitle}>Settings</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 7. Help & Support */}
-            <Pressable style={styles.menuItemRow} onPress={handleSupportPress}>
-              <View style={styles.menuIconCircle}>
-                <HelpCircle size={20} color="#C084FC" />
-              </View>
-              <Text style={styles.menuItemTitle}>Help & Support</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
-
-            {/* 8. Logout */}
-            <Pressable style={styles.menuItemRow} onPress={handleLogout}>
-              <View style={styles.menuIconCircle}>
-                <LogOut size={20} color="#EF4444" />
-              </View>
-              <Text style={styles.menuItemTitle}>Logout</Text>
-              <ChevronRight size={18} color="#475569" style={styles.menuItemChevron} />
-            </Pressable>
+      <View style={styles.content}>
+        {/* Top User Card (New Card Design: Initials Avatar Box, Name, Email, Crown Role Badge) */}
+        <Pressable
+          style={styles.userCard}
+          onPress={() => navigation?.navigate('Subscription')}
+        >
+          <View style={styles.avatarGradientBox}>
+            {currentUser.avatar_url ? (
+              <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
+            ) : (
+              <Text style={styles.avatarInitials}>
+                {getInitials(currentUser.name || 'Alex Kumar')}
+              </Text>
+            )}
           </View>
 
-          {/* Expandable Feed Section (History / Liked / Saved / Downloads) */}
-          {selectedFeed !== 'none' ? (
-            <View style={styles.activeSectionContainer}>
-              <View style={styles.activeSectionHeader}>
-                <Text style={styles.activeSectionTitle}>
-                  {selectedFeed === 'history'
-                    ? 'Watch History'
-                    : selectedFeed === 'liked'
-                    ? 'Liked Videos'
-                    : selectedFeed === 'saved'
-                    ? 'Saved Videos'
-                    : 'Downloaded Videos'}
-                </Text>
-                <Pressable onPress={() => setSelectedFeed('none')}>
-                  <X size={18} color="#94A3B8" />
-                </Pressable>
-              </View>
-
-              <VerticalList
-                videos={activeVideos}
-                numColumns={2}
-                refreshing={loading}
-                isContinueWatching={true}
-                onRefresh={reload}
-                onPressVideo={playVideo}
-                onDeleteVideo={
-                  selectedFeed === 'history'
-                    ? (v: any) => removeWatchHistoryItem(v.id)
-                    : undefined
-                }
-                emptyText={`No ${selectedFeed} videos found.`}
-              />
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.userNameText}>
+              {currentUser.name || 'Alex Kumar'}
+            </Text>
+            <Text style={styles.userEmailText}>
+              {currentUser.email || 'alex.kumar@gmail.com'}
+            </Text>
+            <View style={styles.membershipRow}>
+              <Crown size={14} color="#A855F7" />
+              <Text style={styles.membershipText}>{membershipLabel}</Text>
             </View>
+          </View>
+
+          <ChevronRight color="#475569" size={20} style={styles.cardChevron} />
+        </Pressable>
+
+        {/* Action Buttons: Upgrade Plan & Login/Logout */}
+        <View style={{ marginBottom: 8, width: '100%', gap: 8 }}>
+          {userIsLoggedIn ? (
+            <Pressable
+              style={({ pressed }) => [{
+                backgroundColor: '#6366F1',
+                borderRadius: 12,
+                paddingVertical: 10,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: pressed ? 0.85 : 1,
+              }]}
+              onPress={() => navigation?.navigate('Subscription')}
+            >
+              <Crown color="#FFFFFF" size={16} />
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                {userIsSubscribed ? 'Upgrade / Change Plan' : 'Choose a Membership Plan'}
+              </Text>
+            </Pressable>
           ) : null}
+
+          {!userIsLoggedIn ? (
+            <Pressable
+              style={({ pressed }) => [{
+                backgroundColor: '#6366F1',
+                borderRadius: 12,
+                paddingVertical: 11,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={handleLoginRedirect}
+            >
+              <LogIn color="#FFFFFF" size={18} />
+              <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 14 }}>
+                Log In
+              </Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={({ pressed }) => [{
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                borderColor: '#EF4444',
+                borderWidth: 1,
+                borderRadius: 10,
+                paddingVertical: 9,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={handleLogout}
+            >
+              <LogOut color="#EF4444" size={16} />
+              <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 13 }}>
+                Log Out
+              </Text>
+            </Pressable>
+          )}
         </View>
-      </ScrollView>
+
+        {/* User Activity Tab Switcher: Liked | Saved | Downloads | History */}
+        <View style={styles.tabContainer}>
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeTab === 'liked' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab('liked')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'liked' && styles.activeTabText,
+              ]}
+              numberOfLines={1}
+            >
+              Liked ({likedVideos.length})
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeTab === 'saved' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab('saved')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'saved' && styles.activeTabText,
+              ]}
+              numberOfLines={1}
+            >
+              Saved ({savedVideos.length})
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeTab === 'downloads' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab('downloads')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'downloads' && styles.activeTabText,
+              ]}
+              numberOfLines={1}
+            >
+              Downloads ({downloadedVideos.length})
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeTab === 'history' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveTab('history')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'history' && styles.activeTabText,
+              ]}
+              numberOfLines={1}
+            >
+              History ({history.length})
+            </Text>
+          </Pressable>
+        </View>
+
+        {/* Clear All History Header Action Button */}
+        {activeTab === 'history' && history.length > 0 ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <Pressable
+              style={({ pressed }) => [{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                borderColor: 'rgba(239, 68, 68, 0.4)',
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => clearWatchHistory()}
+            >
+              <Trash2 size={12} color="#EF4444" />
+              <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '700' }}>Clear All History</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {/* Activity Feed Grid */}
+        <View style={{ flex: 1 }}>
+          <VerticalList
+            videos={userVideos}
+            numColumns={2}
+            refreshing={loading}
+            isContinueWatching={true}
+            onRefresh={reload}
+            onPressVideo={playVideo}
+            onDeleteVideo={activeTab === 'history' ? (video: any) => removeWatchHistoryItem(video.id) : undefined}
+            emptyText={`No ${activeTab} videos found.`}
+          />
+        </View>
+      </View>
 
       {/* Permanent Bottom Navigation Bar */}
       <BottomNavBar activeTab="Profile" navigation={navigation} />
