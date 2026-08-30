@@ -589,10 +589,10 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                    Upgrade to VIP Access
+                    Upgrade your plan
                   </Text>
                   <Text style={{ color: '#A5B4FC', fontSize: 11, marginTop: 1 }}>
-                    Ad-Free 4K Ultra HD • ₹99/mo via Razorpay UPI
+                    View plans to unlock unlimited 4K streaming
                   </Text>
                 </View>
               </View>
@@ -602,7 +602,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                   style={({ pressed }) => [{
                     backgroundColor: '#6366F1',
                     borderRadius: 10,
-                    paddingHorizontal: 12,
+                    paddingHorizontal: 14,
                     paddingVertical: 8,
                     opacity: pressed ? 0.8 : 1,
                   }]}

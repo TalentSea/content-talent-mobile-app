@@ -130,17 +130,12 @@ function HeroBannerSlideItem({
         onError={() => setImgUri(defaultFallback)}
       />
       <View style={styles.gradientOverlay}>
-        {/* Top Badges (Pluralsight Path & Category) */}
+        {/* Top Badge */}
         <View style={styles.brandingBadgeRow}>
           <View style={styles.pluralsightBadge}>
             <Award size={12} color="#FFFFFF" />
             <Text style={styles.pluralsightBadgeText}>
               {item.badgeLabel || 'FEATURED SPOTLIGHT'}
-            </Text>
-          </View>
-          <View style={styles.clipBadge}>
-            <Text style={styles.clipBadgeText}>
-              🎬 {item.type === 'trailer' ? 'CLIP / TRAILER' : item.category || 'PREVIEW'}
             </Text>
           </View>
         </View>
@@ -155,7 +150,7 @@ function HeroBannerSlideItem({
             />
             <View style={{ flex: 1 }}>
               <Text style={styles.brandingTitleText} numberOfLines={1}>
-                {item.creatorName || item.title || 'Naa Anveshana'}
+                {item.creatorName || item.title || 'Creator Studio'}
               </Text>
               {item.tagline ? (
                 <Text style={styles.brandingTaglineText} numberOfLines={2}>
@@ -173,7 +168,7 @@ function HeroBannerSlideItem({
                 onError={() => setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80')}
               />
               <View>
-                <Text style={styles.creatorName}>{item.creatorName || 'OTT Master Creator'}</Text>
+                <Text style={styles.creatorName}>{item.creatorName || 'Streamr Studio'}</Text>
                 {item.duration ? (
                   <Text style={styles.creatorBio}>Duration • {item.duration}</Text>
                 ) : null}
@@ -191,16 +186,11 @@ function HeroBannerSlideItem({
           </>
         )}
 
-        {/* Action Buttons: Watch Now & Clip / Trailer */}
+        {/* Action Button: Watch Now */}
         <View style={styles.buttonRow}>
           <Pressable style={styles.playButton} onPress={() => onPress(item)}>
             <Play size={14} color="#000000" fill="#000000" />
             <Text style={styles.playButtonText}>Watch Now</Text>
-          </Pressable>
-
-          <Pressable style={styles.trailerButton} onPress={() => onPress(item)}>
-            <Film size={14} color="#FFFFFF" />
-            <Text style={styles.trailerButtonText}>Clip / Trailer</Text>
           </Pressable>
         </View>
       </View>
