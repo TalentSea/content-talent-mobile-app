@@ -90,7 +90,6 @@ function resolveImageUrl(
   }
   let clean = url.trim();
 
-  // Replace localhost or 127.0.0.1 with live server IP
   if (clean.includes('localhost:8000') || clean.includes('127.0.0.1:8000')) {
     clean = clean.replace(/http:\/\/(localhost|127\.0\.0\.1):8000/g, API_BASE_URL);
   }
@@ -124,24 +123,35 @@ function HeroBannerSlideItem({
   }, [item.thumbnail_url, item.creatorAvatar]);
 
   return (
-    <Pressable style={styles.bannerSlide} onPress={() => onPress(item)}>
+    <View style={styles.bannerSlide}>
       <Image
         source={{ uri: imgUri }}
         style={styles.backgroundImage}
-        onError={() => {
-          console.warn('[HeroBanner] Image load notice for:', item.title, '-> using fallback.');
-          setImgUri(defaultFallback);
-        }}
+        onError={() => setImgUri(defaultFallback)}
       />
       <View style={styles.gradientOverlay}>
+        {/* Top Badges (Pluralsight Path & Category) */}
+        <View style={styles.brandingBadgeRow}>
+          <View style={styles.pluralsightBadge}>
+            <Award size={12} color="#FFFFFF" />
+            <Text style={styles.pluralsightBadgeText}>
+              {item.badgeLabel || 'FEATURED SPOTLIGHT'}
+            </Text>
+          </View>
+          <View style={styles.clipBadge}>
+            <Text style={styles.clipBadgeText}>
+              🎬 {item.type === 'trailer' ? 'CLIP / TRAILER' : item.category || 'PREVIEW'}
+            </Text>
+          </View>
+        </View>
+
+        {/* Studio Branding / Creator Profile Row */}
         {item.type === 'branding' ? (
           <View style={styles.brandingHeaderContent}>
             <Image
               source={{ uri: avatarUri }}
               style={styles.brandingLogo}
-              onError={() => {
-                setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80');
-              }}
+              onError={() => setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80')}
             />
             <View style={{ flex: 1 }}>
               <Text style={styles.brandingTitleText} numberOfLines={1}>
@@ -155,12 +165,46 @@ function HeroBannerSlideItem({
             </View>
           </View>
         ) : (
-          <Text style={styles.videoTitleText} numberOfLines={2}>
-            {item.title}
-          </Text>
+          <>
+            <View style={styles.creatorRow}>
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.creatorAvatar}
+                onError={() => setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80')}
+              />
+              <View>
+                <Text style={styles.creatorName}>{item.creatorName || 'OTT Master Creator'}</Text>
+                {item.duration ? (
+                  <Text style={styles.creatorBio}>Duration • {item.duration}</Text>
+                ) : null}
+              </View>
+            </View>
+
+            <Text style={styles.title} numberOfLines={1}>
+              {item.title}
+            </Text>
+            {item.description ? (
+              <Text style={styles.description} numberOfLines={2}>
+                {item.description}
+              </Text>
+            ) : null}
+          </>
         )}
+
+        {/* Action Buttons: Watch Now & Clip / Trailer */}
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.playButton} onPress={() => onPress(item)}>
+            <Play size={14} color="#000000" fill="#000000" />
+            <Text style={styles.playButtonText}>Watch Now</Text>
+          </Pressable>
+
+          <Pressable style={styles.trailerButton} onPress={() => onPress(item)}>
+            <Film size={14} color="#FFFFFF" />
+            <Text style={styles.trailerButtonText}>Clip / Trailer</Text>
+          </Pressable>
+        </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -188,7 +232,6 @@ export function HeroBanner({
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
   );
 
-  // Build branding slide items (Slide 1: Studio Branding, Next Slides: Featured Videos)
   const brandingSlide: HeroItem = {
     id: 'hero_branding_0',
     type: 'branding',
@@ -226,7 +269,6 @@ export function HeroBanner({
   const items: HeroItem[] = [brandingSlide, ...videoSlides];
 
   useEffect(() => {
-    // Auto-advance banner every 6 seconds
     const timer = setInterval(() => {
       setActiveIndex(prev => {
         const next = (prev + 1) % items.length;
@@ -278,7 +320,6 @@ export function HeroBanner({
         )}
       />
 
-      {/* Pagination Dots */}
       <View style={styles.paginationDots}>
         {items.map((_, i) => (
           <View

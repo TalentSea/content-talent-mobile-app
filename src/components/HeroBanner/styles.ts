@@ -6,14 +6,14 @@ const { width } = Dimensions.get('window');
 export const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: 270,
+    height: 280,
     marginBottom: 20,
     position: 'relative',
   },
   bannerSlide: {
     width: width - 32,
     marginHorizontal: 16,
-    height: 250,
+    height: 260,
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
@@ -32,50 +32,163 @@ export const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.28)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     justifyContent: 'flex-end',
-    padding: 18,
+    padding: 16,
   },
+
+  // Branding Badges (Pluralsight Path & Clip/Trailer)
+  brandingBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  pluralsightBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#6366F1',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  pluralsightBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  clipBadge: {
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  clipBadgeText: {
+    color: '#E5E7EB',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  // Creator Row
+  creatorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  creatorAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#1E1E2E',
+  },
+  creatorName: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  creatorBio: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+
+  // Studio Branding Card Content
   brandingHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+    marginBottom: 8,
   },
   brandingLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 2,
     borderColor: '#FFFFFF',
     backgroundColor: '#1E1E2E',
   },
   brandingTitleText: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
-    marginBottom: 4,
+    marginBottom: 2,
     textShadowColor: 'rgba(0, 0, 0, 0.85)',
     textShadowOffset: { width: 0, height: 1.5 },
     textShadowRadius: 4,
   },
   brandingTaglineText: {
     color: '#F3F4F6',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 19,
+    lineHeight: 18,
     textShadowColor: 'rgba(0, 0, 0, 0.85)',
     textShadowOffset: { width: 0, height: 1.5 },
     textShadowRadius: 4,
   },
-  videoTitleText: {
+
+  // Video Title & Description
+  title: {
     color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 25,
+    fontSize: 17,
+    fontWeight: '800',
+    lineHeight: 22,
+    marginBottom: 4,
     textShadowColor: 'rgba(0, 0, 0, 0.85)',
-    textShadowOffset: { width: 0, height: 1.5 },
-    textShadowRadius: 4,
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
+  description: {
+    color: '#D1D5DB',
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 10,
+  },
+
+  // Action Buttons (Watch Now & Clip/Trailer)
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  playButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  playButtonText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  trailerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  trailerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  // Pagination Dots
   paginationDots: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -96,6 +209,6 @@ export const styles = StyleSheet.create({
     width: 18,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#E50914',
+    backgroundColor: '#6366F1',
   },
 });
