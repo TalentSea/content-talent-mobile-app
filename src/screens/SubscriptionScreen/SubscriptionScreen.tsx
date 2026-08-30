@@ -100,20 +100,9 @@ export function SubscriptionScreen({ navigation }: any) {
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Subscription Plans</Text>
           <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }}>
-            Create and manage your subscription tiers
+            Choose a plan to unlock premium streaming
           </Text>
         </View>
-        <Pressable
-          style={{
-            backgroundColor: '#6366F1',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 8,
-          }}
-          onPress={() => Alert.alert('Create Plan', 'Custom creator plan creation dialog')}
-        >
-          <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>+ Create Plan</Text>
-        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
