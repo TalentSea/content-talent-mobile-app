@@ -155,15 +155,33 @@ export async function incrementVideoViewsApi(videoId: number) {
 }
 
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
-  try {
-    // Exclusive Mobile Endpoint: GET /api/v1/mobile/categories
-    const response = await apiGet<MobileCategoriesResponse>('/api/v1/mobile/categories');
-    if (response && Array.isArray(response.data)) {
-      return response.data;
+  const endpoints = [
+    '/api/v1/mobile/categories',
+    '/api/v1/categories',
+    '/api/v1/admin/categories',
+    '/api/v1/categories/list',
+  ];
+
+  for (const path of endpoints) {
+    try {
+      const response = await apiGet<any>(path);
+      const list = Array.isArray(response)
+        ? response
+        : response?.data || response?.items || response?.categories;
+
+      if (Array.isArray(list) && list.length > 0) {
+        return list.map((item: any, idx: number) => ({
+          id: item.id || idx + 1,
+          name: item.name || item.title || item.category_name || 'Category',
+          slug: item.slug || (item.name ? item.name.toLowerCase().replace(/\s+/g, '-') : `cat_${idx}`),
+          color: item.color,
+          icon: item.icon,
+        }));
+      }
+    } catch (error) {
+      console.warn(`[fetchUserCategoriesApi] Endpoint ${path} notice:`, error);
     }
-    return [];
-  } catch (error) {
-    console.warn('[fetchUserCategoriesApi] Mobile API notice:', error);
-    return [];
   }
+
+  return [];
 }

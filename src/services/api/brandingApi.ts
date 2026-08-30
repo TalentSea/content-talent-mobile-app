@@ -88,38 +88,57 @@ const findLogoUrl = (obj: any): string | null => {
 };
 
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
-  try {
-    // 1. Primary Endpoint: GET /api/v1/mobile/branding
-    const rawRes = await apiGet<any>('/api/v1/mobile/branding');
-    console.log('[fetchMobileBrandingApi] Full JSON:', JSON.stringify(rawRes));
+  const endpoints = [
+    '/api/v1/mobile/branding',
+    '/api/v1/branding',
+    '/api/v1/admin/branding',
+    '/api/v1/branding/info',
+  ];
 
-    if (rawRes) {
-      const data = rawRes.data || rawRes.branding || rawRes.creator || rawRes;
-      const detectedBanner = findBannerUrl(data) || findBannerUrl(rawRes);
-      const detectedLogo = findLogoUrl(data) || findLogoUrl(rawRes);
+  for (const path of endpoints) {
+    try {
+      const rawRes = await apiGet<any>(path);
+      if (rawRes) {
+        const data = rawRes.data || rawRes.branding || rawRes.creator || rawRes;
+        const detectedBanner = findBannerUrl(data) || findBannerUrl(rawRes);
+        const detectedLogo = findLogoUrl(data) || findLogoUrl(rawRes);
 
-      const rawBanners = data.featured_videos || data.featured_banners || data.featured || data.banners || rawRes.featured_videos || rawRes.featured_banners || rawRes.banners || [];
-      const parsedBanners: MobileBannerItem[] = Array.isArray(rawBanners) ? rawBanners.map((b: any) => ({
-        id: b.id || b.video_id || Math.random(),
-        title: b.title || b.name || 'Featured Video',
-        description: b.description || '',
-        image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || b.banner_url || '',
-        video_id: b.video_id || b.id,
-        category: b.category,
-      })) : [];
+        const rawBanners =
+          data.featured_videos ||
+          data.featured_banners ||
+          data.featured ||
+          data.banners ||
+          rawRes.featured_videos ||
+          rawRes.featured_banners ||
+          rawRes.banners ||
+          [];
 
-      return {
-        creator_name: data.creator_name || data.studio_name || data.name || rawRes.creator_name || null,
-        tagline: data.tagline || data.subtitle || rawRes.tagline || null,
-        description: data.description || data.bio || rawRes.description || null,
-        banner_url: detectedBanner,
-        logo_url: detectedLogo,
-        updated_at: data.updated_at || rawRes.updated_at || null,
-        featured_videos: parsedBanners,
-      };
+        const parsedBanners: MobileBannerItem[] = Array.isArray(rawBanners)
+          ? rawBanners.map((b: any) => ({
+              id: b.id || b.video_id || Math.random(),
+              title: b.title || b.name || 'Featured Video',
+              description: b.description || '',
+              image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || b.banner_url || '',
+              video_id: b.video_id || b.id,
+              category: b.category,
+            }))
+          : [];
+
+        if (detectedBanner || detectedLogo || data.creator_name || data.name || parsedBanners.length > 0) {
+          return {
+            creator_name: data.creator_name || data.studio_name || data.name || rawRes.creator_name || null,
+            tagline: data.tagline || data.subtitle || rawRes.tagline || null,
+            description: data.description || data.bio || rawRes.description || null,
+            banner_url: detectedBanner,
+            logo_url: detectedLogo,
+            updated_at: data.updated_at || rawRes.updated_at || null,
+            featured_videos: parsedBanners,
+          };
+        }
+      }
+    } catch (error) {
+      console.warn(`[fetchMobileBrandingApi] Endpoint ${path} notice:`, error);
     }
-  } catch (error) {
-    console.warn('[fetchMobileBrandingApi] Mobile branding notice:', error);
   }
 
   return {
@@ -134,30 +153,30 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
 }
 
 export async function fetchMobileBannersApi(): Promise<MobileBannerItem[]> {
-  try {
-    // Secondary Endpoint: GET /api/v1/mobile/banners
-    const rawRes = await apiGet<any>('/api/v1/mobile/banners');
-    if (rawRes && Array.isArray(rawRes.items)) {
-      return rawRes.items.map((b: any) => ({
-        id: b.id || Math.random(),
-        title: b.title || b.name || 'Featured Video',
-        description: b.description || '',
-        image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || '',
-        video_id: b.video_id,
-        category: b.category,
-      }));
-    } else if (Array.isArray(rawRes)) {
-      return rawRes.map((b: any) => ({
-        id: b.id || Math.random(),
-        title: b.title || b.name || 'Featured Video',
-        description: b.description || '',
-        image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || '',
-        video_id: b.video_id,
-        category: b.category,
-      }));
+  const endpoints = [
+    '/api/v1/mobile/banners',
+    '/api/v1/banners',
+    '/api/v1/admin/banners',
+  ];
+
+  for (const path of endpoints) {
+    try {
+      const rawRes = await apiGet<any>(path);
+      const itemsList = Array.isArray(rawRes) ? rawRes : rawRes?.items || rawRes?.data || rawRes?.banners;
+      if (Array.isArray(itemsList) && itemsList.length > 0) {
+        return itemsList.map((b: any) => ({
+          id: b.id || Math.random(),
+          title: b.title || b.name || 'Featured Video',
+          description: b.description || '',
+          image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || '',
+          video_id: b.video_id || b.id,
+          category: b.category,
+        }));
+      }
+    } catch (e) {
+      console.warn(`[fetchMobileBannersApi] Endpoint ${path} notice:`, e);
     }
-  } catch (e) {
-    // Banners endpoint notice
   }
+
   return [];
 }

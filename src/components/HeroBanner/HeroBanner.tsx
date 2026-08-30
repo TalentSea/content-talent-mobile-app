@@ -232,41 +232,59 @@ export function HeroBanner({
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
   );
 
-  const brandingSlide: HeroItem = {
-    id: 'hero_branding_0',
-    type: 'branding',
-    title: branding?.creator_name || 'Naa Anveshana',
-    tagline: branding?.tagline || 'Going different countries and eating.',
-    description: branding?.description || '',
-    thumbnail_url: bannerImageUri,
-    creatorAvatar: logoImageUri,
-    creatorName: branding?.creator_name || 'Naa Anveshana',
-    badgeLabel: 'STUDIO BRANDING',
-    category: 'OFFICIAL',
-  };
+export function HeroBanner({
+  video,
+  heroItems = [],
+  branding,
+  onPlayVideo,
+  onSelectPlaylist,
+}: HeroBannerProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
-  const videoSlides: HeroItem[] = heroItems && heroItems.length > 0
-    ? heroItems
-    : video
-      ? [
-        {
-          id: video.id,
-          type: 'video',
-          title: video.title,
-          description: video.description || 'Featured high-definition video stream.',
-          thumbnail_url: video.main_thumbnail_url || DEFAULT_HERO_ITEMS[0].thumbnail_url,
-          category: video.category || 'Featured',
-          badgeLabel: 'SPOTLIGHT',
-          duration: video.duration || 'Stream',
-          creatorName: branding?.creator_name || 'OTT Master Creator',
-          creatorAvatar: logoImageUri,
-          rawVideo: video,
-        },
-        ...DEFAULT_HERO_ITEMS.slice(1),
-      ]
-      : DEFAULT_HERO_ITEMS;
+  const items: HeroItem[] = [];
 
-  const items: HeroItem[] = [brandingSlide, ...videoSlides];
+  // 1. Add Studio Branding slide ONLY if branding API returns real creator data
+  if (branding && (branding.creator_name || branding.banner_url || branding.logo_url)) {
+    const bannerUri = resolveImageUrl(branding.banner_url, '');
+    const logoUri = resolveImageUrl(branding.logo_url, '');
+    items.push({
+      id: 'hero_branding_0',
+      type: 'branding',
+      title: branding.creator_name || 'Creator Studio',
+      tagline: branding.tagline || '',
+      description: branding.description || '',
+      thumbnail_url: bannerUri,
+      creatorAvatar: logoUri,
+      creatorName: branding.creator_name || 'Creator Studio',
+      badgeLabel: 'STUDIO BRANDING',
+      category: 'OFFICIAL',
+    });
+  }
+
+  // 2. Add Featured Video slides from live API banners or uploaded videos
+  if (heroItems && heroItems.length > 0) {
+    items.push(...heroItems);
+  } else if (video) {
+    items.push({
+      id: video.id,
+      type: 'video',
+      title: video.title,
+      description: video.description || '',
+      thumbnail_url: resolveImageUrl(video.main_thumbnail_url, ''),
+      category: video.category || 'Featured',
+      badgeLabel: 'SPOTLIGHT',
+      duration: video.duration || '',
+      creatorName: branding?.creator_name || 'Streamr',
+      creatorAvatar: resolveImageUrl(branding?.logo_url, ''),
+      rawVideo: video,
+    });
+  }
+
+  // If no live API branding or videos exist, return null (do not display mock data)
+  if (items.length === 0) {
+    return null;
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {

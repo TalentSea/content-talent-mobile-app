@@ -115,25 +115,25 @@ export function HomeScreen({ navigation }: any) {
           id: `hero_banner_${b.id}`,
           type: 'video',
           title: b.title,
-          description: b.description || 'Watch now in high-definition video stream.',
+          description: b.description || '',
           thumbnail_url: b.image_url,
           category: b.category || 'Featured',
           badgeLabel: idx === 0 ? 'FEATURED' : 'SPOTLIGHT',
-          creatorName: branding?.creator_name || 'Creator Studio',
+          creatorName: branding?.creator_name || undefined,
           creatorAvatar: branding?.logo_url || b.image_url,
           rawVideo: matchingVideo,
         };
       })
-    : (videos && videos.length > 0 ? [videos[0]] : []).map((v, idx) => ({
+    : (videos && videos.length > 0 ? videos.slice(0, 5) : []).map((v, idx) => ({
         id: `hero_${v.id}`,
         type: 'video',
         title: v.title,
-        description: v.description || 'Watch now in high-definition video stream.',
+        description: v.description || '',
         thumbnail_url: getThumbnailForVideo(v),
         category: v.category || 'Featured',
         badgeLabel: idx === 0 ? 'FEATURED' : 'TRENDING NOW',
-        duration: v.duration || '00:00',
-        creatorName: branding?.creator_name || 'Creator Studio',
+        duration: v.duration || '',
+        creatorName: branding?.creator_name || undefined,
         creatorAvatar: branding?.logo_url || getThumbnailForVideo(v),
         rawVideo: v,
       }));
