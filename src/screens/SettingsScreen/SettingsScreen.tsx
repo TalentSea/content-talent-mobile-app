@@ -132,13 +132,27 @@ export function SettingsScreen({ navigation }: any) {
         {/* Section 4: Account & Info */}
         <Text style={styles.sectionHeader}>Account & About</Text>
         <View style={styles.card}>
+          <Pressable
+            style={styles.row}
+            onPress={() => navigation.navigate('Subscription')}
+          >
+            <View style={styles.rowLeft}>
+              <Shield size={18} color="#818CF8" />
+              <View>
+                <Text style={styles.rowTitle}>VIP Subscription Tiers</Text>
+                <Text style={styles.rowSub}>Basic, Premium, or Annual Plans</Text>
+              </View>
+            </View>
+            <Text style={[styles.rowValue, { color: '#6366F1', fontWeight: '800' }]}>Manage Tiers →</Text>
+          </Pressable>
+
           <View style={styles.row}>
             <View style={styles.rowLeft}>
               <Shield size={18} color="#818CF8" />
-              <Text style={styles.rowTitle}>Account Membership</Text>
+              <Text style={styles.rowTitle}>Account Status</Text>
             </View>
             <Text style={styles.rowValue}>
-              {user?.role ? user.role.toUpperCase() : 'SUBSCRIBER'}
+              {user?.role ? user.role.toUpperCase() : 'GUEST'}
             </Text>
           </View>
 

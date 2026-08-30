@@ -41,7 +41,7 @@ export const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     backgroundColor: '#6366F1',
-    justifyInCenter: 'center',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
     shadowColor: '#6366F1',
@@ -221,6 +221,61 @@ export const styles = StyleSheet.create({
   successSub: {
     fontSize: 13,
     color: '#D1D5DB',
+    textAlign: 'center',
+  },
+
+  /* Feature Comparison Table Styles */
+  matrixCard: {
+    backgroundColor: '#0E0E16',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  matrixHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  matrixHeaderCell: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  matrixRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+    alignItems: 'center',
+  },
+  matrixRowAlt: {
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  },
+  matrixFeatureName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#E5E7EB',
+  },
+  matrixCellText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9CA3AF',
+    textAlign: 'center',
+  },
+  matrixCellTextHighlight: {
+    color: '#10B981',
+    fontWeight: '700',
+  },
+  matrixCellDash: {
+    color: '#4B5563',
     textAlign: 'center',
   },
 });

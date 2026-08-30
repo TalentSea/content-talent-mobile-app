@@ -154,6 +154,7 @@ export default function NativeVideoPlayer({
   onProgress,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
+  const hasSentLoadEventRef = useRef(false);
 
   const [paused, setPaused] = useState(!autoStart);
   const [currentTime, setCurrentTime] = useState(0);
@@ -225,6 +226,7 @@ export default function NativeVideoPlayer({
   useEffect(() => {
     setPaused(!autoStart);
     setError(null);
+    hasSentLoadEventRef.current = false;
   }, [autoStart, uri]);
 
   useEffect(() => {
@@ -317,6 +319,7 @@ export default function NativeVideoPlayer({
   const handleRetry = () => {
     setError(null);
     setIsBuffering(true);
+    hasSentLoadEventRef.current = false;
     setRetryCount(prev => prev + 1);
   };
 
@@ -424,6 +427,7 @@ export default function NativeVideoPlayer({
   };
 
   const handleLoad = (e: any) => {
+    hasSentLoadEventRef.current = true;
     const d = e.nativeEvent.duration || 0;
     const w = e.nativeEvent.width || 0;
     const h = e.nativeEvent.height || 0;
@@ -542,7 +546,7 @@ export default function NativeVideoPlayer({
         onError={(e: any) => {
           const { message = 'Failed to load video stream', errorCode } = e.nativeEvent || {};
           console.warn('[NativeVideoPlayer] Stream notice:', message, errorCode);
-          if (!hasSentLoadEvent && errorCode) {
+          if (!hasSentLoadEventRef.current && (errorCode || message)) {
             setError(errorCode ? `${errorCode}: ${message}` : message);
             setShowControls(true);
           }

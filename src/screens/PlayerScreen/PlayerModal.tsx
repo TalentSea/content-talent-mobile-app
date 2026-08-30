@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
+  Image,
   Modal,
   ScrollView,
   Share,
   StatusBar,
+  StyleSheet,
   Text,
   Pressable,
   View,
@@ -366,25 +368,100 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               onProgress={handlePlayerProgress}
             />
           ) : playingVideo ? (
-            <View style={{ flex: 1, backgroundColor: '#0A0A10', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-              <Lock size={44} color="#6366F1" style={{ marginBottom: 12 }} />
-              <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16, textAlign: 'center', marginBottom: 6 }}>
-                VIP Subscription Required
-              </Text>
-              <Text style={{ color: '#9CA3AF', fontSize: 12, textAlign: 'center', marginBottom: 16 }}>
-                Subscribe to unlock ad-free 4K video playback.
-              </Text>
+            <View style={{ flex: 1, backgroundColor: '#000000', position: 'relative' }}>
+              {/* Display Video Thumbnail */}
+              {playingVideo.poster || (playingVideo as any).main_thumbnail_url ? (
+                <Image
+                  source={{ uri: playingVideo.poster || (playingVideo as any).main_thumbnail_url }}
+                  style={StyleSheet.absoluteFill}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#12121A' }]} />
+              )}
+
+              {/* Close Button Top Left */}
               <Pressable
-                style={{ backgroundColor: '#6366F1', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
-                onPress={() => {
-                  handleClose();
-                  if (onUpgradeSubscription) onUpgradeSubscription();
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  left: 12,
+                  zIndex: 20,
+                  backgroundColor: 'rgba(0,0,0,0.6)',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onPress={handleClose}
+              >
+                <X color="#FFFFFF" size={18} />
+              </Pressable>
+
+              {/* Semi-transparent Backdrop Overlay */}
+              <View
+                style={{
+                  ...StyleSheet.absoluteFill,
+                  backgroundColor: 'rgba(10, 10, 16, 0.75)',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  padding: 20,
+                  zIndex: 10,
                 }}
               >
-                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14 }}>
-                  Subscribe Now
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: '#6366F1',
+                    borderWidth: 1.5,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 10,
+                  }}
+                >
+                  <Lock size={26} color="#6366F1" />
+                </View>
+
+                <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
+                  <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
+                    VIP SUBSCRIPTION REQUIRED
+                  </Text>
+                </View>
+
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
+                  Subscribe to Watch Full Video
                 </Text>
-              </Pressable>
+
+                <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 260 }}>
+                  Subscribe to a plan to unlock ad-free 4K video streaming.
+                </Text>
+
+                <Pressable
+                  style={{
+                    backgroundColor: '#6366F1',
+                    paddingHorizontal: 20,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    shadowColor: '#6366F1',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 6,
+                    elevation: 5,
+                  }}
+                  onPress={() => {
+                    handleClose();
+                    if (onUpgradeSubscription) onUpgradeSubscription();
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                    Subscribe Now
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
         </View>

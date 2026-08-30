@@ -17,7 +17,7 @@ import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen/SubscriptionScreen';
 import { LibraryProvider } from '../contexts/LibraryContext';
-import { restoreStoredSession } from '../services/api/authService';
+import { restoreStoredSession, isUserLoggedIn } from '../services/api/authService';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -31,8 +31,9 @@ export function RootNavigator() {
         async function checkInitialAuth() {
             try {
                 const user = await restoreStoredSession();
-                if (user && isMounted) {
-                    console.log('[RootNavigator] Initial session restored for user:', user.name);
+                const loggedIn = isUserLoggedIn();
+                if (user && loggedIn && isMounted) {
+                    console.log('[RootNavigator] Initial session restored for logged-in user:', user.name);
                     setInitialRoute('Home');
                 } else if (isMounted) {
                     setInitialRoute('Login');

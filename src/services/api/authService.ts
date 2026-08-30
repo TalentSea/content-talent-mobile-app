@@ -11,7 +11,9 @@ export type UserProfile = {
   email: string | null;
   avatar_url?: string | null;
   provider: 'google' | 'facebook' | 'guest' | string;
-  role: 'guest' | 'subscriber' | 'premium' | 'admin' | string;
+  role: 'guest' | 'member' | 'subscriber' | 'premium' | 'admin' | string;
+  chosen_plan?: string | null;
+  plan_id?: string | null;
   created_at?: string;
 };
 
@@ -119,26 +121,45 @@ export function getCurrentUser(): UserProfile | null {
   return currentAuthenticatedUser;
 }
 
-export function isUserSubscribed(): boolean {
+export function isUserLoggedIn(): boolean {
   if (!currentAuthenticatedUser) return false;
-  const role = currentAuthenticatedUser.role?.toLowerCase() || '';
-  return ['subscriber', 'premium', 'admin', 'creator', 'vip'].includes(role);
+  const provider = currentAuthenticatedUser.provider;
+  const role = currentAuthenticatedUser.role;
+  return provider !== 'guest' && role !== 'guest';
 }
 
-export function activateSubscription(role: 'subscriber' | 'premium' = 'subscriber'): UserProfile {
+export function isUserSubscribed(): boolean {
+  if (!isUserLoggedIn()) return false;
+  const role = currentAuthenticatedUser?.role?.toLowerCase() || '';
+  const hasPlan = !!currentAuthenticatedUser?.chosen_plan || !!currentAuthenticatedUser?.plan_id;
+  return ['member', 'subscriber', 'premium', 'admin', 'creator', 'vip'].includes(role) || hasPlan;
+}
+
+export function activateSubscription(
+  role: 'member' | 'subscriber' | 'premium' = 'member',
+  planName: string = 'Premium Plan',
+  planId?: string
+): UserProfile {
   const updatedUser: UserProfile = currentAuthenticatedUser
-    ? { ...currentAuthenticatedUser, role }
+    ? {
+        ...currentAuthenticatedUser,
+        role,
+        chosen_plan: planName,
+        plan_id: planId || currentAuthenticatedUser.plan_id,
+      }
     : {
         id: 101,
         name: 'VIP Member',
-        email: 'vip@streamr.app',
-        provider: 'guest',
+        email: 'member@streamr.app',
+        provider: 'google',
         role,
+        chosen_plan: planName,
+        plan_id: planId,
       };
 
   currentAuthenticatedUser = updatedUser;
   saveSessionToStorage(
-    DEFAULT_AUTH_TOKEN,
+    getApiAccessToken() || DEFAULT_AUTH_TOKEN,
     storedRefreshToken || `sub_refresh_${Date.now()}`,
     updatedUser,
   );

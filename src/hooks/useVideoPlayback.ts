@@ -5,7 +5,7 @@ import { fetchVideoPlayInfo, getDistinctStreamUrlForVideo } from '../services/ap
 import { API_BASE_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../constants/config';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
-import { isUserSubscribed } from '../services/api/authService';
+import { isUserSubscribed, isUserLoggedIn } from '../services/api/authService';
 
 export function useVideoPlayback(videoList: ApiVideo[] = []) {
     const navigation = useNavigation<any>();
@@ -20,20 +20,41 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             return;
         }
 
+        // 1. Logged-in User Check: Only logged in users can view / play content
+        if (!isUserLoggedIn()) {
+            Alert.alert(
+                'Login Required',
+                'Only logged-in users can play video content. Please log in to your account.',
+                [
+                    {
+                        text: 'Log In',
+                        onPress: () => {
+                            if (navigation) {
+                                navigation.navigate('Login');
+                            }
+                        },
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                ],
+            );
+            return;
+        }
+
+        // 2. Member Plan Gate Check: Only show video content to members who chose a plan
         if (!isUserSubscribed()) {
             Alert.alert(
-                'Subscription Required',
-                'Video playback requires an active VIP Subscription. Upgrade now to stream unlimited videos.',
+                'Subscription Plan Required',
+                'Video streaming is exclusive to members who have selected a subscription plan. Please choose a plan to watch.',
                 [
-                    { text: 'Cancel', style: 'cancel' },
                     {
-                        text: 'Subscribe Now',
+                        text: 'Choose Plan',
                         onPress: () => {
-                            if (navigation && typeof navigation.navigate === 'function') {
+                            if (navigation) {
                                 navigation.navigate('Subscription');
                             }
                         },
                     },
+                    { text: 'Cancel', style: 'cancel' },
                 ],
             );
             return;
