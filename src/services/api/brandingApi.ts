@@ -87,11 +87,43 @@ const findLogoUrl = (obj: any): string | null => {
   return null;
 };
 
+const parseBannerItem = (b: any): MobileBannerItem => {
+  let vidId: number | undefined = undefined;
+  let titleStr = '';
+  let descStr = '';
+  let categoryStr: string | undefined = undefined;
+  let imgUrl = '';
+
+  if (typeof b === 'number') {
+    vidId = b;
+  } else if (typeof b === 'string' && !isNaN(Number(b))) {
+    vidId = Number(b);
+  } else if (b && typeof b === 'object') {
+    const vObj = b.video || b;
+    vidId = b.video_id || b.id || (typeof b.video === 'number' ? b.video : (vObj.id || vObj.video_id));
+    if (typeof vidId === 'string' && !isNaN(Number(vidId))) {
+      vidId = Number(vidId);
+    }
+    titleStr = b.title || b.name || vObj.title || vObj.name || '';
+    descStr = b.description || vObj.description || '';
+    categoryStr = b.category || vObj.category;
+    imgUrl = findBannerUrl(b) || findBannerUrl(vObj) || b.image_url || b.thumbnail_url || vObj.thumbnail_url || vObj.main_thumbnail_url || '';
+  }
+
+  return {
+    id: (b && b.id) || vidId || Math.random(),
+    title: titleStr,
+    description: descStr,
+    image_url: imgUrl,
+    video_id: vidId,
+    category: categoryStr,
+  };
+};
+
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
   const endpoints = [
     '/api/v1/mobile/branding',
     '/api/v1/branding',
-    '/api/v1/admin/branding',
     '/api/v1/branding/info',
   ];
 
@@ -114,14 +146,7 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
           [];
 
         const parsedBanners: MobileBannerItem[] = Array.isArray(rawBanners)
-          ? rawBanners.map((b: any) => ({
-              id: b.id || b.video_id || Math.random(),
-              title: b.title || b.name || 'Featured Video',
-              description: b.description || '',
-              image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || b.banner_url || '',
-              video_id: b.video_id || b.id,
-              category: b.category,
-            }))
+          ? rawBanners.map(parseBannerItem)
           : [];
 
         if (detectedBanner || detectedLogo || data.creator_name || data.name || parsedBanners.length > 0) {
@@ -137,7 +162,7 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
         }
       }
     } catch (error) {
-      console.warn(`[fetchMobileBrandingApi] Endpoint ${path} notice:`, error);
+      console.warn(`[fetchMobileBrandingApi] Notice for ${path}:`, error);
     }
   }
 
@@ -154,27 +179,25 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
 
 export async function fetchMobileBannersApi(): Promise<MobileBannerItem[]> {
   const endpoints = [
+    '/api/v1/mobile/featured-videos',
+    '/api/v1/mobile/featured_videos',
     '/api/v1/mobile/banners',
+    '/api/v1/featured-videos',
     '/api/v1/banners',
-    '/api/v1/admin/banners',
   ];
 
   for (const path of endpoints) {
     try {
       const rawRes = await apiGet<any>(path);
-      const itemsList = Array.isArray(rawRes) ? rawRes : rawRes?.items || rawRes?.data || rawRes?.banners;
+      const itemsList = Array.isArray(rawRes)
+        ? rawRes
+        : rawRes?.items || rawRes?.data || rawRes?.banners || rawRes?.featured_videos || rawRes?.featured;
+
       if (Array.isArray(itemsList) && itemsList.length > 0) {
-        return itemsList.map((b: any) => ({
-          id: b.id || Math.random(),
-          title: b.title || b.name || 'Featured Video',
-          description: b.description || '',
-          image_url: findBannerUrl(b) || b.image_url || b.thumbnail_url || '',
-          video_id: b.video_id || b.id,
-          category: b.category,
-        }));
+        return itemsList.map(parseBannerItem);
       }
     } catch (e) {
-      console.warn(`[fetchMobileBannersApi] Endpoint ${path} notice:`, e);
+      console.warn(`[fetchMobileBannersApi] Notice for ${path}:`, e);
     }
   }
 

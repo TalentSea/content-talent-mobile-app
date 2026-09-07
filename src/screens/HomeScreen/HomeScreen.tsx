@@ -102,41 +102,61 @@ export function HomeScreen({ navigation }: any) {
   // 3. Continue Watching: watch history filtered to available videos
   const continueWatchingList = continueWatching;
 
-  // Extract custom featured banners configured in branding admin settings
-  const featuredBannersList: MobileBannerItem[] = (branding?.featured_videos && branding.featured_videos.length > 0)
-    ? branding.featured_videos
-    : apiBanners;
+  // Extract custom featured banners configured in studio branding
+  const combinedBanners: MobileBannerItem[] = [
+    ...(branding?.featured_videos || []),
+    ...apiBanners,
+  ];
 
-  // Build Hero Banner Carousel items dynamically from live admin banners or uploaded videos
-  const heroItems: HeroItem[] = featuredBannersList.length > 0
-    ? featuredBannersList.map((b, idx) => {
-        const matchingVideo = videos.find(v => v.id === b.video_id || v.title.toLowerCase() === b.title.toLowerCase());
-        return {
-          id: `hero_banner_${b.id}`,
-          type: 'video',
-          title: b.title,
-          description: b.description || '',
-          thumbnail_url: b.image_url,
-          category: b.category || 'Featured',
-          badgeLabel: idx === 0 ? 'FEATURED' : 'SPOTLIGHT',
-          creatorName: branding?.creator_name || undefined,
-          creatorAvatar: branding?.logo_url || b.image_url,
-          rawVideo: matchingVideo,
-        };
-      })
-    : (videos && videos.length > 0 ? videos.slice(0, 5) : []).map((v, idx) => ({
-        id: `hero_${v.id}`,
-        type: 'video',
-        title: v.title,
-        description: v.description || '',
-        thumbnail_url: getThumbnailForVideo(v),
-        category: v.category || 'Featured',
-        badgeLabel: idx === 0 ? 'FEATURED' : 'TRENDING NOW',
-        duration: v.duration || '',
-        creatorName: branding?.creator_name || undefined,
-        creatorAvatar: branding?.logo_url || getThumbnailForVideo(v),
-        rawVideo: v,
-      }));
+  // Deduplicate featured videos by ID or title
+  let featuredBannersList = combinedBanners.filter((item, index, self) =>
+    index === self.findIndex(t => (
+      (t.video_id && item.video_id && Number(t.video_id) === Number(item.video_id)) ||
+      (t.title && item.title && t.title.trim().toLowerCase() === item.title.trim().toLowerCase())
+    ))
+  );
+
+  // If API banners list is empty, take the featured/primary uploaded video (e.g. Katniss edit) as featured video
+  if (featuredBannersList.length === 0 && videos.length > 0) {
+    const explicitlyFeatured = videos.filter(v => (v as any).is_featured || (v as any).featured || (v as any).is_banner);
+    const targetVideos = explicitlyFeatured.length > 0 ? explicitlyFeatured : videos.slice(0, 1);
+    featuredBannersList = targetVideos.map(v => ({
+      id: v.id,
+      video_id: v.id,
+      title: v.title,
+      description: v.description || '',
+      image_url: getThumbnailForVideo(v),
+      category: v.category || undefined,
+    }));
+  }
+
+  // Build Hero Banner Carousel items strictly from live featured banners configured by admin
+  const heroItems: HeroItem[] = featuredBannersList.map((b, idx) => {
+    const matchingVideo = videos.find(v => (
+      (b.video_id && v.id === Number(b.video_id)) ||
+      (b.title && b.title.trim() !== '' && v.title && v.title.trim().toLowerCase() === b.title.trim().toLowerCase())
+    ));
+    const thumb = (b.image_url && b.image_url.trim() !== '')
+      ? b.image_url
+      : (matchingVideo ? getThumbnailForVideo(matchingVideo) : '');
+
+    const finalTitle = (b.title && b.title.trim() !== '' && b.title !== 'Featured Video')
+      ? b.title
+      : (matchingVideo?.title || 'Featured Stream');
+
+    return {
+      id: `hero_banner_${b.id || b.video_id || idx}`,
+      type: 'video',
+      title: finalTitle,
+      description: b.description || matchingVideo?.description || '',
+      thumbnail_url: thumb,
+      category: b.category || matchingVideo?.category || 'Entertainment',
+      badgeLabel: idx === 0 ? 'FEATURED' : 'SPOTLIGHT',
+      creatorName: branding?.creator_name || undefined,
+      creatorAvatar: branding?.logo_url || thumb,
+      rawVideo: matchingVideo,
+    };
+  });
 
   function handleSelectPlaylist(playlistId: number, playlistTitle: string) {
     navigation.navigate('CategoryDetail', {

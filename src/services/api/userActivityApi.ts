@@ -158,7 +158,6 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   const endpoints = [
     '/api/v1/mobile/categories',
     '/api/v1/categories',
-    '/api/v1/admin/categories',
     '/api/v1/categories/list',
   ];
 

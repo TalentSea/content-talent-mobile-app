@@ -42,48 +42,9 @@ type HeroBannerProps = {
   onSelectPlaylist?: (playlistId: number, title: string) => void;
 };
 
-const DEFAULT_HERO_ITEMS: HeroItem[] = [
-  {
-    id: 'hero_1',
-    type: 'video',
-    title: 'React Native Architecture & Performance Masterclass',
-    description: 'Elevate your mobile apps with Fabric renderer, TurboModules, and zero-bridge native execution.',
-    thumbnail_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80',
-    category: 'Development',
-    badgeLabel: 'PLURALSIGHT PATH',
-    duration: '22:15',
-    creatorName: 'Alex OTT Creator',
-    creatorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-  },
-  {
-    id: 'hero_2',
-    type: 'trailer',
-    title: 'Tears of Steel - Official Sci-Fi Open Movie Trailer',
-    description: 'Watch the high-octane 4K HLS trailer featuring VFX powered by open-source technology.',
-    thumbnail_url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-    category: 'Sci-Fi',
-    badgeLabel: 'FEATURED TRAILER',
-    duration: '02:30',
-    creatorName: 'Blender Foundation',
-    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-  },
-  {
-    id: 'hero_3',
-    type: 'playlist',
-    title: 'FastAPI Microservices & Video Backend Series',
-    description: 'Complete backend learning track covering HLS encoding, Auth0 JWT security, and SQLite ORMs.',
-    thumbnail_url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-    category: 'Backend',
-    badgeLabel: 'CURATED PLAYLIST',
-    duration: '5 Playlists',
-    creatorName: 'Streamr Tech Lab',
-    creatorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
-  },
-];
-
 function resolveImageUrl(
   url?: string | null,
-  fallback: string = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+  fallback: string = '',
 ): string {
   if (!url || typeof url !== 'string' || url.trim() === '') {
     return fallback;
@@ -110,44 +71,44 @@ function HeroBannerSlideItem({
   item: HeroItem;
   onPress: (item: HeroItem) => void;
 }) {
-  const defaultFallback = item.type === 'branding'
-    ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80'
-    : 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80';
-
-  const [imgUri, setImgUri] = useState<string>(() => resolveImageUrl(item.thumbnail_url, defaultFallback));
-  const [avatarUri, setAvatarUri] = useState<string>(() => resolveImageUrl(item.creatorAvatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'));
+  const [imgUri, setImgUri] = useState<string>(() => resolveImageUrl(item.thumbnail_url, ''));
+  const [avatarUri, setAvatarUri] = useState<string>(() => resolveImageUrl(item.creatorAvatar, ''));
 
   useEffect(() => {
-    setImgUri(resolveImageUrl(item.thumbnail_url, defaultFallback));
-    setAvatarUri(resolveImageUrl(item.creatorAvatar, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80'));
+    setImgUri(resolveImageUrl(item.thumbnail_url, ''));
+    setAvatarUri(resolveImageUrl(item.creatorAvatar, ''));
   }, [item.thumbnail_url, item.creatorAvatar]);
 
   return (
     <View style={styles.bannerSlide}>
-      <Image
-        source={{ uri: imgUri }}
-        style={styles.backgroundImage}
-        onError={() => setImgUri(defaultFallback)}
-      />
+      {imgUri ? (
+        <Image
+          source={{ uri: imgUri }}
+          style={styles.backgroundImage}
+          onError={() => setImgUri('')}
+        />
+      ) : null}
       <View style={styles.gradientOverlay}>
-        {/* Top Badge */}
-        <View style={styles.brandingBadgeRow}>
-          <View style={styles.pluralsightBadge}>
-            <Award size={12} color="#FFFFFF" />
-            <Text style={styles.pluralsightBadgeText}>
-              {item.badgeLabel || 'FEATURED SPOTLIGHT'}
-            </Text>
+        {/* Top Badge Row: Category Pill on top right for featured videos */}
+        {item.category && item.type !== 'branding' ? (
+          <View style={styles.brandingBadgeRow}>
+            <View style={styles.categoryPillBadge}>
+              <Film size={11} color="#FFFFFF" />
+              <Text style={styles.categoryPillText}>{item.category}</Text>
+            </View>
           </View>
-        </View>
+        ) : null}
 
-        {/* Studio Branding / Creator Profile Row */}
+        {/* Slide Content */}
         {item.type === 'branding' ? (
           <View style={styles.brandingHeaderContent}>
-            <Image
-              source={{ uri: avatarUri }}
-              style={styles.brandingLogo}
-              onError={() => setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80')}
-            />
+            {avatarUri ? (
+              <Image
+                source={{ uri: avatarUri }}
+                style={styles.brandingLogo}
+                onError={() => setAvatarUri('')}
+              />
+            ) : null}
             <View style={{ flex: 1 }}>
               <Text style={styles.brandingTitleText} numberOfLines={1}>
                 {item.creatorName || item.title || 'Creator Studio'}
@@ -161,23 +122,24 @@ function HeroBannerSlideItem({
           </View>
         ) : (
           <>
+            {/* Video Row: Thumbnail Circle (same 34x34 size) + Video Name beside it */}
             <View style={styles.creatorRow}>
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.creatorAvatar}
-                onError={() => setAvatarUri('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80')}
-              />
-              <View>
-                <Text style={styles.creatorName}>{item.creatorName || 'Streamr Studio'}</Text>
+              {imgUri ? (
+                <Image
+                  source={{ uri: imgUri }}
+                  style={styles.creatorAvatar}
+                />
+              ) : null}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {item.title}
+                </Text>
                 {item.duration ? (
                   <Text style={styles.creatorBio}>Duration • {item.duration}</Text>
                 ) : null}
               </View>
             </View>
 
-            <Text style={styles.title} numberOfLines={1}>
-              {item.title}
-            </Text>
             {item.description ? (
               <Text style={styles.description} numberOfLines={2}>
                 {item.description}
@@ -186,41 +148,19 @@ function HeroBannerSlideItem({
           </>
         )}
 
-        {/* Action Button: Watch Now */}
-        <View style={styles.buttonRow}>
-          <Pressable style={styles.playButton} onPress={() => onPress(item)}>
-            <Play size={14} color="#000000" fill="#000000" />
-            <Text style={styles.playButtonText}>Watch Now</Text>
-          </Pressable>
-        </View>
+        {/* Action Button: Watch Now (Only for Video/Featured slides, NOT for Slide 1 Creator Banner) */}
+        {item.type !== 'branding' ? (
+          <View style={styles.buttonRow}>
+            <Pressable style={styles.playButton} onPress={() => onPress(item)}>
+              <Play size={14} color="#000000" fill="#000000" />
+              <Text style={styles.playButtonText}>Watch Now</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </View>
   );
 }
-
-export function HeroBanner({
-  video,
-  heroItems,
-  branding,
-  onPlayVideo,
-  onSelectPlaylist,
-}: HeroBannerProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
-
-  const fallbackBanner = (heroItems && heroItems.length > 0 && heroItems[0].thumbnail_url)
-    ? heroItems[0].thumbnail_url
-    : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80';
-
-  const bannerImageUri = resolveImageUrl(
-    branding?.banner_url || (branding as any)?.creator_banner || (branding as any)?.cover_banner,
-    fallbackBanner,
-  );
-
-  const logoImageUri = resolveImageUrl(
-    branding?.logo_url || (branding as any)?.creator_logo || (branding as any)?.logo,
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80',
-  );
 
 export function HeroBanner({
   video,
@@ -271,12 +211,8 @@ export function HeroBanner({
     });
   }
 
-  // If no live API branding or videos exist, return null (do not display mock data)
-  if (items.length === 0) {
-    return null;
-  }
-
   useEffect(() => {
+    if (items.length === 0) return;
     const timer = setInterval(() => {
       setActiveIndex(prev => {
         const next = (prev + 1) % items.length;
@@ -292,6 +228,11 @@ export function HeroBanner({
     return () => clearInterval(timer);
   }, [items.length]);
 
+  // If no live API branding or videos exist, return null (do not display mock data)
+  if (items.length === 0) {
+    return null;
+  }
+
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const slideSize = event.nativeEvent.layoutMeasurement.width;
     const index = Math.round(event.nativeEvent.contentOffset.x / slideSize);
@@ -304,7 +245,7 @@ export function HeroBanner({
     if (item.rawVideo && onPlayVideo) {
       onPlayVideo(item.rawVideo);
     } else if (item.rawPlaylist && onSelectPlaylist) {
-      onSelectPlaylist(Number(item.rawPlaylist.id), item.rawPlaylist.title);
+      onSelectPlaylist(Number(item.rawPlaylist.id), item.rawPlaylist.name);
     } else if (onSelectPlaylist) {
       onSelectPlaylist(1, item.title);
     }

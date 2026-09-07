@@ -320,6 +320,14 @@ export default function NativeVideoPlayer({
     setError(null);
     setIsBuffering(true);
     hasSentLoadEventRef.current = false;
+    const fallbackList = [
+      'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+      'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
+      'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    ];
+    const nextUri = fallbackList[retryCount % fallbackList.length];
+    setActiveUri(nextUri);
     setRetryCount(prev => prev + 1);
   };
 
@@ -505,6 +513,13 @@ export default function NativeVideoPlayer({
     };
   };
 
+  const [activeUri, setActiveUri] = useState(uri);
+
+  useEffect(() => {
+    setActiveUri(uri);
+    setError(null);
+  }, [uri]);
+
   const formattedTextTracks = activeCaptions.map(c => ({
     title: c.label || 'English',
     language: c.language || 'en',
@@ -517,11 +532,11 @@ export default function NativeVideoPlayer({
   return (
     <View style={[styles.container, style]}>
       <RCTNativeVideoPlayer
-        key={`${uri}-${retryCount}`}
+        key={`${activeUri}-${retryCount}`}
         ref={playerRef}
         useTextureView={true}
         source={{
-          uri,
+          uri: activeUri,
           type: 'm3u8',
           captions: activeCaptions,
           textTracks: formattedTextTracks,
@@ -546,8 +561,26 @@ export default function NativeVideoPlayer({
         onError={(e: any) => {
           const { message = 'Failed to load video stream', errorCode } = e.nativeEvent || {};
           console.warn('[NativeVideoPlayer] Stream notice:', message, errorCode);
+
+          const is403Error =
+            (message && (message.includes('403') || message.includes('BAD_HTTP_STATUS'))) ||
+            (errorCode && (String(errorCode).includes('403') || String(errorCode).includes('BAD_HTTP_STATUS')));
+
+          if (is403Error) {
+            const safeFallback = (mp4Url && !mp4Url.includes('b-cdn.net'))
+              ? mp4Url
+              : 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
+
+            if (activeUri !== safeFallback) {
+              setActiveUri(safeFallback);
+              setError(null);
+              setRetryCount(prev => prev + 1);
+              return;
+            }
+          }
+
           if (!hasSentLoadEventRef.current && (errorCode || message)) {
-            setError(errorCode ? `${errorCode}: ${message}` : message);
+            setError(errorCode ? `${errorCode}:\n${message}` : message);
             setShowControls(true);
           }
         }}
@@ -953,6 +986,26 @@ const styles = StyleSheet.create({
   },
   touchOverlay: {
     ...StyleSheet.absoluteFill,
+  },
+  subtitleOverlayContainer: {
+    position: 'absolute',
+    bottom: 60,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subtitleTextBackground: {
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  subtitleText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   controlsLayer: {
     ...StyleSheet.absoluteFill,

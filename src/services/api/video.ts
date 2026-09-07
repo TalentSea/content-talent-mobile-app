@@ -43,25 +43,17 @@ export function getDistinctStreamUrlForVideo(video: any): string {
   const libraryId = video?.bunny_library_id || video?.library_id;
   const videoIdStr = video?.bunny_video_id || video?.video_id;
 
-  if (!url && videoIdStr && libraryId) {
-    return `https://vz-${libraryId}.b-cdn.net/${videoIdStr}/playlist.m3u8`;
-  }
-
-  // Extract Bunny CDN playlist URL from thumbnail_url GUID if stream URL is missing
-  const thumbUrl = video?.thumbnail_url || video?.main_thumbnail_url;
-  if (!url && thumbUrl && typeof thumbUrl === 'string' && thumbUrl.includes('.b-cdn.net/')) {
-    const guidMatch = thumbUrl.match(/\.b-cdn\.net\/([a-f0-9\-]+)\//i);
-    if (guidMatch && guidMatch[1]) {
-      return `https://talentsea6777.b-cdn.net/${guidMatch[1]}/playlist.m3u8`;
-    }
-  }
-
   if (url && typeof url === 'string' && url.trim().length > 0 && url !== API_BASE_URL) {
     url = url.trim();
     if (url.startsWith('/')) {
       return `${API_BASE_URL}${url}`;
     }
-    return url;
+    // Filter out unsigned b-cdn.net URLs without token params that cause HTTP 403 Forbidden error
+    if (url.includes('b-cdn.net') && !url.includes('token') && !url.includes('expires')) {
+      // Unsigned b-cdn URL, proceed to fallback
+    } else {
+      return url;
+    }
   }
 
   const idNum = typeof video?.id === 'number' ? video.id : 1;

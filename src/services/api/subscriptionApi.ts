@@ -91,7 +91,7 @@ const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const endpoints = [
     '/api/v1/mobile/plans',
-    '/api/v1/admin/plans',
+    '/api/v1/mobile/subscription-plans',
     '/api/v1/plans',
     '/api/v1/subscriptions/plans',
   ];

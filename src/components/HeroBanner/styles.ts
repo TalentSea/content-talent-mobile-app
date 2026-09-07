@@ -59,16 +59,20 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
   },
-  clipBadge: {
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  categoryPillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    marginLeft: 'auto',
   },
-  clipBadgeText: {
-    color: '#E5E7EB',
+  categoryPillText: {
+    color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '700',
   },
