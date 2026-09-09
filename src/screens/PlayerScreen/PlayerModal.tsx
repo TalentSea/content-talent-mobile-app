@@ -136,6 +136,7 @@ export function PlayerModal({
 
   useEffect(() => {
     if (playingVideo) {
+      setIsSubscribed(isUserSubscribed());
       initViewTracker();
       hasCountedViewRef.current = false;
       const initialViews = getCleanViewCountForVideo(currentVideoId);
@@ -335,7 +336,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                 ]
           }
         >
-          {playingVideo && isSubscribed ? (
+          {playingVideo && (isSubscribed || isUserSubscribed()) ? (
             <NativeVideoPlayer
               video={currentVideoObj}
               id={currentVideoId}

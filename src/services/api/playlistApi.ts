@@ -41,12 +41,36 @@ export async function fetchPlaylists(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // Mobile Playlists Endpoint (/api/v1/mobile/playlists)
-    const response = await apiGet<PaginatedPlaylistsResponse>(
-      `/api/v1/mobile/playlists?${query.toString()}`,
+    // 1. Primary: Mobile Playlists Endpoint (/api/v1/mobile/playlists)
+    try {
+      const response = await apiGet<PaginatedPlaylistsResponse>(
+        `/api/v1/mobile/playlists?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items)) {
+        return response;
+      }
+    } catch (err) {
+      // Mobile playlists fallback
+    }
+
+    // 2. Admin Playlists Endpoint (/api/v1/admin/playlists)
+    try {
+      const adminResponse = await apiGet<PaginatedPlaylistsResponse>(
+        `/api/v1/admin/playlists?${query.toString()}`,
+      );
+      if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+        return adminResponse;
+      }
+    } catch (e) {
+      // Admin playlists fallback
+    }
+
+    // 3. Public Playlists Endpoint (/api/v1/playlists)
+    const publicResponse = await apiGet<PaginatedPlaylistsResponse>(
+      `/api/v1/playlists?${query.toString()}`,
     );
-    if (response && Array.isArray(response.items)) {
-      return response;
+    if (publicResponse && Array.isArray(publicResponse.items)) {
+      return publicResponse;
     }
 
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
@@ -60,8 +84,22 @@ export async function fetchPlaylistDetails(
   playlistId: number,
 ): Promise<PlaylistDetails> {
   try {
-    // Mobile Playlist Details API (/api/v1/mobile/playlists/{id})
-    return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
+    // 1. Primary: Mobile Playlist Details API
+    try {
+      return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
+    } catch (e) {
+      // Fallback
+    }
+
+    // 2. Admin Playlist Details API
+    try {
+      return await apiGet<PlaylistDetails>(`/api/v1/admin/playlists/${playlistId}`);
+    } catch (e) {
+      // Fallback
+    }
+
+    // 3. Public Playlist Details API
+    return await apiGet<PlaylistDetails>(`/api/v1/playlists/${playlistId}`);
   } catch (error) {
     console.warn(`[fetchPlaylistDetails] Mobile API notice for playlist ${playlistId}:`, error);
     throw error;
@@ -78,10 +116,37 @@ export async function fetchPlaylistVideos(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // Mobile Playlist Videos API (/api/v1/mobile/playlists/{id}/videos)
-    const response = await apiGet<PaginatedPlaylistVideosResponse>(
-      `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
+    // 1. Primary: Mobile Playlist Videos API
+    try {
+      const response = await apiGet<PaginatedPlaylistVideosResponse>(
+        `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items) && response.items.length > 0) {
+        return response;
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    // 2. Admin Playlist Videos API
+    try {
+      const adminResponse = await apiGet<PaginatedPlaylistVideosResponse>(
+        `/api/v1/admin/playlists/${playlistId}/videos?${query.toString()}`,
+      );
+      if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+        return adminResponse;
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    // 3. Public Playlist Videos API
+    const publicResponse = await apiGet<PaginatedPlaylistVideosResponse>(
+      `/api/v1/playlists/${playlistId}/videos?${query.toString()}`,
     );
+    if (publicResponse && Array.isArray(publicResponse.items)) {
+      return publicResponse;
+    }
     if (response && Array.isArray(response.items)) {
       return response;
     }

@@ -125,7 +125,14 @@ export function VideoGridScreen({ route, navigation }: any) {
       />
 
       {/* Video Player Modal */}
-      <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
+      <PlayerModal
+        playingVideo={playingVideo}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation?.navigate('Subscription');
+        }}
+        onClose={closePlayer}
+      />
     </SafeAreaView>
   );
 }

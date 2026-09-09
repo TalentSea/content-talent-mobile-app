@@ -8,6 +8,7 @@ import { useLibrary } from '../../contexts/LibraryContext';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import type { PlayInfo } from '../../../types/video';
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
+import { isUserSubscribed } from '../../services/api/authService';
 
 export function LibraryScreen({ route, navigation }: any) {
   const { items } = useLibrary();
@@ -59,19 +60,36 @@ export function LibraryScreen({ route, navigation }: any) {
       {videos.length && isCollection ? (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.collectionContent}>
           <View style={styles.playerArea}>
-            <NativeVideoPlayer
-              uri={featuredVideo.stream_url}
-              mp4Url={featuredVideo.mp4Url}
-              downloadUrls={featuredVideo.downloadUrls}
-              title={featuredVideo.title}
-              captions={featuredVideo.captions}
-              inbuiltCaptionTracks={featuredVideo.inbuiltCaptionTracks}
-              hasInbuiltCaptions={featuredVideo.hasInbuiltCaptions}
-              adTagUrl={featuredVideo.adTagUrl}
-              autoStart
-              controls
-              resizeMode="cover"
-            />
+            {isUserSubscribed() ? (
+              <NativeVideoPlayer
+                uri={featuredVideo.stream_url}
+                mp4Url={featuredVideo.mp4Url}
+                downloadUrls={featuredVideo.downloadUrls}
+                title={featuredVideo.title}
+                captions={featuredVideo.captions}
+                inbuiltCaptionTracks={featuredVideo.inbuiltCaptionTracks}
+                hasInbuiltCaptions={featuredVideo.hasInbuiltCaptions}
+                adTagUrl={featuredVideo.adTagUrl}
+                autoStart
+                controls
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{ flex: 1, backgroundColor: '#101018', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14, marginBottom: 4 }}>
+                  Subscription Required
+                </Text>
+                <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 12 }}>
+                  Subscribe to a plan to stream this collection.
+                </Text>
+                <Pressable
+                  style={{ backgroundColor: '#6366F1', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
+                  onPress={() => navigation.navigate('Subscription')}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>Subscribe Now</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
           <Text style={styles.upNextTitle}>More in {title}</Text>
           {videos.filter(video => video.stream_url !== featuredVideo.stream_url).map(video => (
@@ -108,7 +126,16 @@ export function LibraryScreen({ route, navigation }: any) {
         </Pressable>
       </View>
       )}
-      {!isCollection ? <PlayerModal playingVideo={playingVideo} onClose={() => setPlayingVideo(null)} /> : null}
+      {!isCollection ? (
+        <PlayerModal
+          playingVideo={playingVideo}
+          onUpgradeSubscription={() => {
+            setPlayingVideo(null);
+            navigation.navigate('Subscription');
+          }}
+          onClose={() => setPlayingVideo(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

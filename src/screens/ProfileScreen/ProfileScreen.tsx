@@ -68,11 +68,16 @@ export function ProfileScreen({ navigation }: any) {
   const userIsLoggedIn = isUserLoggedIn();
   const userIsSubscribed = isUserSubscribed();
 
-  const currentUser = user || {
-    name: 'Alex Kumar',
-    email: 'alex.kumar@gmail.com',
+  const currentUser = user ? {
+    ...user,
+    name: (user.name === 'Guest User' || !user.name) && userIsSubscribed ? 'VIP Subscriber' : user.name,
+  } : {
+    name: userIsSubscribed ? 'VIP Subscriber' : 'Alex Kumar',
+    email: userIsSubscribed ? 'vip@streamr.app' : 'alex.kumar@gmail.com',
     avatar_url: undefined,
-    role: 'guest',
+    role: userIsSubscribed ? 'subscriber' : 'guest',
+    chosen_plan: userIsSubscribed ? 'VIP Member Plan' : null,
+    plan_id: userIsSubscribed ? 'vip_plan' : null,
   };
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
@@ -380,6 +385,7 @@ export function ProfileScreen({ navigation }: any) {
               <VerticalList
                 videos={downloadedVideoList}
                 numColumns={2}
+                scrollable={false}
                 refreshing={loading}
                 isContinueWatching={true}
                 onRefresh={reload}

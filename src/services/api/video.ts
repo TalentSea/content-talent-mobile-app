@@ -139,14 +139,44 @@ export async function fetchVideos(
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 50));
 
-    // Mobile Videos Endpoint (/api/v1/mobile/videos)
-    const response = await apiGet<PaginatedVideosResponse>(
-      `/api/v1/mobile/videos?${query.toString()}`,
+    // 1. Primary: Mobile Videos Endpoint (/api/v1/mobile/videos)
+    try {
+      const response = await apiGet<PaginatedVideosResponse>(
+        `/api/v1/mobile/videos?${query.toString()}`,
+      );
+      if (response && Array.isArray(response.items)) {
+        return {
+          ...response,
+          items: response.items.map(normalizeVideoItem),
+        };
+      }
+    } catch (err) {
+      // Mobile endpoint notice
+    }
+
+    // 2. Secondary: Admin Videos Endpoint (/api/v1/admin/videos)
+    try {
+      const adminResponse = await apiGet<PaginatedVideosResponse>(
+        `/api/v1/admin/videos?${query.toString()}`,
+      );
+      if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
+        return {
+          ...adminResponse,
+          items: adminResponse.items.map(normalizeVideoItem),
+        };
+      }
+    } catch (e) {
+      // Admin endpoint notice
+    }
+
+    // 3. Public Videos Endpoint (/api/v1/videos)
+    const publicResponse = await apiGet<PaginatedVideosResponse>(
+      `/api/v1/videos?${query.toString()}`,
     );
-    if (response && Array.isArray(response.items)) {
+    if (publicResponse && Array.isArray(publicResponse.items)) {
       return {
-        ...response,
-        items: response.items.map(normalizeVideoItem),
+        ...publicResponse,
+        items: publicResponse.items.map(normalizeVideoItem),
       };
     }
 
@@ -173,10 +203,33 @@ export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
   try {
-    // Mobile Video Details (/api/v1/mobile/videos/{id})
-    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
-    if (mobileRes) {
-      return normalizeVideoItem(mobileRes) as VideoDetails;
+    // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
+    try {
+      const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+      if (mobileRes) {
+        return normalizeVideoItem(mobileRes) as VideoDetails;
+      }
+    } catch (e) {
+      // Mobile details fallback
+    }
+
+    // 2. Secondary: Admin Video Details (/api/v1/admin/videos/{id})
+    try {
+      const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
+      if (adminRes) {
+        return normalizeVideoItem(adminRes) as VideoDetails;
+      }
+    } catch (e) {
+      // Admin details fallback
+    }
+
+    // 3. Public Video Details (/api/v1/videos/{id})
+    const publicRes = await apiGet<VideoDetails>(`/api/v1/videos/${videoId}`);
+    if (publicRes) {
+      return normalizeVideoItem(publicRes) as VideoDetails;
+    }
+      return normalizeVideoItem(publicRes) as VideoDetails;
+>>>>>>> 2f749b4a (feat: implement Razorpay payment checkout modal, signature verification, and subscription playback unlock)
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Mobile API notice for video ${videoId}:`, error);

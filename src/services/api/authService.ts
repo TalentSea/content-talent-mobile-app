@@ -123,39 +123,62 @@ export function getCurrentUser(): UserProfile | null {
 
 export function isUserLoggedIn(): boolean {
   if (!currentAuthenticatedUser) return false;
-  const provider = currentAuthenticatedUser.provider;
-  const role = currentAuthenticatedUser.role;
-  return provider !== 'guest' && role !== 'guest';
+  const role = (currentAuthenticatedUser.role || '').toLowerCase();
+  const planVal = (
+    currentAuthenticatedUser.chosen_plan ||
+    currentAuthenticatedUser.plan_id ||
+    (currentAuthenticatedUser as any).plan ||
+    ''
+  ).toString().trim();
+  const hasPlan = planVal.length > 0 && planVal !== 'null' && planVal !== 'undefined';
+
+  if (hasPlan || ['subscriber', 'member', 'premium', 'admin', 'creator', 'vip'].includes(role)) {
+    return true;
+  }
+  return currentAuthenticatedUser.provider !== 'guest' && role !== 'guest';
 }
 
 export function isUserSubscribed(): boolean {
-  if (!isUserLoggedIn()) return false;
-  const role = currentAuthenticatedUser?.role?.toLowerCase() || '';
-  const hasPlan = !!currentAuthenticatedUser?.chosen_plan || !!currentAuthenticatedUser?.plan_id;
-  return ['member', 'subscriber', 'premium', 'admin', 'creator', 'vip'].includes(role) || hasPlan;
+  if (!currentAuthenticatedUser) return false;
+  const role = (currentAuthenticatedUser.role || '').toLowerCase();
+  const planVal = (
+    currentAuthenticatedUser.chosen_plan ||
+    currentAuthenticatedUser.plan_id ||
+    (currentAuthenticatedUser as any).plan ||
+    ''
+  ).toString().trim();
+  const hasPlan = planVal.length > 0 && planVal !== 'null' && planVal !== 'undefined';
+
+  if (hasPlan) return true;
+  if (['subscriber', 'member', 'premium', 'admin', 'creator', 'vip'].includes(role)) {
+    return true;
+  }
+
+  return false;
 }
 
 export function activateSubscription(
-  role: 'member' | 'subscriber' | 'premium' = 'member',
+  role: 'member' | 'subscriber' | 'premium' = 'subscriber',
   planName: string = 'Premium Plan',
   planId?: string
 ): UserProfile {
-  const updatedUser: UserProfile = currentAuthenticatedUser
-    ? {
-        ...currentAuthenticatedUser,
-        role,
-        chosen_plan: planName,
-        plan_id: planId || currentAuthenticatedUser.plan_id,
-      }
-    : {
-        id: 101,
-        name: 'VIP Member',
-        email: 'member@streamr.app',
-        provider: 'google',
-        role,
-        chosen_plan: planName,
-        plan_id: planId,
-      };
+  const baseUser = currentAuthenticatedUser || {
+    id: 101,
+    name: 'VIP Member',
+    email: 'member@streamr.app',
+    avatar_url: null,
+    provider: 'subscriber',
+    role: 'subscriber',
+  };
+
+  const updatedUser: UserProfile = {
+    ...baseUser,
+    name: baseUser.name === 'Guest User' ? 'VIP Subscriber' : baseUser.name,
+    provider: 'subscriber',
+    role: 'subscriber',
+    chosen_plan: planName || 'VIP Member Plan',
+    plan_id: planId || 'vip_plan',
+  };
 
   currentAuthenticatedUser = updatedUser;
   saveSessionToStorage(
@@ -171,9 +194,18 @@ export function setSessionTokens(accessToken: string, refreshToken: string, user
   setApiAccessToken(accessToken);
   storedRefreshToken = refreshToken;
   if (user) {
-    currentAuthenticatedUser = user;
+    const existingPlanName = currentAuthenticatedUser?.chosen_plan;
+    const existingPlanId = currentAuthenticatedUser?.plan_id;
+    const isSubscribedAlready = isUserSubscribed();
+
+    currentAuthenticatedUser = {
+      ...user,
+      chosen_plan: user.chosen_plan || (isSubscribedAlready ? existingPlanName : undefined),
+      plan_id: user.plan_id || (isSubscribedAlready ? existingPlanId : undefined),
+      role: isSubscribedAlready ? 'subscriber' : user.role,
+    };
   }
-  saveSessionToStorage(accessToken, refreshToken, user || currentAuthenticatedUser || undefined);
+  saveSessionToStorage(accessToken, refreshToken, currentAuthenticatedUser || undefined);
   notifyAuthChange();
 }
 
@@ -185,6 +217,15 @@ export async function loginAsGuest(
   customDeviceInfo?: string,
   creatorId: number = 1
 ): Promise<AuthResponse> {
+  // If user is already logged in or subscribed, do NOT overwrite session with Guest!
+  if (isUserSubscribed() || isUserLoggedIn()) {
+    return {
+      access_token: getApiAccessToken() || DEFAULT_AUTH_TOKEN,
+      refresh_token: storedRefreshToken || '',
+      user: currentAuthenticatedUser!,
+    };
+  }
+
   const deviceId = await getOrCreateDeviceId();
   const info = customDeviceInfo || getDeviceInfo();
 
@@ -200,38 +241,30 @@ export async function loginAsGuest(
   try {
     const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
       method: 'POST',
-      authenticated: false,
-      body: JSON.stringify({
-        creator_id: creatorId,
-        device_id: deviceId,
-        device_info: info,
-      }),
+      body: JSON.stringify({ device_id: deviceId, device_info: info, creator_id: creatorId }),
     });
 
-    const activeUser = response.user || fallbackGuestProfile;
-    setSessionTokens(response.access_token, response.refresh_token, activeUser);
+    const guestUser = response.user || fallbackGuestProfile;
+    setSessionTokens(response.access_token, response.refresh_token, guestUser);
     return response;
-  } catch (error) {
-    console.warn('[loginAsGuest] Server guest endpoint notice (using fallback):', error);
-    const guestAuth: AuthResponse = {
-      access_token: DEFAULT_AUTH_TOKEN,
+  } catch (e) {
+    console.warn('[authService] Notice initializing guest session with live backend:', e);
+
+    const fallbackResponse: AuthResponse = {
+      access_token: `guest_access_${Date.now()}`,
       refresh_token: `guest_refresh_${Date.now()}`,
-      token_type: 'bearer',
-      expires_in: 1800,
       user: fallbackGuestProfile,
     };
-    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, guestAuth.user);
-    return guestAuth;
+    setSessionTokens(fallbackResponse.access_token, fallbackResponse.refresh_token, fallbackGuestProfile);
+    return fallbackResponse;
   }
 }
 
 /**
- * 2 & 3. POST /api/v1/auth/google & POST /api/v1/auth/facebook — Sign-In & Account Upgrade
- * Exchanges Google OIDC id_token or Facebook access_token for application JWT.
- * If header Authorization: Bearer <guest_access_token> is present, the backend upgrades the existing guest account into a permanent subscriber account!
+ * 2. POST /api/v1/auth/social-login — Social Login (Google / Auth0 / Guest Upgrade)
  */
-export async function loginWithSocial(
-  provider: SocialProvider,
+export async function loginWithSocialToken(
+  provider: 'google' | 'auth0' | 'apple' | string,
   token: string,
   customDeviceInfo?: string,
   userProfileOverride?: UserProfile,
@@ -255,7 +288,7 @@ export async function loginWithSocial(
         email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
         avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
         provider,
-        role: 'subscriber',
+        role: 'member',
       },
     };
     setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
@@ -295,13 +328,15 @@ export async function loginWithSocial(
         email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
         avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
         provider,
-        role: 'subscriber',
+        role: 'member',
       },
     };
     setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
     return mockAuth;
   }
 }
+
+export const loginWithSocial = loginWithSocialToken;
 
 /**
  * 4. POST /api/v1/auth/refresh — Refresh Access Token
@@ -396,9 +431,20 @@ export async function fetchUserProfileApi(): Promise<UserProfile | null> {
       authenticated: true,
     });
     if (profile) {
-      currentAuthenticatedUser = profile;
+      const activePlanName = profile.chosen_plan || currentAuthenticatedUser?.chosen_plan || 'VIP Member Plan';
+      const activePlanId = profile.plan_id || currentAuthenticatedUser?.plan_id || 'vip_plan';
+      const isSub = isUserSubscribed();
+
+      const mergedUser: UserProfile = {
+        ...profile,
+        chosen_plan: isSub ? activePlanName : profile.chosen_plan,
+        plan_id: isSub ? activePlanId : profile.plan_id,
+        role: isSub ? 'subscriber' : profile.role,
+      };
+
+      currentAuthenticatedUser = mergedUser;
       notifyAuthChange();
-      return profile;
+      return mergedUser;
     }
   } catch (err) {
     console.warn('[fetchUserProfileApi] Error fetching current user profile:', err);
