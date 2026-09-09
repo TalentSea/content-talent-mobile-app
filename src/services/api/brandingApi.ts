@@ -123,8 +123,6 @@ const parseBannerItem = (b: any): MobileBannerItem => {
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
   const endpoints = [
     '/api/v1/mobile/branding',
-    '/api/v1/branding',
-    '/api/v1/branding/info',
   ];
 
   for (const path of endpoints) {
@@ -182,8 +180,6 @@ export async function fetchMobileBannersApi(): Promise<MobileBannerItem[]> {
     '/api/v1/mobile/featured-videos',
     '/api/v1/mobile/featured_videos',
     '/api/v1/mobile/banners',
-    '/api/v1/featured-videos',
-    '/api/v1/banners',
   ];
 
   for (const path of endpoints) {

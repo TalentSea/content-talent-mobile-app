@@ -135,11 +135,37 @@ export function normalizeComment(item: any): CommentItem {
   };
 }
 
+function mergeReplies(r1: CommentReplyItem[] = [], r2: CommentReplyItem[] = []): CommentReplyItem[] {
+  const map = new Map<number, CommentReplyItem>();
+  for (const r of [...r1, ...r2]) {
+    if (r && r.id) {
+      map.set(r.id, r);
+    }
+  }
+  return Array.from(map.values());
+}
+
 function deduplicateComments(items: CommentItem[]): CommentItem[] {
   const map = new Map<number, CommentItem>();
   for (const item of items) {
     if (item && item.id) {
-      map.set(item.id, item);
+      const existing = map.get(item.id);
+      if (existing) {
+        const mergedReplies = mergeReplies(existing.replies, item.replies);
+        const mergedCount = Math.max(
+          existing.reply_count || 0,
+          item.reply_count || 0,
+          mergedReplies.length,
+        );
+        map.set(item.id, {
+          ...existing,
+          ...item,
+          replies: mergedReplies,
+          reply_count: mergedCount,
+        });
+      } else {
+        map.set(item.id, item);
+      }
     }
   }
   return Array.from(map.values());
@@ -215,38 +241,48 @@ export async function fetchVideoComments(
 export async function fetchCommentReplies(
   commentId: number,
 ): Promise<PaginatedRepliesResponse> {
-  try {
-    // Backend Endpoint: GET /api/v1/mobile/comments/{id}/replies
-    const response = await apiGet<any>(
-      `/api/v1/mobile/comments/${commentId}/replies`,
-    );
+  const candidatePaths = [
+    `/api/v1/mobile/comments/${commentId}/replies`,
+    `/api/v1/comments/${commentId}/replies`,
+    `/api/v1/mobile/comments/${commentId}/reply`,
+  ];
 
-    const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
-    const normalized = rawItems.map(normalizeReply);
+  let localReplies: CommentReplyItem[] = [];
+  for (const vId in REAL_COMMENTS_MAP) {
+    const parent = REAL_COMMENTS_MAP[vId].find(c => Number(c.id) === Number(commentId));
+    if (parent && parent.replies) {
+      localReplies = parent.replies;
+      break;
+    }
+  }
 
-    return {
-      total: normalized.length,
-      page: 1,
-      limit: 20,
-      total_pages: 1,
-      items: normalized,
-    };
-  } catch (error) {
-    console.warn(`[fetchCommentReplies] Backend API notice for comment ${commentId}:`, error);
-    for (const vId in REAL_COMMENTS_MAP) {
-      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent && parent.replies) {
+  for (const path of candidatePaths) {
+    try {
+      const response = await apiGet<any>(path);
+      const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
+      if (Array.isArray(rawItems)) {
+        const normalizedRemote = rawItems.map(normalizeReply);
+        const merged = mergeReplies(normalizedRemote, localReplies);
         return {
-          total: parent.replies.length,
+          total: merged.length,
           page: 1,
           limit: 20,
           total_pages: 1,
-          items: parent.replies,
+          items: merged,
         };
       }
+    } catch (error) {
+      // Continue trying candidate endpoint fallback
     }
-    return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
   }
+
+  return {
+    total: localReplies.length,
+    page: 1,
+    limit: 20,
+    total_pages: 1,
+    items: localReplies,
+  };
 }
 
 export async function createTopLevelComment(
@@ -301,33 +337,34 @@ export async function postCommentReply(
 ): Promise<CommentReplyItem> {
   const user = getCurrentUser();
 
-  try {
-    // Backend Endpoint: POST /api/v1/mobile/comments/{id}/reply
-    const rawRes = await apiRequest<any>(
-      `/api/v1/mobile/comments/${commentId}/reply`,
-      {
+  const candidateEndpoints = [
+    `/api/v1/mobile/comments/${commentId}/reply`,
+    `/api/v1/mobile/comments/${commentId}/replies`,
+    `/api/v1/comments/${commentId}/reply`,
+    `/api/v1/comments/${commentId}/replies`,
+  ];
+
+  let replyObj: CommentReplyItem | null = null;
+
+  for (const path of candidateEndpoints) {
+    try {
+      const rawRes = await apiRequest<any>(path, {
         method: 'POST',
         body: JSON.stringify({ text }),
-      },
-    );
-
-    const normalized = normalizeReply(rawRes);
-    for (const vId in REAL_COMMENTS_MAP) {
-      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent) {
-        if (!parent.replies) parent.replies = [];
-        parent.replies.push(normalized);
-        parent.reply_count = parent.replies.length;
+      });
+      if (rawRes) {
+        replyObj = normalizeReply(rawRes);
         break;
       }
+    } catch (e) {
+      // try next candidate endpoint fallback
     }
-    persistCommentsToDisk();
-    return normalized;
-  } catch (error) {
-    console.warn(`[postCommentReply] Backend API notice for comment ${commentId}:`, error);
-    const fallbackReply: CommentReplyItem = {
+  }
+
+  if (!replyObj) {
+    replyObj = {
       id: Date.now(),
-      comment_id: commentId,
+      comment_id: Number(commentId),
       text,
       user_id: user?.id || 1,
       user_name: user?.name || 'You',
@@ -337,19 +374,56 @@ export async function postCommentReply(
       is_owner: true,
       created_at: new Date().toISOString(),
     };
-
-    for (const vId in REAL_COMMENTS_MAP) {
-      const parent = REAL_COMMENTS_MAP[vId].find(c => c.id === commentId);
-      if (parent) {
-        if (!parent.replies) parent.replies = [];
-        parent.replies.push(fallbackReply);
-        parent.reply_count = parent.replies.length;
-        break;
-      }
-    }
-    persistCommentsToDisk();
-    return fallbackReply;
   }
+
+  // Find parent comment in REAL_COMMENTS_MAP and append reply
+  let foundParent = false;
+  for (const vId in REAL_COMMENTS_MAP) {
+    const parent = REAL_COMMENTS_MAP[vId].find(c => Number(c.id) === Number(commentId));
+    if (parent) {
+      if (!parent.replies) parent.replies = [];
+      const existingIdx = parent.replies.findIndex(r => Number(r.id) === Number(replyObj!.id));
+      if (existingIdx >= 0) {
+        parent.replies[existingIdx] = replyObj;
+      } else {
+        parent.replies.push(replyObj);
+      }
+      parent.reply_count = Math.max(parent.reply_count || 0, parent.replies.length);
+      foundParent = true;
+      break;
+    }
+  }
+
+  // If parent not yet in REAL_COMMENTS_MAP, attach to fallback group
+  if (!foundParent) {
+    const fallbackVId = 0;
+    if (!REAL_COMMENTS_MAP[fallbackVId]) {
+      REAL_COMMENTS_MAP[fallbackVId] = [];
+    }
+    let parent = REAL_COMMENTS_MAP[fallbackVId].find(c => Number(c.id) === Number(commentId));
+    if (!parent) {
+      parent = {
+        id: Number(commentId),
+        user_id: 0,
+        user_name: 'User',
+        text: 'Comment',
+        video_id: 0,
+        likes: 0,
+        is_liked: false,
+        reply_count: 1,
+        created_at: new Date().toISOString(),
+        replies: [replyObj],
+      };
+      REAL_COMMENTS_MAP[fallbackVId].push(parent);
+    } else {
+      if (!parent.replies) parent.replies = [];
+      parent.replies.push(replyObj);
+      parent.reply_count = parent.replies.length;
+    }
+  }
+
+  persistCommentsToDisk();
+  return replyObj;
 }
 
 export async function toggleCommentLike(

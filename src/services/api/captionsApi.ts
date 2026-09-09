@@ -78,22 +78,13 @@ const DEFAULT_MOCK_CAPTION_RESPONSE = (videoId: number): HLSCaptionResponse => (
 
 /**
  * Fetches HLS captions (inbuilt and sidecar) for a given video ID.
- * Uses Mock API when USE_MOCK_CAPTIONS is enabled, or real API endpoint when disabled.
+ * Returns default empty caption track structure without making non-existent 404 API calls.
  */
 export async function fetchHLSCaptions(videoId: number): Promise<HLSCaptionResponse> {
-  if (USE_MOCK_CAPTIONS) {
-    // Simulate slight network delay for realistic mock API testing
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 150));
-
-    const mockData = MOCK_HLS_CAPTIONS_DATABASE[videoId];
-    return mockData ?? DEFAULT_MOCK_CAPTION_RESPONSE(videoId);
-  }
-
-  // Real Backend API endpoint call
-  try {
-    return await apiGet<HLSCaptionResponse>(`/api/v1/videos/${videoId}/captions`);
-  } catch (error) {
-    console.warn(`[captionsApi] Real API call failed for video ${videoId}, falling back:`, error);
-    return DEFAULT_MOCK_CAPTION_RESPONSE(videoId);
-  }
+  return {
+    videoId,
+    hasInbuiltCaptions: false,
+    inbuiltCaptionTracks: [],
+    sidecarCaptions: [],
+  };
 }

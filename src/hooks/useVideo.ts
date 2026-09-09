@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchVideos } from '../services/api/video';
 import { subscribeVideoCatalog } from '../services/api/mockVideoApi';
-import { subscribeViewTracker } from '../services/viewTracker';
-import { subscribeUserActivity } from '../services/userActivity';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
 
@@ -35,23 +33,8 @@ export function useVideos() {
       loadVideos(false);
     });
 
-    const unsubscribeViews = subscribeViewTracker(() => {
-      loadVideos(false);
-    });
-
-    const unsubscribeActivity = subscribeUserActivity(() => {
-      loadVideos(false);
-    });
-
-    const interval = setInterval(() => {
-      loadVideos(false);
-    }, 10000);
-
     return () => {
       unsubscribeCatalog();
-      unsubscribeViews();
-      unsubscribeActivity();
-      clearInterval(interval);
     };
   }, []);
 

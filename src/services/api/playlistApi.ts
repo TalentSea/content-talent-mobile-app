@@ -41,30 +41,17 @@ export async function fetchPlaylists(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // 1. Primary: Mobile Playlists Endpoint (/api/v1/mobile/playlists)
-    try {
-      const response = await apiGet<PaginatedPlaylistsResponse>(
-        `/api/v1/mobile/playlists?${query.toString()}`,
-      );
-      if (response && Array.isArray(response.items)) {
-        return response;
-      }
-    } catch (err) {
-      // Mobile playlists fallback
-    }
-
-    // 2. Secondary: Public Playlists Endpoint (/api/v1/playlists)
-    const publicResponse = await apiGet<PaginatedPlaylistsResponse>(
-      `/api/v1/playlists?${query.toString()}`,
+    // Mobile Playlists Endpoint (/api/v1/mobile/playlists)
+    const response = await apiGet<PaginatedPlaylistsResponse>(
+      `/api/v1/mobile/playlists?${query.toString()}`,
     );
-
-    if (publicResponse && Array.isArray(publicResponse.items)) {
-      return publicResponse;
+    if (response && Array.isArray(response.items)) {
+      return response;
     }
 
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
   } catch (error) {
-    console.warn('[fetchPlaylists] Live API notice:', error);
+    console.warn('[fetchPlaylists] Mobile API notice:', error);
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
   }
 }
@@ -73,17 +60,10 @@ export async function fetchPlaylistDetails(
   playlistId: number,
 ): Promise<PlaylistDetails> {
   try {
-    // 1. Primary: Mobile Playlist Details API
-    try {
-      return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
-    } catch (e) {
-      // Fallback
-    }
-
-    // 2. Secondary: Public Playlist Details API
-    return await apiGet<PlaylistDetails>(`/api/v1/playlists/${playlistId}`);
+    // Mobile Playlist Details API (/api/v1/mobile/playlists/{id})
+    return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
   } catch (error) {
-    console.warn(`[fetchPlaylistDetails] API notice for playlist ${playlistId}:`, error);
+    console.warn(`[fetchPlaylistDetails] Mobile API notice for playlist ${playlistId}:`, error);
     throw error;
   }
 }
@@ -98,55 +78,22 @@ export async function fetchPlaylistVideos(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // 1. Primary: Mobile Playlist Videos API
-    try {
-      const response = await apiGet<PaginatedPlaylistVideosResponse>(
-        `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
-      );
-      if (response && Array.isArray(response.items) && response.items.length > 0) {
-        return response;
-      }
-    } catch (e) {
-      // Fallback
-    }
-
-    // 2. Secondary: Public Playlist Videos API
-    const publicResponse = await apiGet<PaginatedPlaylistVideosResponse>(
-      `/api/v1/playlists/${playlistId}/videos?${query.toString()}`,
+    // Mobile Playlist Videos API (/api/v1/mobile/playlists/{id}/videos)
+    const response = await apiGet<PaginatedPlaylistVideosResponse>(
+      `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
     );
-
-    if (publicResponse && Array.isArray(publicResponse.items) && publicResponse.items.length > 0) {
-      return publicResponse;
+    if (response && Array.isArray(response.items)) {
+      return response;
     }
   } catch (error) {
-    console.warn(`[fetchPlaylistVideos] API notice for playlist ${playlistId} videos:`, error);
-  }
-
-  // Accurate Playlist Video Fallback Mapping when backend playlist_videos has no entries yet
-  const { MOCK_VIDEOS_LIST } = require('./mockVideoApi');
-  let fallbackVideos: ApiVideo[] = [];
-
-  if (playlistId === 1) {
-    // Movies & Cinema
-    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [1, 2, 3].includes(v.id));
-  } else if (playlistId === 2) {
-    // Developer Masterclass
-    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [5, 6, 7].includes(v.id));
-  } else if (playlistId === 3) {
-    // Animation Shorts
-    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [3, 2, 1].includes(v.id));
-  } else if (playlistId === 4) {
-    // Full Stack Development
-    fallbackVideos = MOCK_VIDEOS_LIST.filter((v: ApiVideo) => [5, 6].includes(v.id));
-  } else {
-    fallbackVideos = MOCK_VIDEOS_LIST.slice(0, 3);
+    console.warn(`[fetchPlaylistVideos] Mobile API notice for playlist ${playlistId} videos:`, error);
   }
 
   return {
-    total: fallbackVideos.length,
+    total: 0,
     page: 1,
     limit: limit,
     total_pages: 1,
-    items: fallbackVideos,
+    items: [],
   };
 }

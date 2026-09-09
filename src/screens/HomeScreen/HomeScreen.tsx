@@ -75,10 +75,6 @@ export function HomeScreen({ navigation }: any) {
         if (categoriesRes.status === 'fulfilled' && categoriesRes.value && categoriesRes.value.length > 0) {
           const catNames = categoriesRes.value.map((c: MobileCategoryItem) => c.name);
           setApiCategories(Array.from(new Set(catNames)));
-        } else {
-          // If API categories list is empty, derive directly from live backend videos
-          const videoCats = Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
-          setApiCategories(videoCats);
         }
       } catch (err) {
         console.warn('[HomeScreen] Error loading live mobile data:', err);
@@ -87,7 +83,11 @@ export function HomeScreen({ navigation }: any) {
       }
     }
     loadLiveMobileData();
-  }, [videos]);
+  }, []);
+
+  const displayCategories = apiCategories.length > 0
+    ? apiCategories
+    : Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
 
   // 1. Recently Added: sorted by latest published_at/created_at timestamp
   const recentlyAddedVideos = [...videos].sort((a, b) => {

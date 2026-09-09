@@ -60,18 +60,34 @@ export async function recordUserWatchHistoryApi(
   progressPercentage: number = 10,
   lastPositionSeconds: number = 0,
 ) {
-  try {
-    // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/progress
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/progress`, {
-      method: 'POST',
-      body: JSON.stringify({
-        progress_percentage: progressPercentage,
-        progress_seconds: lastPositionSeconds,
-        last_position_seconds: lastPositionSeconds,
-      }),
-    });
-  } catch (error) {
-    console.warn(`[recordUserWatchHistoryApi] Mobile API notice for video ${videoId}:`, error);
+  const roundProgress = Math.round(progressPercentage);
+  const roundSeconds = Math.round(lastPositionSeconds);
+
+  const payload = {
+    video_id: videoId,
+    progress_percentage: roundProgress,
+    progress_seconds: roundSeconds,
+    last_position_seconds: roundSeconds,
+    watch_progress: roundProgress,
+  };
+
+  const candidateEndpoints = [
+    { path: `/api/v1/mobile/videos/${videoId}/progress`, method: 'POST' },
+    { path: `/api/v1/videos/${videoId}/progress`, method: 'POST' },
+    { path: `/api/v1/mobile/videos/${videoId}/progress?progress_percentage=${roundProgress}&last_position_seconds=${roundSeconds}`, method: 'POST' },
+    { path: `/api/v1/mobile/videos/${videoId}/progress`, method: 'PUT' },
+  ];
+
+  for (const ep of candidateEndpoints) {
+    try {
+      await apiRequest(ep.path, {
+        method: ep.method,
+        body: JSON.stringify(payload),
+      });
+      return;
+    } catch (error) {
+      // Continue trying next candidate endpoint fallback silently
+    }
   }
 }
 
@@ -157,8 +173,6 @@ export async function incrementVideoViewsApi(videoId: number) {
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   const endpoints = [
     '/api/v1/mobile/categories',
-    '/api/v1/categories',
-    '/api/v1/categories/list',
   ];
 
   for (const path of endpoints) {

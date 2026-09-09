@@ -610,8 +610,18 @@ export default function NativeVideoPlayer({
           {/* YouTube-Style Top Header Bar */}
           <View style={styles.topBar} pointerEvents="box-none">
             <View style={styles.topBarLeft}>
-              {onClose ? (
-                <Pressable style={styles.topIconButton} onPress={onClose} hitSlop={12}>
+              {(onClose || (isFullscreen && onToggleFullscreen)) ? (
+                <Pressable
+                  style={styles.topIconButton}
+                  onPress={() => {
+                    if (isFullscreen && onToggleFullscreen) {
+                      onToggleFullscreen();
+                    } else if (onClose) {
+                      onClose();
+                    }
+                  }}
+                  hitSlop={12}
+                >
                   <Text style={styles.backIconText}>‹</Text>
                 </Pressable>
               ) : null}

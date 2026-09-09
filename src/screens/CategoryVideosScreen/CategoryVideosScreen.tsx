@@ -56,10 +56,14 @@ export function CategoryVideosScreen({ route, navigation }: any) {
         <View style={styles.headerPlaceholder} />
       </View>
 
-
+      <CategoryTabs
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+      />
 
       <VerticalList
-        videos={filteredVideos.length > 0 ? filteredVideos : popularVideos}
+        videos={filteredVideos}
         numColumns={2}
         refreshing={loading}
         onRefresh={reload}

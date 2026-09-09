@@ -92,8 +92,6 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const endpoints = [
     '/api/v1/mobile/plans',
     '/api/v1/mobile/subscription-plans',
-    '/api/v1/plans',
-    '/api/v1/subscriptions/plans',
   ];
 
   for (const path of endpoints) {

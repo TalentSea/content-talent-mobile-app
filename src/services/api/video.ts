@@ -139,30 +139,14 @@ export async function fetchVideos(
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 50));
 
-    // 1. Primary: Mobile Videos Endpoint (/api/v1/mobile/videos)
-    try {
-      const response = await apiGet<PaginatedVideosResponse>(
-        `/api/v1/mobile/videos?${query.toString()}`,
-      );
-      if (response && Array.isArray(response.items)) {
-        return {
-          ...response,
-          items: response.items.map(normalizeVideoItem),
-        };
-      }
-    } catch (err) {
-      // Mobile endpoint notice
-    }
-
-    // 2. Secondary: Public Videos Endpoint (/api/v1/videos)
-    const publicResponse = await apiGet<PaginatedVideosResponse>(
-      `/api/v1/videos?${query.toString()}`,
+    // Mobile Videos Endpoint (/api/v1/mobile/videos)
+    const response = await apiGet<PaginatedVideosResponse>(
+      `/api/v1/mobile/videos?${query.toString()}`,
     );
-
-    if (publicResponse && Array.isArray(publicResponse.items) && publicResponse.items.length > 0) {
+    if (response && Array.isArray(response.items)) {
       return {
-        ...publicResponse,
-        items: publicResponse.items.map(normalizeVideoItem),
+        ...response,
+        items: response.items.map(normalizeVideoItem),
       };
     }
 
@@ -174,7 +158,7 @@ export async function fetchVideos(
       items: [],
     };
   } catch (error) {
-    console.warn('[fetchVideos] Live API notice:', error);
+    console.warn('[fetchVideos] Mobile API notice:', error);
     return {
       total: 0,
       page: 1,
@@ -189,26 +173,15 @@ export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
   try {
-    // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
-    try {
-      const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
-      if (mobileRes) {
-        return normalizeVideoItem(mobileRes) as VideoDetails;
-      }
-    } catch (e) {
-      // Mobile details fallback
-    }
-
-    // 2. Secondary: Public Video Details (/api/v1/videos/{id})
-    const publicRes = await apiGet<VideoDetails>(`/api/v1/videos/${videoId}`);
-    if (publicRes) {
-      return normalizeVideoItem(publicRes) as VideoDetails;
+    // Mobile Video Details (/api/v1/mobile/videos/{id})
+    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+    if (mobileRes) {
+      return normalizeVideoItem(mobileRes) as VideoDetails;
     }
   } catch (error) {
-    console.warn(`[fetchVideoDetails] Live API notice for video ${videoId}:`, error);
+    console.warn(`[fetchVideoDetails] Mobile API notice for video ${videoId}:`, error);
   }
 
-  // Fallback: minimal streamable structure if server details missing
   return normalizeVideoItem({
     id: videoId,
     title: `Video ${videoId}`,

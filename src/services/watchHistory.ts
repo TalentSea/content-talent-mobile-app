@@ -111,6 +111,8 @@ export async function syncWatchHistoryWithBackend() {
   }
 }
 
+const lastBackendProgressSyncMap = new Map<number, { timestamp: number; progress: number }>();
+
 export function recordWatchHistory(
   video: ApiVideo,
   progressPercentage: number = 0,
@@ -140,10 +142,21 @@ export function recordWatchHistory(
   notifyListeners();
   persistWatchHistoryToDisk();
 
-  // Send watch progress to backend via POST /api/v1/mobile/videos/{video_id}/progress
-  recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds).catch(err =>
-    console.warn('[recordWatchHistory] Backend progress sync notice:', err),
-  );
+  // Throttle backend API calls: at most once every 5 seconds or on significant progress jumps (>= 3%) or completion (>= 98%)
+  const now = Date.now();
+  const lastSync = lastBackendProgressSyncMap.get(video.id);
+  const shouldSyncBackend =
+    !lastSync ||
+    now - lastSync.timestamp >= 5000 ||
+    Math.abs(progressPercentage - lastSync.progress) >= 3 ||
+    progressPercentage >= 98;
+
+  if (shouldSyncBackend) {
+    lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
+    recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds).catch(err =>
+      console.warn('[recordWatchHistory] Backend progress sync notice:', err),
+    );
+  }
 }
 
 // History contains EVERY video the user started watching (> 0%), whether completed (100%) or stopped midway (< 98%)

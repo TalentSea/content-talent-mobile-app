@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Pressable,
   StatusBar,
@@ -14,19 +14,42 @@ import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { fetchUserCategoriesApi } from '../../services/api/userActivityApi';
 import { styles } from './styles';
 
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
-
-const CATEGORIES = ['All', 'Popular', 'Recent', 'Tech', 'Sci-Fi', 'Animation'];
 
 export function VideoGridScreen({ route, navigation }: any) {
   const { section } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [categories, setCategories] = useState<string[]>(['All']);
 
   const { videos, popularVideos, processingVideos, loading, reload } = useVideos();
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
+
+  useEffect(() => {
+    async function loadDynamicCategories() {
+      try {
+        const fetchedCats = await fetchUserCategoriesApi();
+        const catNames = fetchedCats && fetchedCats.length > 0
+          ? fetchedCats.map((c: any) => c.name)
+          : [];
+        const videoCats = videos
+          .map(v => v.category)
+          .filter((c): c is string => Boolean(c && typeof c === 'string' && c.trim().length > 0));
+
+        const uniqueCats = Array.from(new Set(['All', ...catNames, ...videoCats]));
+        setCategories(uniqueCats);
+      } catch (e) {
+        const videoCats = videos
+          .map(v => v.category)
+          .filter((c): c is string => Boolean(c && typeof c === 'string' && c.trim().length > 0));
+        setCategories(Array.from(new Set(['All', ...videoCats])));
+      }
+    }
+    loadDynamicCategories();
+  }, [videos]);
 
   const isPopular = section === 'popular';
   const isRecent = section === 'recent';
@@ -44,12 +67,13 @@ export function VideoGridScreen({ route, navigation }: any) {
 
   const filteredVideos = baseVideos.filter(v => {
     const matchesSearch = searchQuery
-      ? v.title.toLowerCase().includes(searchQuery.toLowerCase())
+      ? v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
     const matchesCategory =
-      selectedCategory === 'All' || selectedCategory === 'Popular' || selectedCategory === 'Recent'
+      selectedCategory === 'All'
         ? true
-        : v.category === selectedCategory;
+        : v.category?.trim().toLowerCase() === selectedCategory.trim().toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -85,7 +109,7 @@ export function VideoGridScreen({ route, navigation }: any) {
 
       {/* Category Tabs */}
       <CategoryTabs
-        categories={CATEGORIES}
+        categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={setSelectedCategory}
       />

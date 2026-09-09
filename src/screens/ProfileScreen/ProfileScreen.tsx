@@ -11,10 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
+  Bookmark,
   ChevronLeft,
   ChevronRight,
   Crown,
   Download,
+  Heart,
   HelpCircle,
   LogIn,
   LogOut,
@@ -26,6 +28,7 @@ import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useDownloads } from '../../hooks/useDownloads';
+import { useUserActivity } from '../../hooks/useUserActivity';
 import {
   clearSessionTokens,
   getCurrentUser,
@@ -48,7 +51,7 @@ function getInitials(name?: string | null): string {
 
 export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
-  const [showDownloads, setShowDownloads] = useState(true);
+  const [activeSection, setActiveSection] = useState<'downloads' | 'saved' | 'liked' | null>('downloads');
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -59,6 +62,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const { videos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
+  const { savedVideos, likedVideos } = useUserActivity(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
   const userIsLoggedIn = isUserLoggedIn();
@@ -103,8 +107,8 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   const membershipLabel = userIsSubscribed
-    ? currentUser.chosen_plan
-      ? `${currentUser.chosen_plan} Member`
+    ? (currentUser as any).chosen_plan
+      ? `${(currentUser as any).chosen_plan} Member`
       : 'Premium Member'
     : userIsLoggedIn
     ? 'Free Member (No Plan)'
@@ -129,6 +133,12 @@ export function ProfileScreen({ navigation }: any) {
             onPress={() => navigation.navigate('Notifications')}
           >
             <Bell color="#FFFFFF" size={18} />
+          </Pressable>
+          <Pressable
+            style={styles.headerIconButton}
+            onPress={handleSupportPress}
+          >
+            <HelpCircle color="#FFFFFF" size={18} />
           </Pressable>
           <Pressable
             style={styles.headerIconButton}
@@ -204,7 +214,7 @@ export function ProfileScreen({ navigation }: any) {
                   My Subscription
                 </Text>
                 <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
-                  {userIsSubscribed ? `Active: ${currentUser.chosen_plan || 'Premium Member'}` : 'Upgrade to watch all content'}
+                  {userIsSubscribed ? `Active: ${(currentUser as any).chosen_plan || 'Premium Member'}` : 'Upgrade to watch all content'}
                 </Text>
               </View>
               <ChevronRight size={18} color="#475569" />
@@ -218,7 +228,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setShowDownloads(prev => !prev)}
+              onPress={() => setActiveSection(prev => (prev === 'downloads' ? null : 'downloads'))}
             >
               <View
                 style={{
@@ -241,10 +251,14 @@ export function ProfileScreen({ navigation }: any) {
                   {downloadedVideoList.length} saved offline videos
                 </Text>
               </View>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight
+                size={18}
+                color="#475569"
+                style={activeSection === 'downloads' ? { transform: [{ rotate: '90deg' }] } : undefined}
+              />
             </Pressable>
 
-            {/* 3. Settings */}
+            {/* 3. Saved Videos */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -252,7 +266,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => navigation?.navigate('Settings')}
+              onPress={() => setActiveSection(prev => (prev === 'saved' ? null : 'saved'))}
             >
               <View
                 style={{
@@ -265,15 +279,24 @@ export function ProfileScreen({ navigation }: any) {
                   marginRight: 14,
                 }}
               >
-                <Settings size={20} color="#A1A1AA" />
+                <Bookmark size={20} color="#3B82F6" />
               </View>
-              <Text style={{ flex: 1, color: '#F1F5F9', fontSize: 15, fontWeight: '600' }}>
-                Settings
-              </Text>
-              <ChevronRight size={18} color="#475569" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                  Saved Videos
+                </Text>
+                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                  {savedVideos.length} bookmarked videos
+                </Text>
+              </View>
+              <ChevronRight
+                size={18}
+                color="#475569"
+                style={activeSection === 'saved' ? { transform: [{ rotate: '90deg' }] } : undefined}
+              />
             </Pressable>
 
-            {/* 4. Help & Support */}
+            {/* 4. Liked Videos */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -281,7 +304,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={handleSupportPress}
+              onPress={() => setActiveSection(prev => (prev === 'liked' ? null : 'liked'))}
             >
               <View
                 style={{
@@ -294,12 +317,21 @@ export function ProfileScreen({ navigation }: any) {
                   marginRight: 14,
                 }}
               >
-                <HelpCircle size={20} color="#F59E0B" />
+                <Heart size={20} color="#EF4444" />
               </View>
-              <Text style={{ flex: 1, color: '#F1F5F9', fontSize: 15, fontWeight: '600' }}>
-                Help & Support
-              </Text>
-              <ChevronRight size={18} color="#475569" />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                  Liked Videos
+                </Text>
+                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                  {likedVideos.length} liked videos
+                </Text>
+              </View>
+              <ChevronRight
+                size={18}
+                color="#475569"
+                style={activeSection === 'liked' ? { transform: [{ rotate: '90deg' }] } : undefined}
+              />
             </Pressable>
 
             {/* 5. Logout */}
@@ -339,8 +371,8 @@ export function ProfileScreen({ navigation }: any) {
             </Pressable>
           </View>
 
-          {/* Downloads Grid Section */}
-          {showDownloads && (
+          {/* Expandable Section Display */}
+          {activeSection === 'downloads' && (
             <View style={{ marginTop: 8 }}>
               <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
                 Saved Offline Downloads ({downloadedVideoList.length})
@@ -353,6 +385,40 @@ export function ProfileScreen({ navigation }: any) {
                 onRefresh={reload}
                 onPressVideo={playVideo}
                 emptyText="No saved offline downloads yet."
+              />
+            </View>
+          )}
+
+          {activeSection === 'saved' && (
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
+                Saved Videos ({savedVideos.length})
+              </Text>
+              <VerticalList
+                videos={savedVideos}
+                numColumns={2}
+                refreshing={loading}
+                isContinueWatching={true}
+                onRefresh={reload}
+                onPressVideo={playVideo}
+                emptyText="No saved videos yet."
+              />
+            </View>
+          )}
+
+          {activeSection === 'liked' && (
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
+                Liked Videos ({likedVideos.length})
+              </Text>
+              <VerticalList
+                videos={likedVideos}
+                numColumns={2}
+                refreshing={loading}
+                isContinueWatching={true}
+                onRefresh={reload}
+                onPressVideo={playVideo}
+                emptyText="No liked videos yet."
               />
             </View>
           )}
