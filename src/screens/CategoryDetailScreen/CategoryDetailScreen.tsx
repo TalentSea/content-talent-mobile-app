@@ -229,6 +229,10 @@ export function CategoryDetailScreen({ route, navigation }: any) {
         playingVideo={playingVideo}
         onSelectVideo={playVideo}
         onSelectPlaylist={handleSelectPlaylist}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation?.navigate('Subscription');
+        }}
         onClose={closePlayer}
       />
     </SafeAreaView>

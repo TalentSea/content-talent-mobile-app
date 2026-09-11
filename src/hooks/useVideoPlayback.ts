@@ -20,8 +20,8 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             return;
         }
 
-        // 1. Logged-in User Check: Only logged in users can view / play content
-        if (!isUserLoggedIn()) {
+        // 1. Logged-in User Check: Only logged in users or users with an active subscription can view content
+        if (!isUserLoggedIn() && !isUserSubscribed()) {
             Alert.alert(
                 'Login Required',
                 'Only logged-in users can play video content. Please log in to your account.',

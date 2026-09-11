@@ -66,13 +66,27 @@ export function ProfileScreen({ navigation }: any) {
 
   const userIsLoggedIn = isUserLoggedIn();
   const userIsSubscribed = isUserSubscribed();
-
-  const currentUser = user || {
-    name: 'Guest Visitor',
-    email: 'Sign in to access your profile',
-    avatar_url: undefined,
-    role: 'guest',
-  };
+  const currentUser = user
+    ? {
+      ...user,
+      name:
+        (user.name === 'Guest User' || !user.name) && userIsSubscribed
+          ? 'VIP Subscriber'
+          : user.name,
+      role: userIsSubscribed ? 'subscriber' : user.role,
+      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : user.chosen_plan,
+      plan_id: userIsSubscribed ? 'vip_plan' : user.plan_id,
+    }
+    : {
+      name: userIsSubscribed ? 'VIP Subscriber' : 'Guest Visitor',
+      email: userIsSubscribed
+        ? 'vip@streamr.app'
+        : 'Sign in to access your profile',
+      avatar_url: undefined,
+      role: userIsSubscribed ? 'subscriber' : 'guest',
+      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : null,
+      plan_id: userIsSubscribed ? 'vip_plan' : null,
+    };
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
     .map((item: DownloadedVideoItem) => item?.video || (item as any))

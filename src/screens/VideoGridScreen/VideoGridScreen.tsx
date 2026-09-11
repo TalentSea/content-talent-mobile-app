@@ -74,38 +74,38 @@ export function VideoGridScreen({ route, navigation }: any) {
   const title = isPopular
     ? 'Popular Videos'
     : isRecent
-    ? 'Recently Added Videos'
-    : isDownloads
-    ? 'Downloads'
-    : isSaved
-    ? 'Saved Videos'
-    : isLiked
-    ? 'Liked Videos'
-    : 'Processing Videos';
+      ? 'Recently Added Videos'
+      : isDownloads
+        ? 'Downloads'
+        : isSaved
+          ? 'Saved Videos'
+          : isLiked
+            ? 'Liked Videos'
+            : 'Processing Videos';
 
   const numCols = 1;
 
   const baseVideos = isPopular
     ? [...popularVideos].sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id))
     : isRecent
-    ? [...videos].sort((a, b) => {
+      ? [...videos].sort((a, b) => {
         const timeA = new Date(a.published_at || a.created_at || 0).getTime();
         const timeB = new Date(b.published_at || b.created_at || 0).getTime();
         return timeB - timeA;
       })
-    : isDownloads
-    ? downloadedVideoList
-    : isSaved
-    ? savedVideos
-    : isLiked
-    ? likedVideos
-    : processingVideos;
+      : isDownloads
+        ? downloadedVideoList
+        : isSaved
+          ? savedVideos
+          : isLiked
+            ? likedVideos
+            : processingVideos;
 
   const filteredVideos = baseVideos.filter(v => {
     if (!showSearchAndTabs) return true;
     const matchesSearch = searchQuery
       ? v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
     const matchesCategory =
       selectedCategory === 'All'
@@ -166,10 +166,10 @@ export function VideoGridScreen({ route, navigation }: any) {
           isDownloads
             ? 'No downloaded offline videos found.'
             : isSaved
-            ? 'No saved videos found.'
-            : isLiked
-            ? 'No liked videos found.'
-            : 'No videos match your filter.'
+              ? 'No saved videos found.'
+              : isLiked
+                ? 'No liked videos found.'
+                : 'No videos match your filter.'
         }
       />
 
@@ -178,4 +178,3 @@ export function VideoGridScreen({ route, navigation }: any) {
     </SafeAreaView>
   );
 }
-

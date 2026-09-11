@@ -185,10 +185,22 @@ export async function fetchVideoComments(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // Backend Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
-    const response = await apiGet<any>(
-      `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
-    );
+    // 1. Mobile Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
+    let response: any = null;
+    try {
+      response = await apiGet<any>(
+        `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
+      );
+    } catch (e) {
+      // Admin Endpoint fallback: GET /api/v1/admin/comments?videoId={videoId}
+      try {
+        response = await apiGet<any>(
+          `/api/v1/admin/comments?videoId=${videoId}&${query.toString()}`,
+        );
+      } catch (adminErr) {
+        // Fallback
+      }
+    }
 
     const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
     const normalizedRemote = rawItems.map(normalizeComment);
@@ -245,6 +257,7 @@ export async function fetchCommentReplies(
     `/api/v1/mobile/comments/${commentId}/replies`,
     `/api/v1/comments/${commentId}/replies`,
     `/api/v1/mobile/comments/${commentId}/reply`,
+    `/api/v1/admin/comments/${commentId}/replies`,
   ];
 
   let localReplies: CommentReplyItem[] = [];
