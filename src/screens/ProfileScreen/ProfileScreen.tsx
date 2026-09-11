@@ -51,7 +51,6 @@ function getInitials(name?: string | null): string {
 
 export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
-  const [activeSection, setActiveSection] = useState<'downloads' | 'saved' | 'liked' | null>('downloads');
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -69,8 +68,8 @@ export function ProfileScreen({ navigation }: any) {
   const userIsSubscribed = isUserSubscribed();
 
   const currentUser = user || {
-    name: 'Alex Kumar',
-    email: 'alex.kumar@gmail.com',
+    name: 'Guest Visitor',
+    email: 'Sign in to access your profile',
     avatar_url: undefined,
     role: 'guest',
   };
@@ -111,8 +110,8 @@ export function ProfileScreen({ navigation }: any) {
       ? `${(currentUser as any).chosen_plan} Member`
       : 'Premium Member'
     : userIsLoggedIn
-    ? 'Free Member (No Plan)'
-    : 'Guest Visitor';
+      ? 'Free Member (No Plan)'
+      : 'Guest Visitor';
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -161,17 +160,17 @@ export function ProfileScreen({ navigation }: any) {
                 <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
               ) : (
                 <Text style={styles.avatarInitials}>
-                  {getInitials(currentUser.name || 'Alex Kumar')}
+                  {getInitials(currentUser.name || 'Guest Visitor')}
                 </Text>
               )}
             </View>
 
             <View style={styles.userInfoContainer}>
               <Text style={styles.userNameText}>
-                {currentUser.name || 'Alex Kumar'}
+                {currentUser.name || 'Guest Visitor'}
               </Text>
               <Text style={styles.userEmailText}>
-                {currentUser.email || 'alex.kumar@gmail.com'}
+                {currentUser.email || 'Sign in to access your profile'}
               </Text>
               <View style={styles.membershipRow}>
                 <Crown size={14} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
@@ -228,7 +227,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'downloads' ? null : 'downloads'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'downloads' })}
             >
               <View
                 style={{
@@ -248,14 +247,10 @@ export function ProfileScreen({ navigation }: any) {
                   Downloads
                 </Text>
                 <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
-                  {downloadedVideoList.length} saved offline videos
+                  {downloadedVideoList.length} Downloads
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'downloads' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 3. Saved Videos */}
@@ -266,7 +261,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'saved' ? null : 'saved'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'saved' })}
             >
               <View
                 style={{
@@ -289,11 +284,7 @@ export function ProfileScreen({ navigation }: any) {
                   {savedVideos.length} bookmarked videos
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'saved' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 4. Liked Videos */}
@@ -304,7 +295,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'liked' ? null : 'liked'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'liked' })}
             >
               <View
                 style={{
@@ -327,11 +318,7 @@ export function ProfileScreen({ navigation }: any) {
                   {likedVideos.length} liked videos
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'liked' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 5. Logout */}
@@ -370,58 +357,6 @@ export function ProfileScreen({ navigation }: any) {
               <ChevronRight size={18} color="#475569" />
             </Pressable>
           </View>
-
-          {/* Expandable Section Display */}
-          {activeSection === 'downloads' && (
-            <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
-                Saved Offline Downloads ({downloadedVideoList.length})
-              </Text>
-              <VerticalList
-                videos={downloadedVideoList}
-                numColumns={2}
-                refreshing={loading}
-                isContinueWatching={true}
-                onRefresh={reload}
-                onPressVideo={playVideo}
-                emptyText="No saved offline downloads yet."
-              />
-            </View>
-          )}
-
-          {activeSection === 'saved' && (
-            <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
-                Saved Videos ({savedVideos.length})
-              </Text>
-              <VerticalList
-                videos={savedVideos}
-                numColumns={2}
-                refreshing={loading}
-                isContinueWatching={true}
-                onRefresh={reload}
-                onPressVideo={playVideo}
-                emptyText="No saved videos yet."
-              />
-            </View>
-          )}
-
-          {activeSection === 'liked' && (
-            <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
-                Liked Videos ({likedVideos.length})
-              </Text>
-              <VerticalList
-                videos={likedVideos}
-                numColumns={2}
-                refreshing={loading}
-                isContinueWatching={true}
-                onRefresh={reload}
-                onPressVideo={playVideo}
-                emptyText="No liked videos yet."
-              />
-            </View>
-          )}
         </View>
       </ScrollView>
 

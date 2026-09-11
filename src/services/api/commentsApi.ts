@@ -311,7 +311,7 @@ export async function createTopLevelComment(
       id: Date.now(),
       user_id: user?.id || 1,
       user_name: user?.name || 'You',
-      user_avatar: user?.avatar_url,
+      user_avatar: user?.avatar_url || undefined,
       text,
       video_id: videoId,
       likes: 0,
@@ -361,20 +361,18 @@ export async function postCommentReply(
     }
   }
 
-  if (!replyObj) {
-    replyObj = {
-      id: Date.now(),
-      comment_id: Number(commentId),
-      text,
-      user_id: user?.id || 1,
-      user_name: user?.name || 'You',
-      user_avatar: user?.avatar_url,
-      likes: 0,
-      is_liked: false,
-      is_owner: true,
-      created_at: new Date().toISOString(),
-    };
-  }
+  const targetReply: CommentReplyItem = replyObj || {
+    id: Date.now(),
+    comment_id: Number(commentId),
+    text,
+    user_id: user?.id || 1,
+    user_name: user?.name || 'You',
+    user_avatar: user?.avatar_url || undefined,
+    likes: 0,
+    is_liked: false,
+    is_owner: true,
+    created_at: new Date().toISOString(),
+  };
 
   // Find parent comment in REAL_COMMENTS_MAP and append reply
   let foundParent = false;
@@ -382,11 +380,11 @@ export async function postCommentReply(
     const parent = REAL_COMMENTS_MAP[vId].find(c => Number(c.id) === Number(commentId));
     if (parent) {
       if (!parent.replies) parent.replies = [];
-      const existingIdx = parent.replies.findIndex(r => Number(r.id) === Number(replyObj!.id));
+      const existingIdx = parent.replies.findIndex(r => Number(r.id) === Number(targetReply.id));
       if (existingIdx >= 0) {
-        parent.replies[existingIdx] = replyObj;
+        parent.replies[existingIdx] = targetReply;
       } else {
-        parent.replies.push(replyObj);
+        parent.replies.push(targetReply);
       }
       parent.reply_count = Math.max(parent.reply_count || 0, parent.replies.length);
       foundParent = true;
@@ -402,7 +400,7 @@ export async function postCommentReply(
     }
     let parent = REAL_COMMENTS_MAP[fallbackVId].find(c => Number(c.id) === Number(commentId));
     if (!parent) {
-      parent = {
+      const newParent: CommentItem = {
         id: Number(commentId),
         user_id: 0,
         user_name: 'User',
@@ -412,18 +410,18 @@ export async function postCommentReply(
         is_liked: false,
         reply_count: 1,
         created_at: new Date().toISOString(),
-        replies: [replyObj],
+        replies: [targetReply],
       };
-      REAL_COMMENTS_MAP[fallbackVId].push(parent);
+      REAL_COMMENTS_MAP[fallbackVId].push(newParent);
     } else {
       if (!parent.replies) parent.replies = [];
-      parent.replies.push(replyObj);
+      parent.replies.push(targetReply);
       parent.reply_count = parent.replies.length;
     }
   }
 
   persistCommentsToDisk();
-  return replyObj;
+  return targetReply;
 }
 
 export async function toggleCommentLike(

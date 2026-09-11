@@ -62,6 +62,7 @@ export function VerticalList({
           durationText={item.duration || undefined}
           badgeText={item.status}
           isContinueWatching={isContinueWatching}
+          layout={numColumns === 1 ? 'row' : 'grid'}
           onPress={() => onPressVideo && onPressVideo(item)}
           onDelete={onDeleteVideo ? () => onDeleteVideo(item) : undefined}
         />

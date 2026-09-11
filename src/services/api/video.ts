@@ -207,7 +207,7 @@ export async function fetchVideoPlayInfo(videoId: number) {
   let playUrl = getDistinctStreamUrlForVideo(video);
 
   const captions: import('../../../types/video').CaptionTrack[] = [];
-  
+
   const tokenParams = playUrl.includes('?')
     ? playUrl.split('?')[1]
     : '';

@@ -41,6 +41,15 @@ function deduplicateComments(items: CommentItem[]): CommentItem[] {
   return Array.from(map.values());
 }
 
+function getInitials(name?: string | null): string {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  }
+  return parts[0].substring(0, 2).toUpperCase();
+}
+
 function formatRelativeTime(dateStr?: string): string {
   if (!dateStr) return '2d';
   try {
@@ -314,14 +323,20 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
               onLongPress={() => promptDeleteComment(comment)}
             >
               {/* Left Column: Avatar */}
-              <Image
-                source={{
-                  uri:
-                    comment.user_avatar ||
-                    'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-                }}
-                style={styles.avatar}
-              />
+              {comment.user_avatar ? (
+                <Image source={{ uri: comment.user_avatar }} style={styles.avatar} />
+              ) : (
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: '#4338CA', justifyContent: 'center', alignItems: 'center' },
+                  ]}
+                >
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                    {getInitials(comment.user_name)}
+                  </Text>
+                </View>
+              )}
 
               {/* Center Column: Comment Info & Body */}
               <View style={styles.commentMain}>
@@ -383,15 +398,20 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
                           key={`reply-${reply.id}-${rIdx}`}
                           style={styles.replyRow}
                           onLongPress={() => promptDeleteReply(comment.id, reply)}
-                        >
-                          <Image
-                            source={{
-                              uri:
-                                reply.user_avatar ||
-                                'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80',
-                            }}
-                            style={styles.replyAvatar}
-                          />
+                        >                          {reply.user_avatar ? (
+                            <Image source={{ uri: reply.user_avatar }} style={styles.replyAvatar} />
+                          ) : (
+                            <View
+                              style={[
+                                styles.replyAvatar,
+                                { backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center' },
+                              ]}
+                            >
+                              <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
+                                {getInitials(reply.user_name)}
+                              </Text>
+                            </View>
+                          )}
 
                           <View style={styles.replyMain}>
                             <View style={styles.authorHeader}>
@@ -449,7 +469,7 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
               <View style={styles.heartColumn}>
                 <Pressable onPress={() => handleToggleLikeComment(comment.id)} hitSlop={10}>
                   <Heart
-                    size={16}
+                    size={18}
                     color={comment.is_liked ? '#EF4444' : '#6B7280'}
                     fill={comment.is_liked ? '#EF4444' : 'transparent'}
                   />
@@ -481,14 +501,20 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
 
           {/* Input Field Row */}
           <View style={styles.inputFieldRow}>
-            <Image
-              source={{
-                uri:
-                  currentUser?.avatar_url ||
-                  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-              }}
-              style={styles.inputUserAvatar}
-            />
+            {currentUser?.avatar_url ? (
+              <Image source={{ uri: currentUser.avatar_url }} style={styles.inputUserAvatar} />
+            ) : (
+              <View
+                style={[
+                  styles.inputUserAvatar,
+                  { backgroundColor: '#6366F1', justifyContent: 'center', alignItems: 'center' },
+                ]}
+              >
+                <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '700' }}>
+                  {getInitials(currentUser?.name || 'You')}
+                </Text>
+              </View>
+            )}
 
             <View style={styles.inputPillContainer}>
               <TextInput

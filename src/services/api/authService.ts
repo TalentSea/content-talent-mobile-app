@@ -270,7 +270,7 @@ export async function loginWithSocial(
 
   // Pass current guest token in Authorization header if upgrading an active Guest session
   const currentToken = getApiAccessToken();
-  const isGuestUpgrade = currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN;
+  const isGuestUpgrade = Boolean(currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN);
 
   try {
     const response = await apiRequest<AuthResponse>(endpoint, {

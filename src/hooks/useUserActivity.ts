@@ -7,6 +7,8 @@ import {
   subscribeUserActivity,
   toggleLikeVideo,
   toggleSaveVideo,
+  isPlaylistSaved,
+  toggleSavePlaylist,
 } from '../services/userActivity';
 import type { ApiVideo } from '../types/video';
 
@@ -68,5 +70,7 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
     isVideoSaved,
     toggleLikeVideo,
     toggleSaveVideo,
+    isPlaylistSaved,
+    toggleSavePlaylist,
   };
 }

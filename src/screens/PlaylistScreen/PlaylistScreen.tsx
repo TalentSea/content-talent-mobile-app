@@ -54,7 +54,11 @@ export function PlaylistScreen({ navigation }: any) {
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator color="#FFFFFF" size="large" />
-          <Text style={{ color: '#9CA3AF', marginTop: 12 }}>Loading live playlists...</Text>
+          <Text style={{ color: '#9CA3AF', marginTop: 12 }}>Loading playlists...</Text>
+        </View>
+      ) : playlists.length === 0 ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center' }}>No playlists available.</Text>
         </View>
       ) : (
         /* 2-Column Vertical Grid list (VL) of Playlists */
@@ -85,7 +89,7 @@ export function PlaylistScreen({ navigation }: any) {
                 source={{
                   uri:
                     item.thumbnail_url ||
-                    'https://via.placeholder.com/400x200/1E1E2E/FFFFFF?text=Playlist',
+                    'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80',
                 }}
                 style={styles.cardImage}
               />
@@ -93,7 +97,7 @@ export function PlaylistScreen({ navigation }: any) {
                 <Text style={styles.cardTitle} numberOfLines={1}>
                   {item.name}
                 </Text>
-                <Text style={styles.cardMeta}>{item.video_count} Videos</Text>
+                <Text style={styles.cardMeta}>{item.video_count || 0} Videos</Text>
               </View>
             </Pressable>
           )}

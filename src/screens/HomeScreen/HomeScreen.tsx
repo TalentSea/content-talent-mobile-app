@@ -75,6 +75,10 @@ export function HomeScreen({ navigation }: any) {
         if (categoriesRes.status === 'fulfilled' && categoriesRes.value && categoriesRes.value.length > 0) {
           const catNames = categoriesRes.value.map((c: MobileCategoryItem) => c.name);
           setApiCategories(Array.from(new Set(catNames)));
+        } else {
+          // If API categories list is empty, derive directly from live backend videos
+          const videoCats = Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
+          setApiCategories(videoCats);
         }
       } catch (err) {
         console.warn('[HomeScreen] Error loading live mobile data:', err);
@@ -83,11 +87,7 @@ export function HomeScreen({ navigation }: any) {
       }
     }
     loadLiveMobileData();
-  }, []);
-
-  const displayCategories = apiCategories.length > 0
-    ? apiCategories
-    : Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
+  }, [videos]);
 
   // 1. Recently Added: sorted by latest published_at/created_at timestamp
   const recentlyAddedVideos = [...videos].sort((a, b) => {
@@ -232,7 +232,7 @@ export function HomeScreen({ navigation }: any) {
             {/* 2. Popular Videos Section */}
             {popularVideosSorted.length > 0 && (
               <HorizontalList
-                title="Popular Videos 🔥"
+                title="Popular Videos"
                 videos={popularVideosSorted}
                 onPressVideo={playVideo}
                 onSeeAll={() => navigation.navigate('VideoGrid', { section: 'popular' })}
@@ -300,7 +300,7 @@ export function HomeScreen({ navigation }: any) {
             {/* 4. Recently Updated / Recently Added Section */}
             {recentlyAddedVideos.length > 0 && (
               <HorizontalList
-                title="Recently Updated"
+                title="Recently Added"
                 videos={recentlyAddedVideos}
                 onPressVideo={playVideo}
                 onSeeAll={() => navigation.navigate('VideoGrid', { section: 'recent' })}

@@ -32,8 +32,6 @@ const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
     description: 'Perfect for getting started',
     badgeTag: 'Starter Tier',
     status: 'Active',
-    subscribers: '4,309',
-    revenue: '₹34,42,891',
     features: [
       'Access to basic content library',
       'Standard video quality',
@@ -52,8 +50,6 @@ const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
     badgeTag: 'Most Popular',
     popular: true,
     status: 'Active',
-    subscribers: '8,234',
-    revenue: '₹1,64,60,000',
     features: [
       'Access to all premium content',
       '4K video quality',
@@ -74,8 +70,6 @@ const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
     badgeTag: 'Best Value',
     popular: false,
     status: 'Active',
-    subscribers: '1,245',
-    revenue: '₹84,65,000',
     features: [
       'All Basic plan features',
       '2 months free',

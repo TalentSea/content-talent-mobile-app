@@ -16,10 +16,9 @@ import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { fetchVideoPlayInfo } from '../../services/api/video';
 import { styles } from './styles';
 
-const RECENT_SEARCHES = ['#STREAMR-1', 'ExoPlayer HLS', 'React Native', 'Bunny Stream'];
-
 export function SearchScreen({ navigation }: any) {
   const [query, setQuery] = useState('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const { videos, popularVideos, loading, reload } = useVideos();
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
   const [isOpeningUrl, setIsOpeningUrl] = useState(false);
@@ -102,7 +101,12 @@ export function SearchScreen({ navigation }: any) {
             placeholderTextColor="#6B7280"
             value={query}
             onChangeText={setQuery}
-            onSubmitEditing={() => handleOpenLinkOrCode(query)}
+            onSubmitEditing={() => {
+              if (query.trim()) {
+                setRecentSearches(prev => Array.from(new Set([query.trim(), ...prev])).slice(0, 6));
+              }
+              handleOpenLinkOrCode(query);
+            }}
             autoFocus
           />
           {query ? (
@@ -139,11 +143,11 @@ export function SearchScreen({ navigation }: any) {
       ) : null}
 
       {/* Recent Query Suggestion Pills */}
-      {!query ? (
+      {!query && recentSearches.length > 0 ? (
         <View style={styles.recentWrap}>
-          <Text style={styles.recentTitle}>Recent Searches & Share Codes</Text>
+          <Text style={styles.recentTitle}>Recent Searches</Text>
           <View style={styles.tagRow}>
-            {RECENT_SEARCHES.map(item => (
+            {recentSearches.map(item => (
               <Pressable
                 key={item}
                 style={styles.tag}

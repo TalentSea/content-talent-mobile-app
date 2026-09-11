@@ -24,6 +24,7 @@ export type VideoCardProps = {
   isContinueWatching?: boolean;
   hideDescription?: boolean;
   hideTags?: boolean;
+  layout?: 'grid' | 'row';
   onPress?: () => void;
   onDelete?: () => void;
 };
@@ -42,13 +43,12 @@ export function VideoCard({
   isContinueWatching = false,
   hideDescription = false,
   hideTags = false,
+  layout = 'grid',
   onPress,
   onDelete,
 }: VideoCardProps) {
   const { history } = useWatchHistory();
   const currentVideoId = video?.id || (propId ? parseInt(String(propId), 10) : 1);
-
-
 
   // Find progress percentage from watch history
   const watchHistoryItem = history.find(h => h.video.id === currentVideoId);
@@ -70,6 +70,55 @@ export function VideoCard({
 
   const shouldHideDescription = isContinueWatching || hideDescription;
   const shouldHideTags = isContinueWatching || hideTags;
+
+  if (layout === 'row') {
+    return (
+      <Pressable style={styles.rowCard} onPress={onPress}>
+        <View style={styles.rowThumbnailWrap}>
+          <Image source={{ uri: thumb }} style={styles.thumbnail} />
+
+          {onDelete ? (
+            <Pressable
+              style={styles.deleteBadge}
+              onPress={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              hitSlop={8}
+            >
+              <Trash2 size={12} color="#FFFFFF" />
+            </Pressable>
+          ) : null}
+
+          {displayDuration ? (
+            <View style={styles.durationBadge}>
+              <Text style={styles.durationText}>{displayDuration}</Text>
+            </View>
+          ) : null}
+
+          {watchProgress > 0 ? (
+            <View style={styles.watchProgressWrap}>
+              <View style={[styles.watchProgressFill, { width: `${watchProgress}%` as any }]} />
+            </View>
+          ) : null}
+        </View>
+
+        <View style={styles.rowDetails}>
+          <Text numberOfLines={2} style={styles.rowTitle}>
+            {cardTitle}
+          </Text>
+
+          <View style={styles.rowMetaLine}>
+            {cardCategory ? <Text style={styles.rowCategory}>{cardCategory}</Text> : null}
+            {cardCategory ? <Text style={styles.rowDot}>•</Text> : null}
+            <Text style={styles.rowMeta}>{displayViews}</Text>
+            <Text style={styles.rowDot}>•</Text>
+            <Text style={styles.rowMeta}>{uploadedTimeAgo}</Text>
+          </View>
+        </View>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable

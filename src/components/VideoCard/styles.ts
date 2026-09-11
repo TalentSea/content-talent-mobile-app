@@ -194,4 +194,49 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 20,
   },
+  rowCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 16,
+    gap: 12,
+  },
+  rowThumbnailWrap: {
+    width: 125,
+    height: 80,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+  },
+  rowDetails: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  rowTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 20,
+    marginBottom: 6,
+  },
+  rowMetaLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+  },
+  rowCategory: {
+    color: '#EF4444',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rowDot: {
+    color: '#6B7280',
+    fontSize: 10,
+  },
+  rowMeta: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '500',
+  },
 });
