@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -219,8 +219,8 @@ export default function NativeVideoPlayer({
     };
   }, [selectedCaptionIndex, activeCaptions]);
 
-  const activeCueText = selectedCaptionIndex !== -1
-    ? subtitleCues.find(c => currentTime >= c.start && currentTime <= c.end)?.text
+  const activeCueText = selectedCaptionIndex !== -1 && subtitleCues.length > 0
+    ? subtitleCues.find(c => currentTime >= c.start && currentTime <= c.end)?.text || null
     : null;
 
   useEffect(() => {
@@ -669,33 +669,19 @@ export default function NativeVideoPlayer({
               ) : null}
 
               {/* CC Subtitles Badge Button */}
-              {(hasEmbeddedCaptions || hasInbuiltCaptionsProp || (inbuiltCaptionTracks && inbuiltCaptionTracks.length > 0) || (activeCaptions && activeCaptions.length > 0)) ? (
-                <Pressable
-                  style={[
-                    styles.ytIconButton,
-                    selectedCaptionIndex !== -1 && styles.ytIconButtonActive,
-                  ]}
-                  onPress={() => {
-                    const tracksList = nativeTextTracks.length > 0
-                      ? nativeTextTracks
-                      : (activeCaptions.length > 0 || inbuiltCaptionTracks.length > 0
-                        ? [...activeCaptions, ...inbuiltCaptionTracks.filter(inb => !activeCaptions.some(act => act.language === inb.language))]
-                        : []);
-                    const availableTracksCount = tracksList.length;
-                    if (availableTracksCount <= 1) {
-                      setSelectedCaptionIndex(prev => (prev === -1 ? 0 : -1));
-                    } else {
-                      setShowCaptionMenu(prev => !prev);
-                      setShowMoreMenu(false);
-                      setShowSettingsMenu(false);
-                      setShowDownloadMenu(false);
-                    }
-                    setShowControls(true);
-                  }}
-                >
-                  <Text style={styles.ccBadgeText}>CC</Text>
-                </Pressable>
-              ) : null}
+              {/* CC (Closed Captions / Subtitles) Button */}
+              <Pressable
+                style={[
+                  styles.ytIconButton,
+                  selectedCaptionIndex !== -1 && styles.ytIconButtonActive,
+                ]}
+                onPress={() => {
+                  setSelectedCaptionIndex(prev => (prev === -1 ? 0 : -1));
+                  setShowControls(true);
+                }}
+              >
+                <Text style={styles.ccBadgeText}>CC</Text>
+              </Pressable>
 
               {/* Settings Gear Button */}
               <Pressable
@@ -767,6 +753,8 @@ export default function NativeVideoPlayer({
                 </View>
               </Pressable>
             </View>
+
+
 
             {isDownloading ? (
               <Text style={styles.downloadProgressText}>
@@ -1314,5 +1302,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  downloadToast: {
+    position: 'absolute',
+    bottom: 36,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(18, 18, 18, 0.92)',
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    zIndex: 3500,
+    elevation: 3500,
+  },
+  downloadToastText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

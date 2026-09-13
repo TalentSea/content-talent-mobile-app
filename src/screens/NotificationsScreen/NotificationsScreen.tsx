@@ -19,35 +19,8 @@ type NotificationItem = {
   type: 'video' | 'system' | 'featured';
 };
 
-const MOCK_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: '1',
-    title: 'New Video Uploaded!',
-    body: 'Tears of Steel HLS Demo has been published by Alex OTT Creator.',
-    time: '10m ago',
-    read: false,
-    type: 'video',
-  },
-  {
-    id: '2',
-    title: 'New Masterclass Available',
-    body: 'React Native Architecture & TurboModules series is now live.',
-    time: '2h ago',
-    read: false,
-    type: 'featured',
-  },
-  {
-    id: '3',
-    title: 'System Maintenance Complete',
-    body: 'Bunny CDN video streaming infrastructure optimization completed.',
-    time: '1d ago',
-    read: true,
-    type: 'system',
-  },
-];
-
 export function NotificationsScreen({ navigation }: any) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   function handleMarkAllRead() {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -82,6 +55,17 @@ export function NotificationsScreen({ navigation }: any) {
         data={notifications}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 20 }}>
+            <Bell size={44} color="#475569" style={{ marginBottom: 12 }} />
+            <Text style={{ color: '#F1F5F9', fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
+              No Notifications
+            </Text>
+            <Text style={{ color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+              You're all caught up! Check back later for updates.
+            </Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <Pressable
             style={[styles.itemCard, !item.read && styles.unreadCard]}

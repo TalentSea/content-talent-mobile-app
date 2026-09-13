@@ -86,18 +86,27 @@ export function ProfileScreen({ navigation }: any) {
 
   const userIsLoggedIn = isUserLoggedIn();
   const userIsSubscribed = isUserSubscribed();
-
-  const currentUser = user ? {
-    ...user,
-    name: (user.name === 'Guest User' || !user.name) && userIsSubscribed ? 'VIP Subscriber' : user.name,
-  } : {
-    name: userIsSubscribed ? 'VIP Subscriber' : 'Alex Kumar',
-    email: userIsSubscribed ? 'vip@streamr.app' : 'alex.kumar@gmail.com',
-    avatar_url: undefined,
-    role: userIsSubscribed ? 'subscriber' : 'guest',
-    chosen_plan: userIsSubscribed ? 'VIP Member Plan' : null,
-    plan_id: userIsSubscribed ? 'vip_plan' : null,
-  };
+  const currentUser = user
+    ? {
+      ...user,
+      name:
+        (user.name === 'Guest User' || !user.name) && userIsSubscribed
+          ? 'VIP Subscriber'
+          : user.name,
+      role: userIsSubscribed ? 'subscriber' : user.role,
+      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : user.chosen_plan,
+      plan_id: userIsSubscribed ? 'vip_plan' : user.plan_id,
+    }
+    : {
+      name: userIsSubscribed ? 'VIP Subscriber' : 'Guest Visitor',
+      email: userIsSubscribed
+        ? 'vip@streamr.app'
+        : 'Sign in to access your profile',
+      avatar_url: undefined,
+      role: userIsSubscribed ? 'subscriber' : 'guest',
+      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : null,
+      plan_id: userIsSubscribed ? 'vip_plan' : null,
+    };
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
     .map((item: DownloadedVideoItem) => item?.video || (item as any))
@@ -135,8 +144,8 @@ export function ProfileScreen({ navigation }: any) {
       ? `${(currentUser as any).chosen_plan} Member`
       : 'Premium Member'
     : userIsLoggedIn
-    ? 'Free Member (No Plan)'
-    : 'Guest Visitor';
+      ? 'Free Member (No Plan)'
+      : 'Guest Visitor';
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -185,17 +194,17 @@ export function ProfileScreen({ navigation }: any) {
                 <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
               ) : (
                 <Text style={styles.avatarInitials}>
-                  {getInitials(currentUser.name || 'Alex Kumar')}
+                  {getInitials(currentUser.name || 'Guest Visitor')}
                 </Text>
               )}
             </View>
 
             <View style={styles.userInfoContainer}>
               <Text style={styles.userNameText}>
-                {currentUser.name || 'Alex Kumar'}
+                {currentUser.name || 'Guest Visitor'}
               </Text>
               <Text style={styles.userEmailText}>
-                {currentUser.email || 'alex.kumar@gmail.com'}
+                {currentUser.email || 'Sign in to access your profile'}
               </Text>
               <View style={styles.membershipRow}>
                 <Crown size={14} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
@@ -290,7 +299,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'downloads' ? null : 'downloads'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'downloads' })}
             >
               <View
                 style={{
@@ -310,14 +319,10 @@ export function ProfileScreen({ navigation }: any) {
                   Downloads
                 </Text>
                 <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
-                  {downloadedVideoList.length} saved offline videos
+                  {downloadedVideoList.length} Downloads
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'downloads' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 4. Saved Videos */}
@@ -328,7 +333,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'saved' ? null : 'saved'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'saved' })}
             >
               <View
                 style={{
@@ -351,11 +356,7 @@ export function ProfileScreen({ navigation }: any) {
                   {savedVideos.length} bookmarked videos
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'saved' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 5. Liked Videos */}
@@ -366,7 +367,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => setActiveSection(prev => (prev === 'liked' ? null : 'liked'))}
+              onPress={() => navigation.navigate('VideoGrid', { section: 'liked' })}
             >
               <View
                 style={{
@@ -389,11 +390,7 @@ export function ProfileScreen({ navigation }: any) {
                   {likedVideos.length} liked videos
                 </Text>
               </View>
-              <ChevronRight
-                size={18}
-                color="#475569"
-                style={activeSection === 'liked' ? { transform: [{ rotate: '90deg' }] } : undefined}
-              />
+              <ChevronRight size={18} color="#475569" />
             </Pressable>
 
             {/* 6. Logout */}

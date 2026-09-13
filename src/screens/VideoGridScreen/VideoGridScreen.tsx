@@ -14,7 +14,11 @@ import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { useDownloads } from '../../hooks/useDownloads';
+import { useUserActivity } from '../../hooks/useUserActivity';
 import { fetchUserCategoriesApi } from '../../services/api/userActivityApi';
+import type { DownloadedVideoItem } from '../../services/downloadService';
+import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
 
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
@@ -26,9 +30,25 @@ export function VideoGridScreen({ route, navigation }: any) {
   const [categories, setCategories] = useState<string[]>(['All']);
 
   const { videos, popularVideos, processingVideos, loading, reload } = useVideos();
-  const { playingVideo, playVideo, closePlayer } = useVideoPlayback();
+  const { downloadedVideos } = useDownloads(videos);
+  const { savedVideos, likedVideos } = useUserActivity(videos);
+  const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
+
+  const downloadedVideoList: ApiVideo[] = downloadedVideos
+    .map((item: DownloadedVideoItem) => item?.video || (item as any))
+    .filter((v: ApiVideo) => v && v.id);
+
+  const isPopular = section === 'popular';
+  const isRecent = section === 'recent';
+  const isDownloads = section === 'downloads';
+  const isSaved = section === 'saved';
+  const isLiked = section === 'liked';
+
+  const showSearchAndTabs = isPopular || isRecent || (!isDownloads && !isSaved && !isLiked);
 
   useEffect(() => {
+    if (!showSearchAndTabs) return;
+
     async function loadDynamicCategories() {
       try {
         const fetchedCats = await fetchUserCategoriesApi();
@@ -49,26 +69,43 @@ export function VideoGridScreen({ route, navigation }: any) {
       }
     }
     loadDynamicCategories();
-  }, [videos]);
+  }, [videos, showSearchAndTabs]);
 
-  const isPopular = section === 'popular';
-  const isRecent = section === 'recent';
-  const title = isPopular ? 'Popular Videos' : isRecent ? 'Recently Added Videos' : 'Processing Videos';
+  const title = isPopular
+    ? 'Popular Videos'
+    : isRecent
+      ? 'Recently Added Videos'
+      : isDownloads
+        ? 'Downloads'
+        : isSaved
+          ? 'Saved Videos'
+          : isLiked
+            ? 'Liked Videos'
+            : 'Processing Videos';
 
-  let baseVideos = isPopular
+  const numCols = 1;
+
+  const baseVideos = isPopular
     ? [...popularVideos].sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id))
     : isRecent
-    ? [...videos].sort((a, b) => {
+      ? [...videos].sort((a, b) => {
         const timeA = new Date(a.published_at || a.created_at || 0).getTime();
         const timeB = new Date(b.published_at || b.created_at || 0).getTime();
         return timeB - timeA;
       })
-    : processingVideos;
+      : isDownloads
+        ? downloadedVideoList
+        : isSaved
+          ? savedVideos
+          : isLiked
+            ? likedVideos
+            : processingVideos;
 
   const filteredVideos = baseVideos.filter(v => {
+    if (!showSearchAndTabs) return true;
     const matchesSearch = searchQuery
       ? v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      (v.description && v.description.toLowerCase().includes(searchQuery.toLowerCase()))
       : true;
     const matchesCategory =
       selectedCategory === 'All'
@@ -95,44 +132,49 @@ export function VideoGridScreen({ route, navigation }: any) {
         <View style={styles.backButtonSpacer} />
       </View>
 
-      {/* Search Input Bar */}
-      <View style={styles.searchBarContainer}>
-        <Search size={16} color="#9CA3AF" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search videos..."
-          placeholderTextColor="#6B7280"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+      {/* Search Input Bar (Shown for Popular, Recently Added, etc.) */}
+      {showSearchAndTabs && (
+        <View style={styles.searchBarContainer}>
+          <Search size={16} color="#9CA3AF" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search videos..."
+            placeholderTextColor="#6B7280"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
+
+      {/* Category Tabs (Shown for Popular, Recently Added, etc.) */}
+      {showSearchAndTabs && (
+        <CategoryTabs
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
         />
-      </View>
+      )}
 
-      {/* Category Tabs */}
-      <CategoryTabs
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-      />
-
-      {/* Vertical List (VL) 2-column Grid */}
+      {/* Vertical List Component */}
       <VerticalList
         videos={filteredVideos}
-        numColumns={2}
+        numColumns={numCols}
         refreshing={loading}
         onRefresh={reload}
         onPressVideo={playVideo}
-        emptyText="No videos match your filter."
+        emptyText={
+          isDownloads
+            ? 'No downloaded offline videos found.'
+            : isSaved
+              ? 'No saved videos found.'
+              : isLiked
+                ? 'No liked videos found.'
+                : 'No videos match your filter.'
+        }
       />
 
       {/* Video Player Modal */}
-      <PlayerModal
-        playingVideo={playingVideo}
-        onUpgradeSubscription={() => {
-          closePlayer();
-          navigation?.navigate('Subscription');
-        }}
-        onClose={closePlayer}
-      />
+      <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />
     </SafeAreaView>
   );
 }

@@ -24,6 +24,7 @@ function getGlobalUserLikesFilePath(): string {
 
 let likedVideosStore: ApiVideo[] = [];
 let savedVideosStore: ApiVideo[] = [];
+let savedPlaylistsStore: { id: number; name: string }[] = [];
 
 let globalLikesCounts: Record<string, number> = {};
 let globalUserLikesMap: Record<string, Record<string, boolean>> = {};
@@ -41,6 +42,7 @@ async function persistUserActivityToDisk() {
     const data = JSON.stringify({
       liked: likedVideosStore,
       saved: savedVideosStore,
+      savedPlaylists: savedPlaylistsStore,
     });
     await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
@@ -57,16 +59,19 @@ async function restoreUserActivityFromDisk() {
       const parsed = JSON.parse(content);
       likedVideosStore = parsed && Array.isArray(parsed.liked) ? parsed.liked : [];
       savedVideosStore = parsed && Array.isArray(parsed.saved) ? parsed.saved : [];
+      savedPlaylistsStore = parsed && Array.isArray(parsed.savedPlaylists) ? parsed.savedPlaylists : [];
       notifyActivityListeners();
       return;
     }
     likedVideosStore = [];
     savedVideosStore = [];
+    savedPlaylistsStore = [];
     notifyActivityListeners();
   } catch (err) {
     console.warn('[userActivity] Disk restore notice:', err);
     likedVideosStore = [];
     savedVideosStore = [];
+    savedPlaylistsStore = [];
     notifyActivityListeners();
   }
 }
@@ -286,6 +291,32 @@ export function toggleSaveVideo(video: ApiVideo): boolean {
   );
 
   return isNowSaved;
+}
+
+export function isPlaylistSaved(playlistId: number): boolean {
+  return savedPlaylistsStore.some(p => p.id === playlistId);
+}
+
+export function toggleSavePlaylist(playlistId: number, playlistName: string): boolean {
+  const index = savedPlaylistsStore.findIndex(p => p.id === playlistId);
+  let isNowSaved = false;
+
+  if (index >= 0) {
+    savedPlaylistsStore.splice(index, 1);
+    isNowSaved = false;
+  } else {
+    savedPlaylistsStore.unshift({ id: playlistId, name: playlistName });
+    isNowSaved = true;
+  }
+
+  notifyActivityListeners();
+  persistUserActivityToDisk();
+
+  return isNowSaved;
+}
+
+export function getSavedPlaylists(): { id: number; name: string }[] {
+  return [...savedPlaylistsStore];
 }
 
 export function getLikedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
