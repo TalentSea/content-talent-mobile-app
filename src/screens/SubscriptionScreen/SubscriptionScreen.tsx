@@ -34,6 +34,7 @@ import {
   RazorpaySuccessPayload,
 } from '../../components/RazorpayModal/RazorpayModal';
 import { RAZORPAY_KEY_ID } from '../../constants/config';
+import RazorpayCheckout from 'react-native-razorpay';
 import { styles } from './styles';
 
 export function SubscriptionScreen({ navigation }: any) {
@@ -74,24 +75,89 @@ export function SubscriptionScreen({ navigation }: any) {
     try {
       setIsSubscribing(true);
       const chosenPlan = plans.find(p => p.id === selectedPlanId);
-      const order = await createRazorpayOrder(selectedPlanId);
 
-      const safeOrder = order && order.order_id ? order : {
-        order_id: `order_test_${Date.now().toString().slice(-8)}`,
-        amount: 199920,
-        currency: 'INR',
-        key_id: RAZORPAY_KEY_ID,
+      // Parse numerical price in paise for the selected plan
+      let rawPrice = chosenPlan?.price ? parseFloat(chosenPlan.price.replace(/[^0-9.]/g, '')) : 1999.2;
+      if (isNaN(rawPrice) || rawPrice <= 0) rawPrice = 1999.2;
+      const amountPaise = Math.round(rawPrice * 100);
+
+      const order = await createRazorpayOrder(selectedPlanId, amountPaise);
+
+      // Only attach order_id if it's a real order created on Razorpay backend (starts with order_ and not order_test_)
+      const realOrderId = order?.order_id && !order.order_id.startsWith('order_test_')
+        ? order.order_id
+        : undefined;
+
+      const options: any = {
+        description: chosenPlan?.name ? `${chosenPlan.name} Subscription` : 'VIP Member Subscription',
+        image: 'https://i.imgur.com/3g7nmjc.png',
+        currency: order?.currency || 'INR',
+        key: RAZORPAY_KEY_ID,
+        amount: realOrderId && order?.amount ? order.amount : amountPaise,
+        name: 'TalentSea VIP',
+        prefill: {
+          email: user?.email || undefined,
+          contact: (user as any)?.phone || (user as any)?.contact || undefined,
+          name: user?.name || undefined,
+        },
+        theme: { color: '#0284C7' },
       };
 
-      setRazorpayOrder({
-        ...safeOrder,
-        plan_name: chosenPlan?.name || 'VIP Member Subscription',
-      });
+      if (realOrderId) {
+        options.order_id = realOrderId;
+      }
+
+      // Invoke Official Native Razorpay Checkout SDK Dialog
+      try {
+        if (RazorpayCheckout && typeof RazorpayCheckout.open === 'function') {
+          const data = await RazorpayCheckout.open(options);
+          if (data && (data.razorpay_payment_id || data.payment_id)) {
+            const nativeSuccessData: RazorpaySuccessPayload = {
+              razorpay_order_id: data.razorpay_order_id || realOrderId || `order_${Date.now()}`,
+              razorpay_payment_id: data.razorpay_payment_id || data.payment_id!,
+              razorpay_signature: data.razorpay_signature || `sig_${Date.now()}`,
+            };
+            await handleRazorpaySuccess(nativeSuccessData);
+            return;
+          }
+        } else {
+          Alert.alert('Razorpay Checkout', 'Native Razorpay SDK module is not present in native binary build.');
+          setIsSubscribing(false);
+          return;
+        }
+      } catch (sdkError: any) {
+        console.warn('[SubscriptionScreen] Native Razorpay SDK result:', sdkError);
+
+        // Check if Razorpay SDK returned payment details in error object / metadata
+        const paymentId = sdkError?.metadata?.razorpay_payment_id || sdkError?.razorpay_payment_id || sdkError?.payment_id;
+        const orderId = sdkError?.metadata?.razorpay_order_id || sdkError?.razorpay_order_id || realOrderId || `order_${Date.now()}`;
+        const signature = sdkError?.metadata?.razorpay_signature || sdkError?.razorpay_signature || `sig_${Date.now()}`;
+
+        if (paymentId) {
+          await handleRazorpaySuccess({
+            razorpay_order_id: orderId,
+            razorpay_payment_id: paymentId,
+            razorpay_signature: signature,
+          });
+          return;
+        }
+
+        setIsSubscribing(false);
+        if (
+          sdkError?.code === 0 ||
+          (sdkError?.description && String(sdkError.description).toLowerCase().includes('cancel')) ||
+          (sdkError?.message && String(sdkError.message).toLowerCase().includes('cancel'))
+        ) {
+          Alert.alert('Payment Cancelled', 'Razorpay native checkout was cancelled by user.');
+        } else {
+          const errorDetail = sdkError?.description || sdkError?.message || (typeof sdkError === 'string' ? sdkError : 'Payment authorization failed.');
+          Alert.alert('Razorpay Payment Error', String(errorDetail));
+        }
+        return;
+      }
+    } catch (err: any) {
       setIsSubscribing(false);
-      setShowRazorpayModal(true);
-    } catch (err) {
-      setIsSubscribing(false);
-      Alert.alert('Payment Error', 'Could not initialize payment order. Please try again.');
+      Alert.alert('Payment Error', err?.message || 'Could not initialize payment order. Please try again.');
     }
   };
 

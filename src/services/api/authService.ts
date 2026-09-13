@@ -150,7 +150,7 @@ export function isUserSubscribed(): boolean {
   const hasPlan = planVal.length > 0 && planVal !== 'null' && planVal !== 'undefined';
 
   if (hasPlan) return true;
-  if (['subscriber', 'member', 'premium', 'admin', 'creator', 'vip'].includes(role)) {
+  if (['subscriber', 'premium', 'admin', 'creator', 'vip'].includes(role)) {
     return true;
   }
 
@@ -303,7 +303,7 @@ export async function loginWithSocialToken(
 
   // Pass current guest token in Authorization header if upgrading an active Guest session
   const currentToken = getApiAccessToken();
-  const isGuestUpgrade = currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN;
+  const isGuestUpgrade = Boolean(currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN);
 
   try {
     const response = await apiRequest<AuthResponse>(endpoint, {
@@ -316,23 +316,25 @@ export async function loginWithSocialToken(
     setSessionTokens(response.access_token, response.refresh_token, activeUser);
     return response;
   } catch (error) {
-    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
-    const mockAuth: AuthResponse = {
-      access_token: DEFAULT_AUTH_TOKEN,
-      refresh_token: `mock_refresh_token_${Date.now()}`,
-      token_type: 'bearer',
-      expires_in: 1800,
-      user: userProfileOverride || currentAuthenticatedUser || {
-        id: 99,
-        name: provider === 'google' ? 'Jane Doe' : 'John Smith',
-        email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
-        avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
-        provider,
-        role: 'member',
-      },
+    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice (falling back to guest session token):`, error);
+
+    const guestAuth = await loginAsGuest(info, creatorId);
+    const activeUser: UserProfile = userProfileOverride || {
+      id: guestAuth.user?.id || 99,
+      name: provider === 'google' ? 'Google Subscriber' : 'Facebook Subscriber',
+      email: provider === 'google' ? 'user@gmail.com' : 'user@facebook.com',
+      avatar_url: null,
+      provider,
+      role: 'subscriber',
+      chosen_plan: 'Premium Plan',
+      plan_id: 'premium',
     };
-    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
-    return mockAuth;
+
+    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, activeUser);
+    return {
+      ...guestAuth,
+      user: activeUser,
+    };
   }
 }
 

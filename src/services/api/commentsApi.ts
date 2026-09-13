@@ -185,21 +185,14 @@ export async function fetchVideoComments(
     query.set('page', String(page));
     query.set('limit', String(limit));
 
-    // 1. Mobile Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
+    // Mobile Endpoint: GET /api/v1/mobile/videos/{video_id}/comments
     let response: any = null;
     try {
       response = await apiGet<any>(
         `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
       );
     } catch (e) {
-      // Admin Endpoint fallback: GET /api/v1/admin/comments?videoId={videoId}
-      try {
-        response = await apiGet<any>(
-          `/api/v1/admin/comments?videoId=${videoId}&${query.toString()}`,
-        );
-      } catch (adminErr) {
-        // Fallback
-      }
+      // Mobile comments notice
     }
 
     const rawItems = response?.items || response?.data || (Array.isArray(response) ? response : []);
@@ -255,9 +248,7 @@ export async function fetchCommentReplies(
 ): Promise<PaginatedRepliesResponse> {
   const candidatePaths = [
     `/api/v1/mobile/comments/${commentId}/replies`,
-    `/api/v1/comments/${commentId}/replies`,
     `/api/v1/mobile/comments/${commentId}/reply`,
-    `/api/v1/admin/comments/${commentId}/replies`,
   ];
 
   let localReplies: CommentReplyItem[] = [];
@@ -324,7 +315,7 @@ export async function createTopLevelComment(
       id: Date.now(),
       user_id: user?.id || 1,
       user_name: user?.name || 'You',
-      user_avatar: user?.avatar_url,
+      user_avatar: user?.avatar_url || undefined,
       text,
       video_id: videoId,
       likes: 0,
@@ -381,7 +372,7 @@ export async function postCommentReply(
       text,
       user_id: user?.id || 1,
       user_name: user?.name || 'You',
-      user_avatar: user?.avatar_url,
+      user_avatar: user?.avatar_url || undefined,
       likes: 0,
       is_liked: false,
       is_owner: true,
@@ -389,17 +380,19 @@ export async function postCommentReply(
     };
   }
 
+  const finalReply: CommentReplyItem = replyObj;
+
   // Find parent comment in REAL_COMMENTS_MAP and append reply
   let foundParent = false;
   for (const vId in REAL_COMMENTS_MAP) {
     const parent = REAL_COMMENTS_MAP[vId].find(c => Number(c.id) === Number(commentId));
     if (parent) {
       if (!parent.replies) parent.replies = [];
-      const existingIdx = parent.replies.findIndex(r => Number(r.id) === Number(replyObj!.id));
+      const existingIdx = parent.replies.findIndex(r => Number(r.id) === Number(finalReply.id));
       if (existingIdx >= 0) {
-        parent.replies[existingIdx] = replyObj;
+        parent.replies[existingIdx] = finalReply;
       } else {
-        parent.replies.push(replyObj);
+        parent.replies.push(finalReply);
       }
       parent.reply_count = Math.max(parent.reply_count || 0, parent.replies.length);
       foundParent = true;
@@ -425,18 +418,18 @@ export async function postCommentReply(
         is_liked: false,
         reply_count: 1,
         created_at: new Date().toISOString(),
-        replies: [replyObj],
+        replies: [finalReply],
       };
       REAL_COMMENTS_MAP[fallbackVId].push(parent);
     } else {
       if (!parent.replies) parent.replies = [];
-      parent.replies.push(replyObj);
+      parent.replies.push(finalReply);
       parent.reply_count = parent.replies.length;
     }
   }
 
   persistCommentsToDisk();
-  return replyObj;
+  return finalReply;
 }
 
 export async function toggleCommentLike(

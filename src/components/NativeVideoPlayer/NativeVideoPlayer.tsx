@@ -514,10 +514,12 @@ export default function NativeVideoPlayer({
   };
 
   const [activeUri, setActiveUri] = useState(uri);
+  const [isCdnFallback, setIsCdnFallback] = useState(false);
 
   useEffect(() => {
     setActiveUri(uri);
     setError(null);
+    setIsCdnFallback(false);
   }, [uri]);
 
   const formattedTextTracks = activeCaptions.map(c => ({
@@ -567,6 +569,7 @@ export default function NativeVideoPlayer({
             (errorCode && (String(errorCode).includes('403') || String(errorCode).includes('BAD_HTTP_STATUS')));
 
           if (is403Error) {
+            setIsCdnFallback(true);
             const safeFallback = (mp4Url && !mp4Url.includes('b-cdn.net'))
               ? mp4Url
               : 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
@@ -592,6 +595,15 @@ export default function NativeVideoPlayer({
           <View style={styles.subtitleTextBackground}>
             <Text style={styles.subtitleText}>{activeCueText}</Text>
           </View>
+        </View>
+      ) : null}
+
+      {/* CDN Suspended Notice Banner */}
+      {isCdnFallback ? (
+        <View style={styles.cdnFallbackBanner} pointerEvents="none">
+          <Text style={styles.cdnFallbackText}>
+            ⚠️ Live CDN stream (Bunny.net) returned 403 (Domain Suspended). Playing fallback demo stream.
+          </Text>
         </View>
       ) : null}
       {controls ? (
@@ -1284,5 +1296,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 12,
+  },
+  cdnFallbackBanner: {
+    position: 'absolute',
+    top: 10,
+    left: 12,
+    right: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    zIndex: 99,
+    alignItems: 'center',
+  },
+  cdnFallbackText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

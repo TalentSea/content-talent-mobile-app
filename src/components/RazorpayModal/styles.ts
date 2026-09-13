@@ -228,4 +228,56 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  simulatorBox: {
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginVertical: 10,
+  },
+  simulatorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  simulatorTitle: {
+    color: '#F8FAFC',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  simulatorSubtext: {
+    color: '#94A3B8',
+    fontSize: 11,
+  },
+  simulatorActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  successBtn: {
+    flex: 1,
+    backgroundColor: '#16A34A',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  successBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  failureBtn: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  failureBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+  },
 });

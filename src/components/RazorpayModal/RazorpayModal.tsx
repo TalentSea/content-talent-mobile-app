@@ -38,11 +38,13 @@ export function RazorpayModal({
   onSuccess,
   onFailure,
 }: RazorpayModalProps) {
-  const [activeTab, setActiveTab] = useState<'upi' | 'card'>('upi');
+  const [activeTab, setActiveTab] = useState<'netbanking' | 'card' | 'upi'>('netbanking');
+  const [selectedBank, setSelectedBank] = useState<string>('HDFC');
   const [upiId, setUpiId] = useState<string>('success@razorpay');
   const [cardNumber, setCardNumber] = useState<string>('4111 1111 1111 1111');
   const [expiry, setExpiry] = useState<string>('12/28');
   const [cvv, setCvv] = useState<string>('123');
+  const [otp, setOtp] = useState<string>('123456');
   const [cardHolder, setCardHolder] = useState<string>('Test Subscriber');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
@@ -65,15 +67,15 @@ export function RazorpayModal({
         razorpay_payment_id: mockPaymentId,
         razorpay_signature: mockSignature,
       });
-    }, 1200);
+    }, 1000);
   };
 
   const handlePayFailure = () => {
     setIsProcessing(true);
     setTimeout(() => {
       setIsProcessing(false);
-      onFailure('Payment failed: User cancelled or bank server declined.');
-    }, 800);
+      onFailure('Payment failed: Bank transaction declined by user or server.');
+    }, 600);
   };
 
   return (
@@ -119,11 +121,11 @@ export function RazorpayModal({
           {/* Tabs */}
           <View style={styles.tabsContainer}>
             <Pressable
-              style={[styles.tab, activeTab === 'upi' && styles.tabActive]}
-              onPress={() => setActiveTab('upi')}
+              style={[styles.tab, activeTab === 'netbanking' && styles.tabActive]}
+              onPress={() => setActiveTab('netbanking')}
             >
-              <Text style={[styles.tabText, activeTab === 'upi' && styles.tabTextActive]}>
-                UPI / GPay
+              <Text style={[styles.tabText, activeTab === 'netbanking' && styles.tabTextActive]}>
+                NetBanking
               </Text>
             </Pressable>
             <Pressable
@@ -131,53 +133,70 @@ export function RazorpayModal({
               onPress={() => setActiveTab('card')}
             >
               <Text style={[styles.tabText, activeTab === 'card' && styles.tabTextActive]}>
-                Credit / Debit Card
+                Card
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.tab, activeTab === 'upi' && styles.tabActive]}
+              onPress={() => setActiveTab('upi')}
+            >
+              <Text style={[styles.tabText, activeTab === 'upi' && styles.tabTextActive]}>
+                UPI / GPay
               </Text>
             </Pressable>
           </View>
 
           <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-            {activeTab === 'upi' ? (
+            {activeTab === 'netbanking' ? (
               <View>
-                <View style={styles.inputGroup}>
-                  <Text style={labelStyle}>Enter Test VPA / UPI ID</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={upiId}
-                    onChangeText={setUpiId}
-                    placeholder="e.g. success@razorpay"
-                    placeholderTextColor="#64748B"
-                    autoCapitalize="none"
-                  />
-                </View>
-
-                <Text style={styles.label}>Quick Test Credentials</Text>
+                <Text style={styles.label}>Select Test Bank</Text>
                 <View style={styles.quickOptionsContainer}>
-                  <Pressable
-                    style={[styles.quickChip, upiId === 'success@razorpay' && styles.quickChipActive]}
-                    onPress={() => setUpiId('success@razorpay')}
-                  >
-                    <Text style={[styles.quickChipText, upiId === 'success@razorpay' && styles.quickChipTextActive]}>
-                      ✓ success@razorpay
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.quickChip, upiId === 'failure@razorpay' && styles.quickChipActive]}
-                    onPress={() => setUpiId('failure@razorpay')}
-                  >
-                    <Text style={[styles.quickChipText, upiId === 'failure@razorpay' && styles.quickChipTextActive]}>
-                      ✗ failure@razorpay
-                    </Text>
-                  </Pressable>
+                  {['HDFC', 'ICICI', 'SBI', 'AXIS'].map(bank => (
+                    <Pressable
+                      key={bank}
+                      style={[styles.quickChip, selectedBank === bank && styles.quickChipActive]}
+                      onPress={() => setSelectedBank(bank)}
+                    >
+                      <Text style={[styles.quickChipText, selectedBank === bank && styles.quickChipTextActive]}>
+                        {bank} Bank
+                      </Text>
+                    </Pressable>
+                  ))}
                 </View>
 
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoText}>
-                    <Shield size={12} color="#38BDF8" /> Using test VPA <Text style={{ fontWeight: '700' }}>success@razorpay</Text> will automatically authorize the payment and issue valid Razorpay signatures.
+                {/* Razorpay Test Bank Simulator Component */}
+                <View style={styles.simulatorBox}>
+                  <View style={styles.simulatorHeader}>
+                    <Text style={styles.simulatorTitle}>🏦 Razorpay Test Bank</Text>
+                    <Text style={styles.simulatorSubtext}>Simulation Page</Text>
+                  </View>
+                  <Text style={[styles.infoText, { marginBottom: 12 }]}>
+                    Select an action below to complete authorization for {selectedBank} Bank:
                   </Text>
+                  <View style={styles.simulatorActions}>
+                    <Pressable
+                      style={styles.successBtn}
+                      onPress={handlePaySuccess}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
+                      ) : (
+                        <Text style={styles.successBtnText}>[ Success ]</Text>
+                      )}
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.failureBtn}
+                      onPress={handlePayFailure}
+                      disabled={isProcessing}
+                    >
+                      <Text style={styles.failureBtnText}>[ Failure ]</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
-            ) : (
+            ) : activeTab === 'card' ? (
               <View>
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Card Number (Test)</Text>
@@ -214,47 +233,81 @@ export function RazorpayModal({
                 </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Cardholder Name</Text>
+                  <Text style={styles.label}>3D-Secure OTP</Text>
                   <TextInput
                     style={styles.input}
-                    value={cardHolder}
-                    onChangeText={setCardHolder}
+                    value={otp}
+                    onChangeText={setOtp}
+                    keyboardType="number-pad"
+                    placeholder="Enter 123456"
+                    placeholderTextColor="#64748B"
                   />
                 </View>
 
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoText}>
-                    <CreditCard size={12} color="#38BDF8" /> Test Visa card <Text style={{ fontWeight: '700' }}>4111 1111 1111 1111</Text> simulates native card checkout.
-                  </Text>
+                <Pressable
+                  style={[styles.payButton, isProcessing && styles.payButtonDisabled, { marginTop: 10 }]}
+                  onPress={handlePaySuccess}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.payButtonText}>
+                      Submit / Authorize {formattedAmount}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.inputGroup}>
+                  <Text style={labelStyle}>Enter Test VPA / UPI ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={upiId}
+                    onChangeText={setUpiId}
+                    placeholder="e.g. success@razorpay"
+                    placeholderTextColor="#64748B"
+                    autoCapitalize="none"
+                  />
                 </View>
+
+                <Text style={styles.label}>Quick Test Credentials</Text>
+                <View style={styles.quickOptionsContainer}>
+                  <Pressable
+                    style={[styles.quickChip, upiId === 'success@razorpay' && styles.quickChipActive]}
+                    onPress={() => setUpiId('success@razorpay')}
+                  >
+                    <Text style={[styles.quickChipText, upiId === 'success@razorpay' && styles.quickChipTextActive]}>
+                      ✓ success@razorpay
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.quickChip, upiId === 'failure@razorpay' && styles.quickChipActive]}
+                    onPress={() => setUpiId('failure@razorpay')}
+                  >
+                    <Text style={[styles.quickChipText, upiId === 'failure@razorpay' && styles.quickChipTextActive]}>
+                      ✗ failure@razorpay
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <Pressable
+                  style={[styles.payButton, isProcessing && styles.payButtonDisabled, { marginTop: 16 }]}
+                  onPress={upiId === 'failure@razorpay' ? handlePayFailure : handlePaySuccess}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                  ) : (
+                    <Text style={styles.payButtonText}>
+                      Pay {formattedAmount} via UPI
+                    </Text>
+                  )}
+                </Pressable>
               </View>
             )}
           </ScrollView>
-
-          {/* Footer Actions */}
-          <View style={styles.footer}>
-            <Pressable
-              style={[styles.payButton, isProcessing && styles.payButtonDisabled]}
-              onPress={handlePaySuccess}
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.payButtonText}>
-                  Pay {formattedAmount} (Success Test)
-                </Text>
-              )}
-            </Pressable>
-
-            <Pressable
-              style={styles.failButton}
-              onPress={handlePayFailure}
-              disabled={isProcessing}
-            >
-              <Text style={styles.failButtonText}>Simulate Payment Failure</Text>
-            </Pressable>
-          </View>
         </View>
       </View>
     </Modal>

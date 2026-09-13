@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://138.68.140.83:8000';
+export const API_BASE_URL = 'https://contenttalent-backend.onrender.com/';
 
 export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
 

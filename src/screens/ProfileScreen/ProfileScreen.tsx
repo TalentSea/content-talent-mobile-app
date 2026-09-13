@@ -14,6 +14,7 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  Clock,
   Crown,
   Download,
   Heart,
@@ -21,6 +22,7 @@ import {
   LogIn,
   LogOut,
   Settings,
+  Trash2,
 } from 'lucide-react-native';
 import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
@@ -29,6 +31,7 @@ import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useDownloads } from '../../hooks/useDownloads';
 import { useUserActivity } from '../../hooks/useUserActivity';
+import { useWatchHistory } from '../../hooks/useWatchHistory';
 import {
   clearSessionTokens,
   getCurrentUser,
@@ -51,7 +54,7 @@ function getInitials(name?: string | null): string {
 
 export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
-  const [activeSection, setActiveSection] = useState<'downloads' | 'saved' | 'liked' | null>('downloads');
+  const [activeSection, setActiveSection] = useState<'history' | 'downloads' | 'saved' | 'liked' | null>('history');
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -63,7 +66,23 @@ export function ProfileScreen({ navigation }: any) {
   const { videos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
   const { savedVideos, likedVideos } = useUserActivity(videos);
+  const { history, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
+
+  const handleDeleteHistoryItem = (video: ApiVideo) => {
+    Alert.alert(
+      'Remove Video',
+      `Remove "${video.title}" from your watch history?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => removeWatchHistoryItem(video.id),
+        },
+      ],
+    );
+  };
 
   const userIsLoggedIn = isUserLoggedIn();
   const userIsSubscribed = isUserSubscribed();
@@ -225,7 +244,45 @@ export function ProfileScreen({ navigation }: any) {
               <ChevronRight size={18} color="#475569" />
             </Pressable>
 
-            {/* 2. Downloads Section */}
+            {/* 2. Watch History Section */}
+            <Pressable
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 12,
+                paddingHorizontal: 4,
+              }}
+              onPress={() => setActiveSection(prev => (prev === 'history' ? null : 'history'))}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: '#181926',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 14,
+                }}
+              >
+                <Clock size={20} color="#8B5CF6" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                  Watch History
+                </Text>
+                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                  {history.length} watched videos in progress
+                </Text>
+              </View>
+              <ChevronRight
+                size={18}
+                color="#475569"
+                style={activeSection === 'history' ? { transform: [{ rotate: '90deg' }] } : undefined}
+              />
+            </Pressable>
+
+            {/* 3. Downloads Section */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -263,7 +320,7 @@ export function ProfileScreen({ navigation }: any) {
               />
             </Pressable>
 
-            {/* 3. Saved Videos */}
+            {/* 4. Saved Videos */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -301,7 +358,7 @@ export function ProfileScreen({ navigation }: any) {
               />
             </Pressable>
 
-            {/* 4. Liked Videos */}
+            {/* 5. Liked Videos */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -339,7 +396,7 @@ export function ProfileScreen({ navigation }: any) {
               />
             </Pressable>
 
-            {/* 5. Logout */}
+            {/* 6. Logout */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -375,6 +432,42 @@ export function ProfileScreen({ navigation }: any) {
               <ChevronRight size={18} color="#475569" />
             </Pressable>
           </View>
+
+          {/* Expandable Section Display */}
+          {activeSection === 'history' && (
+            <View style={{ marginTop: 8 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                  Watch History & Progress ({history.length})
+                </Text>
+                {history.length > 0 && (
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert('Clear Watch History', 'Are you sure you want to clear your watch history?', [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Clear All', style: 'destructive', onPress: () => clearWatchHistory() },
+                      ]);
+                    }}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  >
+                    <Trash2 size={14} color="#EF4444" />
+                    <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>Clear All</Text>
+                  </Pressable>
+                )}
+              </View>
+              <VerticalList
+                videos={history.map(item => item.video)}
+                numColumns={2}
+                scrollable={false}
+                refreshing={loading}
+                isContinueWatching={true}
+                onRefresh={reload}
+                onPressVideo={playVideo}
+                onDeleteVideo={handleDeleteHistoryItem}
+                emptyText="No watch history recorded yet. Start watching videos to track progress!"
+              />
+            </View>
+          )}
 
           {/* Expandable Section Display */}
           {activeSection === 'downloads' && (

@@ -13,11 +13,11 @@ export class ApiError extends Error {
   }
 }
 
-let accessToken: string | null = DEFAULT_AUTH_TOKEN;
+let accessToken: string | null = null;
 let isRefreshing = false;
 
 export function setApiAccessToken(token: string | null) {
-  accessToken = token ?? DEFAULT_AUTH_TOKEN;
+  accessToken = token;
 }
 
 export function getApiAccessToken(): string | null {
@@ -76,23 +76,6 @@ export async function apiRequest<T>(
     } catch (refreshErr) {
       isRefreshing = false;
       console.warn('[client.ts] Silent token refresh failed:', refreshErr);
-    }
-  }
-
-  // Handle 403 Forbidden -> Fallback retry with default authorization header
-  if (response.status === 403 && accessToken !== DEFAULT_AUTH_TOKEN && !isRetry) {
-    console.warn(`[client.ts] 403 Forbidden on ${path} with current token. Retrying with default API key.`);
-    const masterHeaders = new Headers(requestHeaders);
-    masterHeaders.set('Authorization', `Bearer ${DEFAULT_AUTH_TOKEN}`);
-    
-    const fallbackResponse = await fetch(`${API_BASE_URL}${path}`, {
-      ...requestOptions,
-      headers: masterHeaders,
-    });
-
-    if (fallbackResponse.ok) {
-      const fallbackText = await fallbackResponse.text();
-      return (fallbackText ? JSON.parse(fallbackText) : undefined) as T;
     }
   }
 

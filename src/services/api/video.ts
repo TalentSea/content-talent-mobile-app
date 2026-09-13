@@ -40,20 +40,12 @@ export function getDistinctStreamUrlForVideo(video: any): string {
     video?.file_path ||
     null;
 
-  const libraryId = video?.bunny_library_id || video?.library_id;
-  const videoIdStr = video?.bunny_video_id || video?.video_id;
-
   if (url && typeof url === 'string' && url.trim().length > 0 && url !== API_BASE_URL) {
     url = url.trim();
     if (url.startsWith('/')) {
       return `${API_BASE_URL}${url}`;
     }
-    // Filter out unsigned b-cdn.net URLs without token params that cause HTTP 403 Forbidden error
-    if (url.includes('b-cdn.net') && !url.includes('token') && !url.includes('expires')) {
-      // Unsigned b-cdn URL, proceed to fallback
-    } else {
-      return url;
-    }
+    return url;
   }
 
   const idNum = typeof video?.id === 'number' ? video.id : 1;
@@ -139,44 +131,14 @@ export async function fetchVideos(
     query.set('page', String(params.page ?? 1));
     query.set('limit', String(params.limit ?? 50));
 
-    // 1. Primary: Mobile Videos Endpoint (/api/v1/mobile/videos)
-    try {
-      const response = await apiGet<PaginatedVideosResponse>(
-        `/api/v1/mobile/videos?${query.toString()}`,
-      );
-      if (response && Array.isArray(response.items)) {
-        return {
-          ...response,
-          items: response.items.map(normalizeVideoItem),
-        };
-      }
-    } catch (err) {
-      // Mobile endpoint notice
-    }
-
-    // 2. Secondary: Admin Videos Endpoint (/api/v1/admin/videos)
-    try {
-      const adminResponse = await apiGet<PaginatedVideosResponse>(
-        `/api/v1/admin/videos?${query.toString()}`,
-      );
-      if (adminResponse && Array.isArray(adminResponse.items) && adminResponse.items.length > 0) {
-        return {
-          ...adminResponse,
-          items: adminResponse.items.map(normalizeVideoItem),
-        };
-      }
-    } catch (e) {
-      // Admin endpoint notice
-    }
-
-    // 3. Public Videos Endpoint (/api/v1/videos)
-    const publicResponse = await apiGet<PaginatedVideosResponse>(
-      `/api/v1/videos?${query.toString()}`,
+    // Mobile Videos Endpoint (/api/v1/mobile/videos)
+    const response = await apiGet<PaginatedVideosResponse>(
+      `/api/v1/mobile/videos?${query.toString()}`,
     );
-    if (publicResponse && Array.isArray(publicResponse.items)) {
+    if (response && Array.isArray(response.items)) {
       return {
-        ...publicResponse,
-        items: publicResponse.items.map(normalizeVideoItem),
+        ...response,
+        items: response.items.map(normalizeVideoItem),
       };
     }
 
@@ -203,33 +165,10 @@ export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
   try {
-    // 1. Primary: Mobile Video Details (/api/v1/mobile/videos/{id})
-    try {
-      const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
-      if (mobileRes) {
-        return normalizeVideoItem(mobileRes) as VideoDetails;
-      }
-    } catch (e) {
-      // Mobile details fallback
-    }
-
-    // 2. Secondary: Admin Video Details (/api/v1/admin/videos/{id})
-    try {
-      const adminRes = await apiGet<VideoDetails>(`/api/v1/admin/videos/${videoId}`);
-      if (adminRes) {
-        return normalizeVideoItem(adminRes) as VideoDetails;
-      }
-    } catch (e) {
-      // Admin details fallback
-    }
-
-    // 3. Public Video Details (/api/v1/videos/{id})
-    const publicRes = await apiGet<VideoDetails>(`/api/v1/videos/${videoId}`);
-    if (publicRes) {
-      return normalizeVideoItem(publicRes) as VideoDetails;
-    }
-      return normalizeVideoItem(publicRes) as VideoDetails;
->>>>>>> 2f749b4a (feat: implement Razorpay payment checkout modal, signature verification, and subscription playback unlock)
+    // Mobile Video Details (/api/v1/mobile/videos/{id})
+    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+    if (mobileRes) {
+      return normalizeVideoItem(mobileRes) as VideoDetails;
     }
   } catch (error) {
     console.warn(`[fetchVideoDetails] Mobile API notice for video ${videoId}:`, error);

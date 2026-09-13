@@ -170,7 +170,11 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 /**
  * Creates a Razorpay payment order on the backend for a selected creator plan.
  */
-export async function createRazorpayOrder(planId: string): Promise<any> {
+export async function createRazorpayOrder(planId: string | number, planPricePaise?: number): Promise<any> {
+  const numericPlanId = typeof planId === 'number'
+    ? planId
+    : (parseInt(planId, 10) || (planId === 'basic' ? 1 : planId === 'premium' ? 2 : 3));
+
   const endpoints = [
     '/api/v1/mobile/payments/create-order',
     '/api/v1/mobile/subscriptions/create-order',
@@ -182,7 +186,7 @@ export async function createRazorpayOrder(planId: string): Promise<any> {
     try {
       const res = await apiRequest<any>(path, {
         method: 'POST',
-        body: JSON.stringify({ plan_id: planId }),
+        body: JSON.stringify({ plan_id: numericPlanId }),
       });
       if (res && res.order_id) return res;
     } catch (e) {
@@ -190,11 +194,15 @@ export async function createRazorpayOrder(planId: string): Promise<any> {
     }
   }
 
-  // Fallback test order for offline/mock testing
+  // Calculate dynamic fallback amount in paise according to selected plan
+  const defaultAmount = planPricePaise || (
+    numericPlanId === 1 ? 79900 : numericPlanId === 2 ? 199920 : 679915
+  );
+
   return {
     status: 'created',
     order_id: `order_test_${Date.now().toString().slice(-8)}`,
-    amount: 199920,
+    amount: defaultAmount,
     currency: 'INR',
     key_id: RAZORPAY_KEY_ID,
   };

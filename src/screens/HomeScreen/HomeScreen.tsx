@@ -26,6 +26,7 @@ import { getCurrentUser } from '../../services/api/authService';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import type { ApiVideo } from '../../types/video';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
+import { HeroSkeleton, HorizontalRowSkeleton } from '../../components/SkeletonLoader/HotstarSkeleton';
 import { styles } from './styles';
 
 export function HomeScreen({ navigation }: any) {
@@ -195,10 +196,12 @@ export function HomeScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* Loading Indicator */}
+        {/* Loading Indicator with Hotstar Skeleton Shimmers */}
         {loading && (
-          <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#E50914" />
+          <View style={{ paddingTop: 8 }}>
+            <HeroSkeleton />
+            <HorizontalRowSkeleton titleWidth={160} />
+            <HorizontalRowSkeleton titleWidth={130} />
           </View>
         )}
 

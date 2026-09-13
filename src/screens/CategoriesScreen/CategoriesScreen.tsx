@@ -35,6 +35,8 @@ const DEFAULT_CATEGORY_COLORS = [
   '#0891B2', // Cyan
 ];
 
+import { CategoryGridSkeleton } from '../../components/SkeletonLoader/HotstarSkeleton';
+
 export function CategoriesScreen({ navigation }: any) {
   const { videos, loading: videosLoading } = useVideos();
   const [categoriesList, setCategoriesList] = useState<RealCategoryItem[]>([]);
@@ -116,9 +118,7 @@ export function CategoriesScreen({ navigation }: any) {
       </View>
 
       {loading || videosLoading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator color="#E50914" size="large" />
-        </View>
+        <CategoryGridSkeleton />
       ) : categoriesList.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
           <Text style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center' }}>
