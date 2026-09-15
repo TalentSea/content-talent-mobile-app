@@ -16,8 +16,9 @@ export function useVideos() {
 
       setError('');
       const response = await fetchVideos({ page: 1, limit: 50 });
-      setVideos(response.items);
+      setVideos(response.items || []);
     } catch (err) {
+      console.warn('[useVideos] Error loading videos:', err);
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
@@ -29,14 +30,17 @@ export function useVideos() {
 
     const interval = setInterval(() => {
       loadVideos(false);
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, []);
 
-  const popularVideos = videos.filter(video => isStreamable(video.status));
+  const filteredPopular = videos.filter(video =>
+    video.is_playable || isStreamable(video.status),
+  );
 
-  const processingVideos = videos.filter(video => !isStreamable(video.status));
+  const popularVideos = filteredPopular.length > 0 ? filteredPopular : videos;
+  const processingVideos = videos.filter(video => !video.is_playable && !isStreamable(video.status));
 
   return {
     videos,

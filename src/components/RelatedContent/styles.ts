@@ -1,0 +1,120 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  container: {
+    marginTop: 20,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#1F2937',
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  badge: {
+    backgroundColor: '#374151',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  badgeText: {
+    color: '#E5E7EB',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  horizontalListContainer: {
+    paddingHorizontal: 16,
+    gap: 12,
+    paddingBottom: 8,
+  },
+  videoCard: {
+    width: 160,
+    borderRadius: 8,
+    backgroundColor: '#111827',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#1F2937',
+  },
+  videoThumbnail: {
+    width: 160,
+    height: 90,
+    backgroundColor: '#1E1E2E',
+  },
+  videoDurationBadge: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  durationText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  videoContent: {
+    padding: 8,
+  },
+  videoTitle: {
+    color: '#F9FAFB',
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  videoMeta: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  playlistCard: {
+    width: 150,
+    borderRadius: 8,
+    backgroundColor: '#1E1E2E',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#374151',
+  },
+  playlistThumbnail: {
+    width: 150,
+    height: 85,
+    backgroundColor: '#1F2937',
+  },
+  playlistOverlay: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  playlistOverlayText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  playlistTitle: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    padding: 8,
+    paddingBottom: 2,
+  },
+  playlistSub: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+  },
+});

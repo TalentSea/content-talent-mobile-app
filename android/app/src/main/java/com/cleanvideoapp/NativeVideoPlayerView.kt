@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.media3.common.C
@@ -15,6 +16,8 @@ import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.ima.ImaAdsLoader
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.facebook.react.bridge.Arguments
@@ -25,10 +28,9 @@ import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.events.Event
 
 class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
-    private val player: ExoPlayer = ExoPlayer.Builder(context).build()
-    private val playerView: PlayerView =
-            LayoutInflater.from(context)
-                    .inflate(R.layout.player_view_layout, this, false) as PlayerView
+    private var imaAdsLoader: ImaAdsLoader? = null
+    private val playerView: PlayerView
+    private val player: ExoPlayer
 
     private var hasSentLoadEvent = false
     private var hasSentTracksEvent = false
@@ -55,35 +57,79 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                 ViewGroup.LayoutParams.MATCH_PARENT
         )
 
+        playerView = LayoutInflater.from(context)
+                .inflate(R.layout.player_view_layout, this, false) as PlayerView
+
+        imaAdsLoader = ImaAdsLoader.Builder(context).build()
+
+        val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setLocalAdInsertionComponents({ imaAdsLoader }, playerView)
+
+        player = ExoPlayer.Builder(context)
+            .setMediaSourceFactory(mediaSourceFactory)
+            .build()
+
         playerView.player = player
+        playerView.subtitleView?.apply {
+            setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 14f)
+            setStyle(
+                androidx.media3.ui.CaptionStyleCompat(
+                    android.graphics.Color.WHITE,
+                    android.graphics.Color.argb(160, 0, 0, 0),
+                    android.graphics.Color.TRANSPARENT,
+                    androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE,
+                    android.graphics.Color.BLACK,
+                    null
+                )
+            )
+        }
+        imaAdsLoader?.setPlayer(player)
         addView(playerView)
 
         player.addListener(object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: androidx.media3.common.VideoSize) {
+                if (videoSize.width > 0 && videoSize.height > 0) {
+                    val event = Arguments.createMap().apply {
+                        putInt("width", videoSize.width)
+                        putInt("height", videoSize.height)
+                        putDouble("duration", player.duration.toDouble() / 1000.0)
+                    }
+                    sendEvent("onLoad", event)
+                }
+            }
+
             override fun onPlaybackStateChanged(state: Int) {
                 when (state) {
                     Player.STATE_READY -> {
-                        if (!hasSentLoadEvent) {
-                            hasSentLoadEvent = true
+                        if (!player.isPlayingAd) {
+                            if (!hasSentLoadEvent) {
+                                hasSentLoadEvent = true
 
-                            val event = Arguments.createMap().apply {
-                                putDouble("duration", player.duration.toDouble() / 1000.0)
+                                val event = Arguments.createMap().apply {
+                                    putDouble("duration", player.duration.toDouble() / 1000.0)
+                                    val format = player.videoFormat
+                                    if (format != null && format.width > 0 && format.height > 0) {
+                                        putInt("width", format.width)
+                                        putInt("height", format.height)
+                                    }
+                                }
+
+                                Log.d("NativeVideoPlayer", "STATE_READY duration=${player.duration}")
+
+                                sendEvent("onLoad", event)
                             }
 
-                            Log.d("NativeVideoPlayer", "STATE_READY duration=${player.duration}")
+                            // Detect embedded subtitle tracks from HLS manifest
+                            if (!hasSentTracksEvent) {
+                                hasSentTracksEvent = true
+                                sendTracksEvent()
+                            }
 
-                            sendEvent("onLoad", event)
+                            val bufferEvent = Arguments.createMap().apply {
+                                putBoolean("isBuffering", false)
+                            }
+                            sendEvent("onBuffer", bufferEvent)
                         }
-
-                        // Detect embedded subtitle tracks from HLS manifest
-                        if (!hasSentTracksEvent) {
-                            hasSentTracksEvent = true
-                            sendTracksEvent()
-                        }
-
-                        val bufferEvent = Arguments.createMap().apply {
-                            putBoolean("isBuffering", false)
-                        }
-                        sendEvent("onBuffer", bufferEvent)
                     }
 
                     Player.STATE_BUFFERING -> {
@@ -94,8 +140,17 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                     }
 
                     Player.STATE_ENDED -> {
-                        sendEvent("onEnd", Arguments.createMap())
+                        if (!player.isPlayingAd) {
+                            sendEvent("onEnd", Arguments.createMap())
+                        }
                     }
+                }
+            }
+
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                sendTracksEvent()
+                if (pendingSelectedTextTrack != null) {
+                    applySelectedTextTrack(pendingSelectedTextTrack)
                 }
             }
 
@@ -144,8 +199,18 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         hasSentTracksEvent = false
         sendEvent("onLoadStart", Arguments.createMap())
 
+        val type = source.getString("type")
         val builder = MediaItem.Builder()
                 .setUri(Uri.parse(uri))
+
+        if (type == "m3u8" || uri.contains(".m3u8")) {
+            builder.setMimeType(MimeTypes.APPLICATION_M3U8)
+        }
+
+        val adTagUrl = source.getString("adTagUrl")
+        if (!adTagUrl.isNullOrBlank()) {
+            builder.setAdsConfiguration(MediaItem.AdsConfiguration.Builder(Uri.parse(adTagUrl)).build())
+        }
 
         if (source.hasKey("captions")) {
             val captions = source.getArray("captions")
@@ -256,22 +321,99 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
     fun releasePlayer() {
         removeCallbacks(progressRunnable)
+        imaAdsLoader?.setPlayer(null)
+        imaAdsLoader?.release()
         player.release()
     }
 
-    /**
-     * Enable or disable subtitle text track rendering.
-     * ExoPlayer discovers embedded HLS subtitle tracks automatically;
-     * this method toggles their visibility via trackSelectionParameters.
-     */
+    private var pendingSelectedTextTrack: ReadableMap? = null
+
     fun setCaptionsEnabled(enabled: Boolean) {
         captionsEnabled = enabled
         Log.d("NativeVideoPlayer", "setCaptionsEnabled: $enabled")
 
-        player.trackSelectionParameters = player.trackSelectionParameters
-            .buildUpon()
-            .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, !enabled)
-            .build()
+        if (!enabled) {
+            val builder = player.trackSelectionParameters.buildUpon()
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            player.trackSelectionParameters = builder.build()
+        } else if (pendingSelectedTextTrack != null) {
+            applySelectedTextTrack(pendingSelectedTextTrack)
+        }
+    }
+
+    fun setSelectedTextTrack(selectedTrack: ReadableMap?) {
+        pendingSelectedTextTrack = selectedTrack
+        applySelectedTextTrack(selectedTrack)
+    }
+
+    private fun applySelectedTextTrack(selectedTrack: ReadableMap?) {
+        if (selectedTrack == null) return
+        val type = selectedTrack.getString("type")
+        val builder = player.trackSelectionParameters.buildUpon()
+
+        if (type == "disabled") {
+            captionsEnabled = false
+            builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+            player.trackSelectionParameters = builder.build()
+            playerView.subtitleView?.visibility = View.GONE
+            return
+        }
+
+        captionsEnabled = true
+        playerView.subtitleView?.apply {
+            visibility = View.VISIBLE
+            bringToFront()
+        }
+        builder.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+        builder.clearOverridesOfType(C.TRACK_TYPE_TEXT)
+
+        val lang = selectedTrack.getString("value")
+        val targetIndex = if (selectedTrack.hasKey("index")) selectedTrack.getInt("index") else 0
+
+        if (!lang.isNullOrEmpty()) {
+            builder.setPreferredTextLanguage(lang)
+        }
+
+        var globalIndex = 0
+        var matched = false
+
+        for (group in player.currentTracks.groups) {
+            if (group.type == C.TRACK_TYPE_TEXT) {
+                for (i in 0 until group.length) {
+                    if (globalIndex == targetIndex) {
+                        builder.setOverrideForType(
+                            TrackSelectionOverride(group.mediaTrackGroup, i)
+                        )
+                        matched = true
+                        Log.d("NativeVideoPlayer", "applySelectedTextTrack matched track: globalIndex=$globalIndex, groupTrack=$i, language=${group.getTrackFormat(i).language}")
+                        break
+                    }
+                    globalIndex++
+                }
+                if (matched) break
+            }
+        }
+
+        if (!matched && player.currentTracks.groups.any { it.type == C.TRACK_TYPE_TEXT }) {
+            for (group in player.currentTracks.groups) {
+                if (group.type == C.TRACK_TYPE_TEXT && group.length > 0) {
+                    builder.setOverrideForType(
+                        TrackSelectionOverride(group.mediaTrackGroup, 0)
+                    )
+                    matched = true
+                    break
+                }
+            }
+        }
+
+        player.trackSelectionParameters = builder.build()
+        playerView.subtitleView?.let { subView ->
+            subView.visibility = View.VISIBLE
+            subView.setPadding(0, 0, 0, 20)
+        }
+        Log.d("NativeVideoPlayer", "applySelectedTextTrack finished: targetIndex=$targetIndex, matched=$matched, textGroups=${player.currentTracks.groups.count { it.type == C.TRACK_TYPE_TEXT }}")
     }
 
     /**

@@ -5,12 +5,15 @@
  */
 
 /** Statuses where the video has at least one streamable resolution. */
-const STREAMABLE_STATUSES = ['READY', 'PLAYABLE'] as const;
+const STREAMABLE_STATUSES = ['READY', 'PLAYABLE', 'PUBLISHED'] as const;
 
 /** Returns true if the video can be played in ExoPlayer. */
-export function isStreamable(status: string): boolean {
-  return STREAMABLE_STATUSES.includes(
-    status.trim().toUpperCase() as (typeof STREAMABLE_STATUSES)[number],
+export function isStreamable(status?: string): boolean {
+  if (!status) return true;
+  const normalized = status.trim().toUpperCase();
+  return (
+    STREAMABLE_STATUSES.includes(normalized as any) ||
+    normalized === 'PUBLISHED'
   );
 }
 
@@ -25,6 +28,7 @@ export const STATUS_DISPLAY: Record<string, StatusDisplay> = {
   ENCODING:         { label: 'Encoding',       color: '#3B82F6' },
   READY:            { label: 'Ready',          color: '#10B981' },
   PLAYABLE:         { label: 'Playable',       color: '#34D399' },
+  PUBLISHED:        { label: 'Published',      color: '#10B981' },
   FAILED:           { label: 'Failed',         color: '#EF4444' },
   UPLOAD_FINISHED:  { label: 'Uploaded',       color: '#8B5CF6' },
   UPLOAD_FAILED:    { label: 'Upload Failed',  color: '#EF4444' },
@@ -32,6 +36,6 @@ export const STATUS_DISPLAY: Record<string, StatusDisplay> = {
 
 /** Safe lookup — returns a neutral grey for unknown statuses. */
 export function getStatusDisplay(status: string): StatusDisplay {
-  const key = status.trim().toUpperCase();
-  return STATUS_DISPLAY[key] ?? { label: status, color: '#6B7280' };
+  const key = (status || '').trim().toUpperCase();
+  return STATUS_DISPLAY[key] ?? { label: status || 'Ready', color: '#10B981' };
 }
