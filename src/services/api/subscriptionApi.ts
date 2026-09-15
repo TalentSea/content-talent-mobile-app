@@ -60,23 +60,6 @@ const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
       '24/7 priority support',
     ],
   },
-  {
-    id: 'annual_basic',
-    name: 'Annual Basic',
-    price: '₹6,799.15',
-    originalPrice: '₹7,999',
-    period: '/year',
-    description: 'Save 15% with annual billing',
-    savings: '15% OFF',
-    badgeTag: 'Best Value',
-    popular: false,
-    status: 'Active',
-    features: [
-      'All Basic plan features',
-      '2 months free',
-      'Annual exclusive content',
-    ],
-  },
 ];
 
 /**
@@ -143,7 +126,7 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
           };
         });
 
-        // Merge fetched backend plans with default creator plans (Basic, Premium, Annual Basic)
+        // Merge fetched backend plans with default creator plans (Basic, Premium)
         const fetchedIds = new Set(fetchedPlans.map(p => String(p.id).toLowerCase()));
         const fetchedNames = new Set(fetchedPlans.map(p => String(p.name).toLowerCase()));
 

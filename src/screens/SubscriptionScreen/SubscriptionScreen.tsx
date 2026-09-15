@@ -407,67 +407,62 @@ export function SubscriptionScreen({ navigation }: any) {
           {/* Header Row */}
           <View style={styles.matrixHeaderRow}>
             <Text style={[styles.matrixHeaderCell, { flex: 2 }]}>Feature</Text>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.1, textAlign: 'center' }]}>Basic</Text>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.1, textAlign: 'center', color: '#6366F1' }]}>Premium</Text>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.3, textAlign: 'center' }]}>Annual Basic</Text>
+            <Text style={[styles.matrixHeaderCell, { flex: 1.2, textAlign: 'center' }]}>Basic</Text>
+            <Text style={[styles.matrixHeaderCell, { flex: 1.2, textAlign: 'center', color: '#6366F1' }]}>Premium</Text>
           </View>
 
           {/* Row 1: Content Library Access */}
           <View style={styles.matrixRow}>
             <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Content Library Access</Text>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
               <Check size={16} color="#10B981" />
             </View>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
               <Check size={16} color="#6366F1" />
-            </View>
-            <View style={{ flex: 1.3, alignItems: 'center' }}>
-              <Check size={16} color="#10B981" />
             </View>
           </View>
 
           {/* Row 2: Video Quality */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Video Quality</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.1 }]}>Standard</Text>
-            <Text style={[styles.matrixCellTextHighlight, { flex: 1.1, textAlign: 'center' }]}>4K</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.3 }]}>Standard</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Max Video Quality</Text>
+            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center' }]}>720p HD</Text>
+            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center' }]}>4K Ultra HD</Text>
           </View>
 
-          {/* Row 3: Live Q&A Sessions */}
+          {/* Row 3: Ad Experience */}
+          <View style={styles.matrixRow}>
+            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Ad Experience</Text>
+            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center', color: '#9CA3AF' }]}>With Ads</Text>
+            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center', color: '#10B981' }]}>100% Ad-Free</Text>
+          </View>
+
+          {/* Row 4: Offline Video Downloads */}
+          <View style={[styles.matrixRow, styles.matrixRowAlt]}>
+            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Offline Video Downloads</Text>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
+              <Minus size={14} color="#4B5563" />
+            </View>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
+              <Check size={16} color="#6366F1" />
+            </View>
+          </View>
+
+          {/* Row 5: Live Q&A Sessions */}
           <View style={styles.matrixRow}>
             <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Live Q&A Sessions</Text>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
               <Minus size={14} color="#4B5563" />
             </View>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
+            <View style={{ flex: 1.2, alignItems: 'center' }}>
               <Check size={16} color="#6366F1" />
-            </View>
-            <View style={{ flex: 1.3, alignItems: 'center' }}>
-              <Minus size={14} color="#4B5563" />
             </View>
           </View>
 
-          {/* Row 4: Downloadable Resources */}
+          {/* Row 6: Support */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Downloadable Resources</Text>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
-              <Minus size={14} color="#4B5563" />
-            </View>
-            <View style={{ flex: 1.1, alignItems: 'center' }}>
-              <Check size={16} color="#6366F1" />
-            </View>
-            <View style={{ flex: 1.3, alignItems: 'center' }}>
-              <Minus size={14} color="#4B5563" />
-            </View>
-          </View>
-
-          {/* Row 5: Support */}
-          <View style={styles.matrixRow}>
             <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Support</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.1 }]}>Email</Text>
-            <Text style={[styles.matrixCellTextHighlight, { flex: 1.1, textAlign: 'center', color: '#6366F1' }]}>24/7 Priority</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.3 }]}>Email</Text>
+            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center' }]}>Email</Text>
+            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center', color: '#6366F1' }]}>24/7 Priority</Text>
           </View>
         </View>
 

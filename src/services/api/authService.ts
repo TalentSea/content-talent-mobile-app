@@ -157,6 +157,30 @@ export function isUserSubscribed(): boolean {
   return false;
 }
 
+export function isUserPremium(): boolean {
+  if (!currentAuthenticatedUser) return false;
+  const role = (currentAuthenticatedUser.role || '').toLowerCase();
+  const planId = (currentAuthenticatedUser.plan_id || '').toLowerCase();
+  const chosenPlan = (currentAuthenticatedUser.chosen_plan || '').toLowerCase();
+
+  if (planId === 'premium' || role === 'premium' || chosenPlan.includes('premium')) {
+    return true;
+  }
+  return false;
+}
+
+export function getUserMaxQuality(): '720p' | '4k' {
+  return isUserPremium() ? '4k' : '720p';
+}
+
+export function canUserDownload(): boolean {
+  return isUserPremium();
+}
+
+export function shouldShowAds(): boolean {
+  return isUserSubscribed() && !isUserPremium();
+}
+
 export function activateSubscription(
   role: 'member' | 'subscriber' | 'premium' = 'subscriber',
   planName: string = 'Premium Plan',
@@ -171,13 +195,15 @@ export function activateSubscription(
     role: 'subscriber',
   };
 
+  const isPremium = planId === 'premium' || (planName && planName.toLowerCase().includes('premium'));
+
   const updatedUser: UserProfile = {
     ...baseUser,
     name: baseUser.name === 'Guest User' ? 'VIP Subscriber' : baseUser.name,
-    provider: 'subscriber',
-    role: 'subscriber',
-    chosen_plan: planName || 'VIP Member Plan',
-    plan_id: planId || 'vip_plan',
+    provider: isPremium ? 'premium' : 'subscriber',
+    role: isPremium ? 'premium' : 'subscriber',
+    chosen_plan: planName || (isPremium ? 'Premium Plan' : 'Basic Plan'),
+    plan_id: planId || (isPremium ? 'premium' : 'basic'),
   };
 
   currentAuthenticatedUser = updatedUser;

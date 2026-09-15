@@ -21,7 +21,7 @@ import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X, Sparkles, Lock 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
-import { isUserSubscribed, subscribeAuthChange } from '../../services/api/authService';
+import { canUserDownload, getUserMaxQuality, isUserSubscribed, shouldShowAds, subscribeAuthChange } from '../../services/api/authService';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
@@ -279,23 +279,11 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
   const likesText = formatLikes(likesCount);
   const timeAgoText = getRelativeTimeString((playingVideo as any)?.published_at || (playingVideo as any)?.created_at);
 
-  const categoryLower = categoryName.toLowerCase();
-  const titleLower = (playingVideo?.title || '').toLowerCase();
+  // Standard 16:9 widescreen player frame for clean portrait mode video presentation
+  const activeRatio = 16 / 9;
 
-  // Determine if this is a vertical/short video:
-  // Checked by category ('shorts'/'short'), title ('soup dumplings'), or native video aspect ratio (< 0.95)
-  const isShortVideo =
-    categoryLower === 'shorts' ||
-    categoryLower === 'short' ||
-    titleLower.includes('soup dumplings') ||
-    (videoRatio != null && videoRatio < 0.95);
-
-  // 2:3 player frame for Short videos (Image 1), 16:9 widescreen player frame for Normal videos (Image 2)
-  const activeRatio = isShortVideo ? 2 / 3 : 16 / 9;
-
-  // Full-screen: 'contain' for short videos (Image 3 with side black pillarboxes), 'cover' for normal videos (Image 4)
-  // Half-screen: 'cover' fills the chosen 2:3 or 16:9 box cleanly
-  const playerResizeMode = isFullscreen ? (isShortVideo ? 'contain' : 'cover') : 'cover';
+  // Full-screen: 'contain' or 'cover'; Portrait: 'contain' fits video cleanly inside 16:9 frame
+  const playerResizeMode = isFullscreen ? 'cover' : 'contain';
 
   return (
     <Modal
@@ -357,7 +345,10 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               captions={playingVideo.captions ?? []}
               inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
               hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
-              adTagUrl={playingVideo.adTagUrl}
+              adTagUrl={shouldShowAds() ? playingVideo.adTagUrl : undefined}
+              maxQuality={getUserMaxQuality()}
+              canDownload={canUserDownload()}
+              onUpgradeSubscription={onUpgradeSubscription}
               style={styles.videoPlayer}
               isFullscreen={isFullscreen}
               onToggleFullscreen={toggleFullscreen}

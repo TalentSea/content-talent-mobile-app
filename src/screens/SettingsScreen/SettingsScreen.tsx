@@ -140,7 +140,7 @@ export function SettingsScreen({ navigation }: any) {
               <Shield size={18} color="#818CF8" />
               <View>
                 <Text style={styles.rowTitle}>VIP Subscription Tiers</Text>
-                <Text style={styles.rowSub}>Basic, Premium, or Annual Plans</Text>
+                <Text style={styles.rowSub}>Basic or Premium Plans</Text>
               </View>
             </View>
             <Text style={[styles.rowValue, { color: '#6366F1', fontWeight: '800' }]}>Manage Tiers →</Text>
