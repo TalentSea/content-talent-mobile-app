@@ -103,9 +103,7 @@ type VideoPlayerProps = {
   inbuiltCaptionTracks?: CaptionTrack[];
   hasInbuiltCaptions?: boolean;
   adTagUrl?: string;
-  maxQuality?: '720p' | '4k';
-  canDownload?: boolean;
-  onUpgradeSubscription?: () => void;
+  planTier?: 'basic' | 'premium' | 'none';
   autoStart?: boolean;
   controls?: boolean;
   muted?: boolean;
@@ -138,9 +136,7 @@ export default function NativeVideoPlayer({
   inbuiltCaptionTracks = [],
   hasInbuiltCaptions: hasInbuiltCaptionsProp = false,
   adTagUrl,
-  maxQuality = '720p',
-  canDownload = false,
-  onUpgradeSubscription,
+  planTier = 'basic',
   autoStart = true,
   controls = true,
   muted = false,
@@ -172,9 +168,6 @@ export default function NativeVideoPlayer({
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [selectedQualityKey, setSelectedQualityKey] = useState<string>('auto');
-  const [selectedQualityLabel, setSelectedQualityLabel] = useState<string>(maxQuality === '4k' ? 'Auto (4K)' : '720p HD');
   const [rate, setRate] = useState(playbackRate);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -340,8 +333,8 @@ export default function NativeVideoPlayer({
     setRetryCount(prev => prev + 1);
   };
 
-  // Download Options (240p, 480p, 720p, 1080p)
-  const availableDownloadUrls: DownloadItem[] =
+  // Download Options (240p, 480p, 720p, 1080p) with planTier resolution caps
+  const rawDownloadUrls: DownloadItem[] =
     downloadUrls.length > 0
       ? downloadUrls
       : uri.includes('.m3u8')
@@ -353,21 +346,23 @@ export default function NativeVideoPlayer({
         ]
       : [{ resolution: '720p', label: 'Standard MP4', url: mp4Url || uri }];
 
-  const handleStartDownload = async (targetUrl: string, label: string) => {
+  const availableDownloadUrls: (DownloadItem & { isLocked?: boolean })[] = rawDownloadUrls.map(item => {
+    if (planTier === 'basic' && (item.resolution === '1080p' || item.label.includes('1080p'))) {
+      return {
+        ...item,
+        isLocked: true,
+        label: '1080p HD 🔒 (Requires Premium Plan)',
+      };
+    }
+    return item;
+  });
+
+  const handleStartDownload = async (targetUrl: string, label: string, isLocked?: boolean) => {
     setShowDownloadMenu(false);
-    if (!canDownload) {
+    if (isLocked) {
       Alert.alert(
-        'Premium Feature 🔒',
-        'Video downloads are exclusive to Premium subscribers. Upgrade to Premium for offline watching anytime!',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Upgrade to Premium',
-            onPress: () => {
-              if (onUpgradeSubscription) onUpgradeSubscription();
-            },
-          },
-        ]
+        'Upgrade to Premium Plan 👑',
+        '1080p HD quality streaming and downloads are exclusively available on the Premium Plan. Your current Basic Plan supports up to 720p HD.',
       );
       return;
     }
@@ -819,28 +814,10 @@ export default function NativeVideoPlayer({
                 <Pressable
                   style={styles.actionButton}
                   onPress={() => {
-                    if (!canDownload) {
-                      setShowControls(false);
-                      Alert.alert(
-                        'Premium Feature 🔒',
-                        'Video downloads are exclusive to Premium subscribers. Upgrade to Premium for offline watching anytime!',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          {
-                            text: 'Upgrade to Premium',
-                            onPress: () => {
-                              if (onUpgradeSubscription) onUpgradeSubscription();
-                            },
-                          },
-                        ]
-                      );
-                      return;
-                    }
                     setShowDownloadMenu(prev => !prev);
                     setShowCaptionMenu(false);
                     setShowMoreMenu(false);
                     setShowSettingsMenu(false);
-                    setShowQualityMenu(false);
                   }}
                   disabled={isDownloading}
                   hitSlop={6}
@@ -873,7 +850,7 @@ export default function NativeVideoPlayer({
                   <Pressable
                     key={idx}
                     style={styles.speedItem}
-                    onPress={() => handleStartDownload(item.url, item.label)}
+                    onPress={() => handleStartDownload(item.url, item.label, item.isLocked)}
                   >
                     <Text style={styles.speedText}>
                       {item.label} ({item.resolution})
@@ -887,15 +864,6 @@ export default function NativeVideoPlayer({
             {showSettingsMenu ? (
               <View style={styles.speedMenu}>
                 <Text style={styles.menuHeaderTitle}>Settings</Text>
-                <Pressable
-                  style={styles.speedItem}
-                  onPress={() => {
-                    setShowQualityMenu(true);
-                    setShowSettingsMenu(false);
-                  }}
-                >
-                  <Text style={styles.speedText}>Quality ({selectedQualityLabel}) ›</Text>
-                </Pressable>
                 <Pressable
                   style={styles.speedItem}
                   onPress={() => {
@@ -914,62 +882,6 @@ export default function NativeVideoPlayer({
                 >
                   <Text style={styles.speedText}>Captions / Subtitles ›</Text>
                 </Pressable>
-              </View>
-            ) : null}
-
-            {/* Quality Menu Dropdown */}
-            {showQualityMenu ? (
-              <View style={styles.speedMenu}>
-                <Text style={styles.menuHeaderTitle}>Streaming Quality</Text>
-                {[
-                  { label: 'Auto (Recommended)', key: 'auto', isPremiumOnly: false },
-                  { label: '4K Ultra HD (2160p)', key: '4k', isPremiumOnly: true },
-                  { label: '1080p Full HD', key: '1080p', isPremiumOnly: true },
-                  { label: '720p HD (Standard)', key: '720p', isPremiumOnly: false },
-                  { label: '480p SD', key: '480p', isPremiumOnly: false },
-                  { label: '240p Low', key: '240p', isPremiumOnly: false },
-                ].map((item, idx) => {
-                  const isLocked = item.isPremiumOnly && maxQuality !== '4k';
-                  const isSelected = selectedQualityKey === item.key;
-                  return (
-                    <Pressable
-                      key={idx}
-                      style={styles.speedItem}
-                      onPress={() => {
-                        if (isLocked) {
-                          setShowQualityMenu(false);
-                          Alert.alert(
-                            'Premium 4K Quality 🔒',
-                            '1080p and 4K Ultra HD streaming are exclusive to Premium subscribers. Your Basic plan currently streams up to 720p HD.',
-                            [
-                              { text: 'Got it', style: 'cancel' },
-                              {
-                                text: 'Upgrade to Premium',
-                                onPress: () => {
-                                  if (onUpgradeSubscription) onUpgradeSubscription();
-                                },
-                              },
-                            ]
-                          );
-                          return;
-                        }
-                        setSelectedQualityKey(item.key);
-                        setSelectedQualityLabel(item.key === 'auto' ? (maxQuality === '4k' ? 'Auto (4K)' : '720p HD') : item.label.split(' ')[0]);
-                        setShowQualityMenu(false);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.speedText,
-                          isSelected && styles.speedTextActive,
-                          isLocked && { color: '#6B7280' },
-                        ]}
-                      >
-                        {item.label}{isLocked ? ' 🔒 (PRO)' : isSelected ? '  ✓' : ''}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
               </View>
             ) : null}
 

@@ -265,7 +265,7 @@ export function SubscriptionScreen({ navigation }: any) {
         ) : (
           plans.map(plan => {
             const isSelected = selectedPlanId === plan.id;
-            const badgeLabel = plan.badgeTag || (plan.popular ? 'Most Popular' : plan.savings);
+            const badgeLabel = plan.badgeTag || (plan.popular ? 'Best Value' : plan.savings);
 
             return (
               <Pressable
@@ -273,7 +273,7 @@ export function SubscriptionScreen({ navigation }: any) {
                 style={[styles.planCard, isSelected && styles.planCardActive]}
                 onPress={() => setSelectedPlanId(plan.id)}
               >
-                {/* Header Badge (Most Popular / Best Value / Starter Tier) */}
+                {/* Header Badge */}
                 {badgeLabel && (
                   <View style={styles.popularBadge}>
                     <Text style={styles.popularBadgeText}>{badgeLabel}</Text>
@@ -281,17 +281,18 @@ export function SubscriptionScreen({ navigation }: any) {
                 )}
 
                 <View style={styles.planHeader}>
-                  <View style={styles.planTitleRow}>
+                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginRight: 8 }}>
                     <View
                       style={[
                         styles.radioCircle,
                         isSelected && styles.radioCircleSelected,
+                        { marginTop: 2 },
                       ]}
                     >
                       {isSelected && <View style={styles.radioDot} />}
                     </View>
-                    <View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <Text style={styles.planName}>{plan.name}</Text>
                         <View style={{
                           backgroundColor: 'rgba(16, 185, 129, 0.15)',
@@ -307,19 +308,19 @@ export function SubscriptionScreen({ navigation }: any) {
                         </View>
                       </View>
                       {plan.description ? (
-                        <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }}>
+                        <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }} numberOfLines={2}>
                           {plan.description}
                         </Text>
                       ) : null}
                     </View>
                   </View>
 
-                  <View style={{ alignItems: 'flex-end' }}>
+                  <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
                     <View style={styles.priceRow}>
                       {plan.originalPrice ? (
                         <Text style={{
                           color: '#6B7280',
-                          fontSize: 14,
+                          fontSize: 13,
                           textDecorationLine: 'line-through',
                           marginRight: 4,
                           fontWeight: '600',
@@ -347,50 +348,16 @@ export function SubscriptionScreen({ navigation }: any) {
                   </View>
                 </View>
 
-                {/* Subscribers & Revenue Stats */}
-                {(plan.subscribers || plan.revenue) && (
-                  <View style={{
-                    flexDirection: 'row',
-                    gap: 12,
-                    marginVertical: 10,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                    borderRadius: 8,
-                  }}>
-                    {plan.subscribers && (
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#6B7280', fontSize: 10, textTransform: 'uppercase', fontWeight: '700' }}>
-                          Active Subscribers
-                        </Text>
-                        <Text style={{ color: '#E5E7EB', fontSize: 13, fontWeight: '800', marginTop: 2 }}>
-                          {plan.subscribers}
-                        </Text>
-                      </View>
-                    )}
-                    {plan.revenue && (
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ color: '#6B7280', fontSize: 10, textTransform: 'uppercase', fontWeight: '700' }}>
-                          Monthly Revenue
-                        </Text>
-                        <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '800', marginTop: 2 }}>
-                          {plan.revenue}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-
                 {/* Features List */}
                 {plan.features && plan.features.length > 0 && (
                   <View style={{ marginTop: 6, gap: 4 }}>
                     <Text style={{ color: '#818CF8', fontSize: 11, fontWeight: '700', marginBottom: 2 }}>
-                      Features:
+                      Included Features:
                     </Text>
                     {plan.features.map((feat, idx) => (
                       <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Check size={14} color="#10B981" />
-                        <Text style={{ color: '#D1D5DB', fontSize: 12 }}>{feat}</Text>
+                        <Text style={{ color: '#D1D5DB', fontSize: 12, flex: 1 }}>{feat}</Text>
                       </View>
                     ))}
                   </View>
@@ -400,69 +367,114 @@ export function SubscriptionScreen({ navigation }: any) {
           })
         )}
 
-        {/* Plan Comparison Feature Matrix */}
+        {/* Dynamic Plan Comparison Feature Matrix */}
         <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Plan Comparison</Text>
 
         <View style={styles.matrixCard}>
           {/* Header Row */}
           <View style={styles.matrixHeaderRow}>
-            <Text style={[styles.matrixHeaderCell, { flex: 2 }]}>Feature</Text>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.2, textAlign: 'center' }]}>Basic</Text>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.2, textAlign: 'center', color: '#6366F1' }]}>Premium</Text>
+            <Text style={[styles.matrixHeaderCell, { flex: 1.8 }]}>Feature</Text>
+            {plans.map(p => (
+              <Text
+                key={p.id}
+                style={[
+                  styles.matrixHeaderCell,
+                  { flex: 1, textAlign: 'center' },
+                  p.id === selectedPlanId && { color: '#6366F1', fontWeight: '800' },
+                ]}
+                numberOfLines={2}
+              >
+                {p.name}
+              </Text>
+            ))}
           </View>
 
-          {/* Row 1: Content Library Access */}
+          {/* Row 1: Catalog Access */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Content Library Access</Text>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Check size={16} color="#10B981" />
-            </View>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Check size={16} color="#6366F1" />
-            </View>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Catalog Access</Text>
+            {plans.map(p => (
+              <View key={p.id} style={{ flex: 1, alignItems: 'center' }}>
+                <Check size={16} color="#10B981" />
+              </View>
+            ))}
           </View>
 
-          {/* Row 2: Video Quality */}
+          {/* Row 2: Ad Experience */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Max Video Quality</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center' }]}>720p HD</Text>
-            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center' }]}>4K Ultra HD</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Ad Experience</Text>
+            {plans.map(p => {
+              const nameLower = (p.name || '').toLowerCase();
+              const isAdFree = !nameLower.includes('with_ads') && !nameLower.includes('ad-supported') && !nameLower.includes('standard');
+              return (
+                <Text
+                  key={p.id}
+                  style={[
+                    styles.matrixCellText,
+                    { flex: 1, textAlign: 'center' },
+                    isAdFree && styles.matrixCellTextHighlight,
+                  ]}
+                >
+                  {isAdFree ? '100% Ad-Free' : 'Ad-Supported'}
+                </Text>
+              );
+            })}
           </View>
 
-          {/* Row 3: Ad Experience */}
+          {/* Row 3: Video Resolution */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Ad Experience</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center', color: '#9CA3AF' }]}>With Ads</Text>
-            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center', color: '#10B981' }]}>100% Ad-Free</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Resolution</Text>
+            {plans.map(p => {
+              const nameLower = (p.name || '').toLowerCase();
+              const feats = (p.features || []).join(' ').toLowerCase();
+              const is1080p = nameLower.includes('premium') || feats.includes('1080p') || feats.includes('4k') || feats.includes('full hd');
+              return (
+                <Text
+                  key={p.id}
+                  style={[
+                    styles.matrixCellText,
+                    { flex: 1, textAlign: 'center' },
+                    is1080p && styles.matrixCellTextHighlight,
+                  ]}
+                >
+                  {is1080p ? '1080p Full HD' : '720p HD'}
+                </Text>
+              );
+            })}
           </View>
 
-          {/* Row 4: Offline Video Downloads */}
+          {/* Row 4: Concurrent Devices */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Offline Video Downloads</Text>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Minus size={14} color="#4B5563" />
-            </View>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Check size={16} color="#6366F1" />
-            </View>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Concurrent Devices</Text>
+            {plans.map(p => {
+              const feats = (p.features || []).join(' ').toLowerCase();
+              const isMulti = feats.includes('3') || feats.includes('multiple') || p.name.toLowerCase().includes('premium');
+              return (
+                <Text
+                  key={p.id}
+                  style={[
+                    styles.matrixCellText,
+                    { flex: 1, textAlign: 'center' },
+                    isMulti && styles.matrixCellTextHighlight,
+                  ]}
+                >
+                  {isMulti ? 'Up to 3 Devices' : '1 Device'}
+                </Text>
+              );
+            })}
           </View>
 
-          {/* Row 5: Live Q&A Sessions */}
+          {/* Row 5: Offline Downloads */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Live Q&A Sessions</Text>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Minus size={14} color="#4B5563" />
-            </View>
-            <View style={{ flex: 1.2, alignItems: 'center' }}>
-              <Check size={16} color="#6366F1" />
-            </View>
-          </View>
-
-          {/* Row 6: Support */}
-          <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 2 }]}>Support</Text>
-            <Text style={[styles.matrixCellText, { flex: 1.2, textAlign: 'center' }]}>Email</Text>
-            <Text style={[styles.matrixCellTextHighlight, { flex: 1.2, textAlign: 'center', color: '#6366F1' }]}>24/7 Priority</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Offline Downloads</Text>
+            {plans.map(p => {
+              const feats = (p.features || []).join(' ').toLowerCase();
+              const hasOffline = feats.includes('download') || p.name.toLowerCase().includes('premium');
+              return (
+                <View key={p.id} style={{ flex: 1, alignItems: 'center' }}>
+                  {hasOffline ? <Check size={16} color="#10B981" /> : <Minus size={14} color="#4B5563" />}
+                </View>
+              );
+            })}
           </View>
         </View>
 

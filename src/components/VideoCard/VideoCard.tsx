@@ -211,14 +211,6 @@ export function VideoCard({
         <Text numberOfLines={1} style={styles.meta}>
           {displayViews}
         </Text>
-        {displayLikes ? (
-          <>
-            <Text style={styles.dot}>•</Text>
-            <Text numberOfLines={1} style={styles.meta}>
-              {displayLikes}
-            </Text>
-          </>
-        ) : null}
         <Text style={styles.dot}>•</Text>
         <Text numberOfLines={1} style={styles.uploadedTimeText}>
           {uploadedTimeAgo}

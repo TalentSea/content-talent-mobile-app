@@ -12,6 +12,9 @@ export type CommentReplyItem = {
   reply_to_user?: string;
   likes: number;
   is_liked: boolean;
+  is_creator?: boolean;
+  is_hearted_by_creator?: boolean;
+  creator_avatar?: string;
   is_owner?: boolean;
   created_at?: string;
 };
@@ -26,6 +29,9 @@ export type CommentItem = {
   video_title?: string;
   likes: number;
   is_liked: boolean;
+  is_creator?: boolean;
+  is_hearted_by_creator?: boolean;
+  creator_avatar?: string;
   reply_count: number;
   is_owner?: boolean;
   created_at?: string;
@@ -84,6 +90,8 @@ async function restoreCommentsFromDisk() {
 
 restoreCommentsFromDisk();
 
+
+
 function normalizeReply(item: any): CommentReplyItem {
   if (!item) return item;
   const author = item.author || {};
@@ -93,6 +101,17 @@ function normalizeReply(item: any): CommentReplyItem {
 
   const fallbackName = currentUser && currentUser.id === userId ? currentUser.name : 'User';
   const authorName = author.name || author.username || item.user_name || item.username || fallbackName;
+
+  const isCreator = !!(
+    item.is_creator ||
+    item.is_admin ||
+    author.is_creator ||
+    author.is_admin ||
+    item.user_role === 'admin' ||
+    item.user_role === 'creator' ||
+    item.role === 'admin' ||
+    item.role === 'creator'
+  );
 
   return {
     id: item.id,
@@ -104,6 +123,9 @@ function normalizeReply(item: any): CommentReplyItem {
     reply_to_user: item.reply_to_user,
     likes: typeof item.likes === 'number' ? item.likes : 0,
     is_liked: !!item.is_liked,
+    is_creator: isCreator,
+    is_hearted_by_creator: !!item.is_hearted_by_creator,
+    creator_avatar: item.creator_avatar,
     is_owner: isOwner,
     created_at: item.created_at || new Date().toISOString(),
   };
@@ -119,6 +141,17 @@ export function normalizeComment(item: any): CommentItem {
   const fallbackName = currentUser && currentUser.id === userId ? currentUser.name : 'User';
   const authorName = author.name || author.username || item.user_name || item.username || fallbackName;
 
+  const isCreator = !!(
+    item.is_creator ||
+    item.is_admin ||
+    author.is_creator ||
+    author.is_admin ||
+    item.user_role === 'admin' ||
+    item.user_role === 'creator' ||
+    item.role === 'admin' ||
+    item.role === 'creator'
+  );
+
   return {
     id: item.id,
     user_id: userId,
@@ -128,6 +161,9 @@ export function normalizeComment(item: any): CommentItem {
     video_id: item.video_id || 0,
     likes: typeof item.likes === 'number' ? item.likes : 0,
     is_liked: !!item.is_liked,
+    is_creator: isCreator,
+    is_hearted_by_creator: !!item.is_hearted_by_creator,
+    creator_avatar: item.creator_avatar,
     reply_count: typeof item.reply_count === 'number' ? item.reply_count : 0,
     is_owner: isOwner,
     created_at: item.created_at || new Date().toISOString(),
@@ -555,4 +591,18 @@ export async function deleteCommentReply(
     console.warn(`[deleteCommentReply] Backend API notice for reply ${replyId}:`, e);
     return true;
   }
+}
+
+export async function toggleCommentDislike(
+  _commentId: number,
+): Promise<{ is_disliked: boolean }> {
+  return { is_disliked: false };
+}
+
+export async function toggleReplyDislike(
+  _videoId: number,
+  _commentId: number,
+  _replyId: number,
+): Promise<{ is_disliked: boolean }> {
+  return { is_disliked: false };
 }

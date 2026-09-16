@@ -6,6 +6,7 @@ import {
   fetchUserContinueWatchingApi,
   clearUserWatchHistoryApi,
   removeVideoWatchHistoryApi,
+  incrementVideoViewsApi,
 } from './api/userActivityApi';
 
 import { getUserStorageKey, subscribeAuthChange } from './api/authService';
@@ -26,6 +27,7 @@ function getHistoryFilePath(): string {
 let watchHistoryStore: WatchHistoryItem[] = [];
 
 const listeners: Set<() => void> = new Set();
+const viewTriggeredSet = new Set<number>();
 
 function notifyListeners() {
   listeners.forEach(fn => fn());
@@ -153,9 +155,17 @@ export function recordWatchHistory(
 
   if (shouldSyncBackend) {
     lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
-    recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds).catch(err =>
-      console.warn('[recordWatchHistory] Backend progress sync notice:', err),
-    );
+    recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds)
+      .then(() => {
+        // Spec #10: When progress crosses 30% watch threshold, trigger view count registration
+        if (progressPercentage >= 30 && !viewTriggeredSet.has(video.id)) {
+          viewTriggeredSet.add(video.id);
+          incrementVideoViewsApi(video.id).catch(err =>
+            console.warn(`[recordWatchHistory] 30% view increment notice for video ${video.id}:`, err),
+          );
+        }
+      })
+      .catch(err => console.warn('[recordWatchHistory] Backend progress sync notice:', err));
   }
 }
 

@@ -180,6 +180,19 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
                 val detailedMessage = error.cause?.message ?: error.message ?: "Unknown error"
 
+                // Handle ad playback / IMA ad loader errors gracefully without crashing or showing error fallback overlay
+                if (player.isPlayingAd || error.errorCodeName.startsWith("ERROR_CODE_AD") || detailedMessage.contains("ad", ignoreCase = true)) {
+                    Log.w("NativeVideoPlayer", "Non-fatal ad playback error, resuming main video content seamlessly: $detailedMessage")
+                    val currentMediaItem = player.currentMediaItem
+                    if (currentMediaItem != null) {
+                        val cleanMediaItem = currentMediaItem.buildUpon().setAdsConfiguration(null).build()
+                        player.setMediaItem(cleanMediaItem)
+                        player.prepare()
+                        player.playWhenReady = true
+                    }
+                    return
+                }
+
                 val event = Arguments.createMap().apply {
                     putString("message", detailedMessage)
                     putString("errorCode", error.errorCodeName)

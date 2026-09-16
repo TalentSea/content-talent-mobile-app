@@ -1,4 +1,5 @@
 import { apiGet } from './client';
+import { getCreatorId } from '../../constants/config';
 import type { ApiVideo } from '../../types/video';
 
 export type PlaylistListItem = {
@@ -37,6 +38,8 @@ export async function fetchPlaylists(
 ): Promise<PaginatedPlaylistsResponse> {
   try {
     const query = new URLSearchParams();
+    const cid = getCreatorId();
+    if (cid) query.set('creator_id', String(cid));
     if (search) query.set('search', search);
     query.set('page', String(page));
     query.set('limit', String(limit));
@@ -60,8 +63,9 @@ export async function fetchPlaylistDetails(
   playlistId: number,
 ): Promise<PlaylistDetails> {
   try {
+    const cid = getCreatorId();
     // Mobile Playlist Details API (/api/v1/mobile/playlists/{id})
-    return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}`);
+    return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}?creator_id=${cid}`);
   } catch (error) {
     console.warn(`[fetchPlaylistDetails] Mobile API notice for playlist ${playlistId}:`, error);
     throw error;
@@ -75,6 +79,8 @@ export async function fetchPlaylistVideos(
 ): Promise<PaginatedPlaylistVideosResponse> {
   try {
     const query = new URLSearchParams();
+    const cid = getCreatorId();
+    if (cid) query.set('creator_id', String(cid));
     query.set('page', String(page));
     query.set('limit', String(limit));
 

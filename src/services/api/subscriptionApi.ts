@@ -1,5 +1,5 @@
 import { apiGet, apiRequest } from './client';
-import { RAZORPAY_KEY_ID } from '../../constants/config';
+import { RAZORPAY_KEY_ID, getCreatorId } from '../../constants/config';
 
 export type SubscriptionPlan = {
   id: string;
@@ -24,52 +24,50 @@ export type SubscribeResponse = {
   message?: string;
 };
 
-const DEFAULT_CREATOR_PLANS: SubscriptionPlan[] = [
+const REAL_CREATOR_PLANS_FALLBACK: SubscriptionPlan[] = [
   {
-    id: 'basic',
-    name: 'Basic',
-    price: '₹799',
+    id: '1',
+    name: 'Standard with Ads',
+    price: '₹99',
     period: '/month',
-    description: 'Perfect for getting started',
-    badgeTag: 'Starter Tier',
+    description: 'Access to our full catalog with occasional commercial breaks.',
+    badgeTag: 'Popular',
     status: 'Active',
     features: [
-      'Access to basic content library',
-      'Standard video quality',
-      'Community access',
-      'Email support',
+      'Full video catalog access',
+      'Standard definition (720p) streaming',
+      'Occasional short advertisements',
+      '1 concurrent device stream',
     ],
   },
   {
-    id: 'premium',
-    name: 'Premium',
-    price: '₹1,999.20',
-    originalPrice: '₹2,499',
-    period: '/4 months',
-    description: 'Best for serious learners',
-    savings: '20% OFF',
-    badgeTag: 'Most Popular',
+    id: '2',
+    name: 'Premium Ad-Free',
+    price: '₹199',
+    period: '/month',
+    description: 'Unlimited streaming with zero ads and maximum quality.',
+    savings: 'Best Value',
+    badgeTag: 'Best Value',
     popular: true,
     status: 'Active',
     features: [
-      'Access to all premium content',
-      '4K video quality',
-      'Priority community access',
-      'Live Q&A sessions',
-      'Downloadable resources',
-      '24/7 priority support',
+      '100% Ad-free streaming',
+      'Full HD (1080p) crystal-clear resolution',
+      'Offline mobile video downloads',
+      'Up to 3 concurrent device screens',
+      'Early access to new releases',
     ],
   },
 ];
 
 /**
  * Fetches subscription plans set by the creator directly via backend REST API.
- * Tries live mobile/creator endpoints with fallback to default creator plans.
  */
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const cid = getCreatorId();
   const endpoints = [
-    '/api/v1/mobile/plans',
-    '/api/v1/mobile/subscription-plans',
+    `/api/v1/mobile/plans?creator_id=${cid}`,
+    `/api/v1/mobile/subscription-plans?creator_id=${cid}`,
   ];
 
   for (const path of endpoints) {
@@ -84,8 +82,8 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
           const finalPriceNum = item.final_price ?? item.price;
           const basePriceNum = item.base_price;
           const currencySymbol = item.currency === 'USD' ? '$' : '₹';
-          
-          let priceStr = '₹799';
+
+          let priceStr = '₹99';
           if (typeof finalPriceNum === 'number') {
             priceStr = `${currencySymbol}${finalPriceNum}`;
           } else if (item.price) {
@@ -102,7 +100,7 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
           const periodStr = item.period || `/${periodVal > 1 ? `${periodVal} ` : ''}${periodUnit}`;
 
           const discountPct = item.discount_percentage;
-          const savingsStr = item.savings || (discountPct ? `${discountPct}% OFF` : undefined);
+          const savingsStr = item.savings || (discountPct && discountPct > 0 ? `${discountPct}% OFF` : undefined);
 
           return {
             id: String(item.id || item.plan_id || item._id),
@@ -111,9 +109,9 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
             originalPrice: origPriceStr,
             period: periodStr,
             description: item.description || item.desc || 'Exclusive creator subscription plan.',
-            popular: Boolean(item.is_popular || item.popular || item.badge_text === 'Most Popular'),
+            popular: Boolean(item.is_popular || item.popular || item.badge_text === 'Best Value' || item.badge_text === 'Most Popular'),
             savings: savingsStr,
-            badgeTag: item.badge_text || item.badgeTag || (item.is_popular ? 'Most Popular' : undefined),
+            badgeTag: item.badge_text || item.badgeTag || (item.is_popular ? 'Best Value' : undefined),
             status: item.is_active !== false ? 'Active' : 'Inactive',
             subscribers: item.active_subscribers ? Number(item.active_subscribers).toLocaleString('en-IN') : item.subscribers,
             revenue: item.monthly_revenue ? `${currencySymbol}${Number(item.monthly_revenue).toLocaleString('en-IN')}` : item.revenue,
@@ -126,22 +124,14 @@ export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
           };
         });
 
-        // Merge fetched backend plans with default creator plans (Basic, Premium)
-        const fetchedIds = new Set(fetchedPlans.map(p => String(p.id).toLowerCase()));
-        const fetchedNames = new Set(fetchedPlans.map(p => String(p.name).toLowerCase()));
-
-        const additionalDefaults = DEFAULT_CREATOR_PLANS.filter(
-          dp => !fetchedIds.has(String(dp.id).toLowerCase()) && !fetchedNames.has(String(dp.name).toLowerCase())
-        );
-
-        return [...fetchedPlans, ...additionalDefaults];
+        return fetchedPlans;
       }
     } catch (e) {
       console.warn(`[subscriptionApi] Notice fetching plans from ${path}:`, e);
     }
   }
 
-  return DEFAULT_CREATOR_PLANS;
+  return REAL_CREATOR_PLANS_FALLBACK;
 }
 
 /**
@@ -239,5 +229,40 @@ export async function createSubscription(planId: string): Promise<SubscribeRespo
   }
 
   return { status: 'success', message: 'VIP Subscription activated successfully' };
+}
+
+export type LiveSubscriptionDTO = {
+  id?: number;
+  plan_id?: number | string;
+  plan_name?: string;
+  billing_period_value?: number;
+  billing_period_unit?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  days_remaining?: number;
+  plan_type?: string;
+};
+
+export type LiveSubscriptionStatusResponse = {
+  has_active_subscription: boolean;
+  subscription?: LiveSubscriptionDTO | null;
+};
+
+/**
+ * Retrieves current user's live subscription status & active plan directly from backend.
+ */
+export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionStatusResponse> {
+  const cid = getCreatorId();
+  try {
+    const res = await apiGet<LiveSubscriptionStatusResponse>(`/api/v1/mobile/subscriptions/me?creator_id=${cid}`);
+    if (res) {
+      return res;
+    }
+  } catch (e) {
+    console.warn('[subscriptionApi] Notice fetching live subscription status from backend:', e);
+  }
+
+  return { has_active_subscription: false, subscription: null };
 }
 

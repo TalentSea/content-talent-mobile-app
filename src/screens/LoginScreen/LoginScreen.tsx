@@ -11,7 +11,7 @@ import { Play } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { LoginManager, AccessToken, Profile } from 'react-native-fbsdk-next';
 import { loginWithSocial, loginAsGuest, setSessionTokens, restoreStoredSession, SocialProvider, UserProfile } from '../../services/api/authService';
-import { DEFAULT_AUTH_TOKEN } from '../../constants/config';
+import { DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
 import { styles } from './styles';
 
 export function LoginScreen({ navigation }: any) {
@@ -190,8 +190,8 @@ export function LoginScreen({ navigation }: any) {
                 }
             }
 
-            const sendToken = realToken || `token_${provider}_${Date.now()}`;
-            const authRes = await loginWithSocial(provider, sendToken, undefined, realProfile, 1);
+            const sendToken = realToken || `mock_google_${realProfile?.email || 'user'}`;
+            const authRes = await loginWithSocial(provider, sendToken, undefined, realProfile, getCreatorId());
 
             if (realProfile && authRes.user) {
                 setSessionTokens(
@@ -220,10 +220,72 @@ export function LoginScreen({ navigation }: any) {
         }
     };
 
+<<<<<<< HEAD
+=======
+    const handleFacebookModalSubmit = async () => {
+        const input = fbEmailOrPhone.trim();
+        if (!input) return;
+
+        try {
+            setFbLoggingIn(true);
+
+            let cleanName = fbUsername.trim();
+            if (!cleanName) {
+                if (input.includes('@')) {
+                    const prefix = input.split('@')[0];
+                    cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+                } else if (/^\d+$/.test(input)) {
+                    cleanName = `Facebook User ${input.slice(-4)}`;
+                } else {
+                    cleanName = input;
+                }
+            }
+
+            const email = input.includes('@') ? input : `${input}@facebook.com`;
+
+            const fbProfile: UserProfile = {
+                id: Date.now(),
+                name: cleanName,
+                email: email,
+                avatar_url: `https://via.placeholder.com/100x100/1877F2/FFFFFF?text=FB`,
+                provider: 'facebook',
+                role: 'subscriber',
+            };
+
+            const sendToken = `mock_facebook_${input.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const authRes = await loginWithSocial('facebook', sendToken, undefined, fbProfile, getCreatorId());
+
+            setSessionTokens(
+                authRes.access_token || DEFAULT_AUTH_TOKEN,
+                authRes.refresh_token || 'facebook_session',
+                authRes.user || fbProfile,
+            );
+
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } catch (err) {
+            console.warn('[FacebookModal] error:', err);
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } finally {
+            setFbLoggingIn(false);
+        }
+    };
+
     const handleContinueAsGuest = async () => {
         try {
             setLoadingProvider('guest');
-            await loginAsGuest(undefined, 1);
+            await loginAsGuest(undefined, getCreatorId());
         } catch (e) {
             console.warn('[handleContinueAsGuest] notice:', e);
         } finally {

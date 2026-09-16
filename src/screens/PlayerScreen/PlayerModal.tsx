@@ -21,7 +21,8 @@ import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X, Sparkles, Lock 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
-import { canUserDownload, getUserMaxQuality, isUserSubscribed, shouldShowAds, subscribeAuthChange } from '../../services/api/authService';
+import { isUserSubscribed, getUserSubscriptionTier, subscribeAuthChange } from '../../services/api/authService';
+import { DEFAULT_AD_TAG_URL } from '../../constants/config';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
@@ -320,142 +321,159 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                   {
                     width: '100%',
                     aspectRatio: activeRatio,
+                    maxHeight: height > 0 ? Math.min(215, height * 0.28) : 215,
                   },
                 ]
           }
         >
-          {playingVideo && (isSubscribed || isUserSubscribed()) ? (
-            <NativeVideoPlayer
-              video={currentVideoObj}
-              id={currentVideoId}
-              category={categoryName}
-              thumbnailUrl={playingVideo.poster}
-              description={playingVideo.description}
-              uri={playingVideo.stream_url || playingVideo.playback_url || ''}
-              mp4Url={playingVideo.mp4Url}
-              downloadUrls={playingVideo.downloadUrls}
-              title={playingVideo.title}
-              autoStart={true}
-              controls={true}
-              loop={false}
-              muted={false}
-              volume={1}
-              playbackRate={1}
-              resizeMode={playerResizeMode}
-              captions={playingVideo.captions ?? []}
-              inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
-              hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
-              adTagUrl={shouldShowAds() ? playingVideo.adTagUrl : undefined}
-              maxQuality={getUserMaxQuality()}
-              canDownload={canUserDownload()}
-              onUpgradeSubscription={onUpgradeSubscription}
-              style={styles.videoPlayer}
-              isFullscreen={isFullscreen}
-              onToggleFullscreen={toggleFullscreen}
-              onLoadRatio={setVideoRatio}
-              autoplay={autoplay}
-              onToggleAutoplay={onToggleAutoplay}
-              onClose={handleClose}
-              onEnd={onVideoEnd}
-              onProgress={handlePlayerProgress}
-            />
-          ) : playingVideo ? (
-            <View style={{ flex: 1, backgroundColor: '#000000', position: 'relative' }}>
-              {/* Display Video Thumbnail */}
-              {playingVideo.poster || (playingVideo as any).main_thumbnail_url ? (
-                <Image
-                  source={{ uri: playingVideo.poster || (playingVideo as any).main_thumbnail_url }}
-                  style={StyleSheet.absoluteFill}
-                  resizeMode="cover"
+          {(() => {
+            const subTier = getUserSubscriptionTier();
+            const isUserSub = subTier !== 'none';
+
+            if (playingVideo && isUserSub) {
+              const isPremium = subTier === 'premium';
+              // Basic: Ads from backend API + 720p max; Premium: No ads + 1080p resolution unlocked
+              const activeAdTagUrl = isPremium ? undefined : (playingVideo.adTagUrl || DEFAULT_AD_TAG_URL);
+              const activePlanTier = isPremium ? 'premium' : 'basic';
+
+              return (
+                <NativeVideoPlayer
+                  video={currentVideoObj}
+                  id={currentVideoId}
+                  category={categoryName}
+                  thumbnailUrl={playingVideo.poster}
+                  description={playingVideo.description}
+                  uri={playingVideo.stream_url || playingVideo.playback_url || ''}
+                  mp4Url={playingVideo.mp4Url}
+                  downloadUrls={playingVideo.downloadUrls}
+                  title={playingVideo.title}
+                  autoStart={true}
+                  controls={true}
+                  loop={false}
+                  muted={false}
+                  volume={1}
+                  playbackRate={1}
+                  resizeMode={playerResizeMode}
+                  captions={playingVideo.captions ?? []}
+                  inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
+                  hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
+                  adTagUrl={activeAdTagUrl}
+                  planTier={activePlanTier}
+                  style={styles.videoPlayer}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={toggleFullscreen}
+                  onLoadRatio={setVideoRatio}
+                  autoplay={autoplay}
+                  onToggleAutoplay={onToggleAutoplay}
+                  onClose={handleClose}
+                  onEnd={onVideoEnd}
+                  onProgress={handlePlayerProgress}
                 />
-              ) : (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#12121A' }]} />
-              )}
+              );
+            }
 
-              {/* Close Button Top Left */}
-              <Pressable
-                style={{
-                  position: 'absolute',
-                  top: 12,
-                  left: 12,
-                  zIndex: 20,
-                  backgroundColor: 'rgba(0,0,0,0.6)',
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-                onPress={handleClose}
-              >
-                <X color="#FFFFFF" size={18} />
-              </Pressable>
+            if (playingVideo) {
+              return (
+                <View style={{ flex: 1, backgroundColor: '#000000', position: 'relative' }}>
+                  {/* Display Video Thumbnail */}
+                  {playingVideo.poster || (playingVideo as any).main_thumbnail_url ? (
+                    <Image
+                      source={{ uri: playingVideo.poster || (playingVideo as any).main_thumbnail_url }}
+                      style={StyleSheet.absoluteFill}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#12121A' }]} />
+                  )}
 
-              {/* Semi-transparent Backdrop Overlay */}
-              <View
-                style={{
-                  ...StyleSheet.absoluteFill,
-                  backgroundColor: 'rgba(10, 10, 16, 0.75)',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  padding: 20,
-                  zIndex: 10,
-                }}
-              >
-                <View
-                  style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 26,
-                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                    borderColor: '#6366F1',
-                    borderWidth: 1.5,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: 10,
-                  }}
-                >
-                  <Lock size={26} color="#6366F1" />
+                  {/* Close Button Top Left */}
+                  <Pressable
+                    style={{
+                      position: 'absolute',
+                      top: 12,
+                      left: 12,
+                      zIndex: 20,
+                      backgroundColor: 'rgba(0,0,0,0.6)',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onPress={handleClose}
+                  >
+                    <X color="#FFFFFF" size={18} />
+                  </Pressable>
+
+                  {/* Semi-transparent Backdrop Overlay */}
+                  <View
+                    style={{
+                      ...StyleSheet.absoluteFill,
+                      backgroundColor: 'rgba(10, 10, 16, 0.78)',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      padding: 20,
+                      zIndex: 10,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: 26,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#6366F1',
+                        borderWidth: 1.5,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 10,
+                      }}
+                    >
+                      <Lock size={26} color="#6366F1" />
+                    </View>
+
+                    <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
+                      <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
+                        VIP SUBSCRIPTION REQUIRED
+                      </Text>
+                    </View>
+
+                    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
+                      Subscribe to Watch Full Video
+                    </Text>
+
+                    <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 270, lineHeight: 16 }}>
+                      Unsubscribed users must upgrade to watch. Basic plan: 720p HD + ads. Premium plan: 1080p HD + ad-free.
+                    </Text>
+
+                    <Pressable
+                      style={{
+                        backgroundColor: '#6366F1',
+                        paddingHorizontal: 22,
+                        paddingVertical: 10,
+                        borderRadius: 10,
+                        shadowColor: '#6366F1',
+                        shadowOffset: { width: 0, height: 4 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 6,
+                        elevation: 5,
+                      }}
+                      onPress={() => {
+                        handleClose();
+                        if (onUpgradeSubscription) onUpgradeSubscription();
+                      }}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                        Upgrade Now
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
+              );
+            }
 
-                <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
-                  <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
-                    VIP SUBSCRIPTION REQUIRED
-                  </Text>
-                </View>
-
-                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
-                  Subscribe to Watch Full Video
-                </Text>
-
-                <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 260 }}>
-                  Subscribe to a plan to unlock ad-free 4K video streaming.
-                </Text>
-
-                <Pressable
-                  style={{
-                    backgroundColor: '#6366F1',
-                    paddingHorizontal: 20,
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                    shadowColor: '#6366F1',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 6,
-                    elevation: 5,
-                  }}
-                  onPress={() => {
-                    handleClose();
-                    if (onUpgradeSubscription) onUpgradeSubscription();
-                  }}
-                >
-                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                    Subscribe Now
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : null}
+            return null;
+          })()}
         </View>
 
         {!isFullscreen && playingVideo ? (
@@ -561,8 +579,8 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
               borderColor: '#6366F1',
               borderWidth: 1.5,
               borderRadius: 14,
-              padding: 12,
-              marginTop: 12,
+              padding: 10,
+              marginTop: 6,
               marginBottom: 8,
               flexDirection: 'row',
               alignItems: 'center',

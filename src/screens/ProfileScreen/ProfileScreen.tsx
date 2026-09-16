@@ -35,10 +35,13 @@ import { useWatchHistory } from '../../hooks/useWatchHistory';
 import {
   clearSessionTokens,
   getCurrentUser,
+  getUserSubscriptionTier,
   isUserLoggedIn,
   isUserSubscribed,
+  isUserAdFree,
   subscribeAuthChange,
 } from '../../services/api/authService';
+import { fetchUserSubscriptionStatus, LiveSubscriptionDTO } from '../../services/api/subscriptionApi';
 import type { DownloadedVideoItem } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
@@ -55,12 +58,24 @@ function getInitials(name?: string | null): string {
 export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
   const [activeSection, setActiveSection] = useState<'history' | 'downloads' | 'saved' | 'liked' | null>('history');
+  const [liveSub, setLiveSub] = useState<LiveSubscriptionDTO | null>(null);
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
       setUser(getCurrentUser());
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    async function loadBackendSubscription() {
+      const status = await fetchUserSubscriptionStatus();
+      if (status.subscription) {
+        setLiveSub(status.subscription);
+      }
+      setUser(getCurrentUser());
+    }
+    loadBackendSubscription();
   }, []);
 
   const { videos, loading, reload } = useVideos();
@@ -85,7 +100,13 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   const userIsLoggedIn = isUserLoggedIn();
-  const userIsSubscribed = isUserSubscribed();
+  const userIsSubscribed = isUserSubscribed() || Boolean(liveSub);
+  const subTier = getUserSubscriptionTier();
+  const userAdFree = isUserAdFree();
+
+  const activePlanName = liveSub?.plan_name || user?.chosen_plan || (subTier === 'premium' ? 'Premium Plan' : subTier === 'basic' ? 'Basic Plan' : 'Free Plan');
+  const daysRemainingStr = liveSub?.days_remaining ? ` (${liveSub.days_remaining} days left)` : '';
+
   const currentUser = user
     ? {
       ...user,
@@ -93,9 +114,9 @@ export function ProfileScreen({ navigation }: any) {
         (user.name === 'Guest User' || !user.name) && userIsSubscribed
           ? 'VIP Subscriber'
           : user.name,
-      role: userIsSubscribed ? 'subscriber' : user.role,
-      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : user.chosen_plan,
-      plan_id: userIsSubscribed ? 'vip_plan' : user.plan_id,
+      role: userIsSubscribed ? (subTier === 'premium' ? 'premium' : 'subscriber') : user.role,
+      chosen_plan: activePlanName,
+      plan_id: user.plan_id || (userIsSubscribed ? (subTier === 'premium' ? 'premium' : 'basic') : null),
     }
     : {
       name: userIsSubscribed ? 'VIP Subscriber' : 'Guest Visitor',
@@ -103,9 +124,9 @@ export function ProfileScreen({ navigation }: any) {
         ? 'vip@streamr.app'
         : 'Sign in to access your profile',
       avatar_url: undefined,
-      role: userIsSubscribed ? 'subscriber' : 'guest',
-      chosen_plan: userIsSubscribed ? 'VIP Member Plan' : null,
-      plan_id: userIsSubscribed ? 'vip_plan' : null,
+      role: userIsSubscribed ? (subTier === 'premium' ? 'premium' : 'subscriber') : 'guest',
+      chosen_plan: activePlanName,
+      plan_id: userIsSubscribed ? (subTier === 'premium' ? 'premium' : 'basic') : null,
     };
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
@@ -140,72 +161,41 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   const membershipLabel = userIsSubscribed
-    ? (currentUser as any).chosen_plan
-      ? `${(currentUser as any).chosen_plan} Member`
-      : 'Premium Member'
-    : userIsLoggedIn
-      ? 'Free Member (No Plan)'
-      : 'Guest Visitor';
+    ? subTier === 'premium'
+      ? 'PREMIUM SUBSCRIBER'
+      : 'VIP SUBSCRIBER'
+    : 'FREE MEMBER';
 
   return (
     <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Header Bar */}
-      <View style={styles.header}>
-        <Pressable
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <ChevronLeft color="#FFFFFF" size={20} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Profile</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Pressable
-            style={styles.headerIconButton}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <Bell color="#FFFFFF" size={18} />
-          </Pressable>
-          <Pressable
-            style={styles.headerIconButton}
-            onPress={handleSupportPress}
-          >
-            <HelpCircle color="#FFFFFF" size={18} />
-          </Pressable>
-          <Pressable
-            style={styles.headerIconButton}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Settings color="#FFFFFF" size={18} />
-          </Pressable>
-        </View>
-      </View>
+      <StatusBar barStyle="light-content" backgroundColor="#05050A" />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        {/* Profile Card Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Account</Text>
+        </View>
+
         <View style={styles.content}>
-          {/* Top User Identity Card: Photo, Name, Email, Role / Plan Status */}
           <Pressable
             style={styles.userCard}
-            onPress={() => navigation?.navigate('Subscription')}
+            onPress={() => {
+              if (!userIsLoggedIn) {
+                navigation?.navigate('Login');
+              }
+            }}
           >
             <View style={styles.avatarGradientBox}>
               {currentUser.avatar_url ? (
                 <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarInitials}>
-                  {getInitials(currentUser.name || 'Guest Visitor')}
-                </Text>
+                <Text style={styles.avatarInitials}>{getInitials(currentUser.name)}</Text>
               )}
             </View>
 
             <View style={styles.userInfoContainer}>
-              <Text style={styles.userNameText}>
-                {currentUser.name || 'Guest Visitor'}
-              </Text>
-              <Text style={styles.userEmailText}>
-                {currentUser.email || 'Sign in to access your profile'}
-              </Text>
+              <Text style={styles.userNameText}>{currentUser.name}</Text>
+              <Text style={styles.userEmailText}>{currentUser.email || 'guest@streamr.app'}</Text>
               <View style={styles.membershipRow}>
                 <Crown size={14} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
                 <Text style={[styles.membershipText, !userIsSubscribed && { color: '#94A3B8' }]}>
@@ -240,14 +230,17 @@ export function ProfileScreen({ navigation }: any) {
                   marginRight: 14,
                 }}
               >
-                <Crown size={20} color="#A855F7" />
+                <Crown size={20} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
                   My Subscription
                 </Text>
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
-                  {userIsSubscribed ? `Active: ${(currentUser as any).chosen_plan || 'Premium Member'}` : 'Upgrade to watch all content'}
+                <Text style={{ color: userIsSubscribed ? '#A855F7' : '#64748B', fontSize: 12, marginTop: 1, fontWeight: userIsSubscribed ? '600' : '400' }}>
+                  Active Plan: {activePlanName}{daysRemainingStr}
+                </Text>
+                <Text style={{ color: userAdFree ? '#10B981' : '#94A3B8', fontSize: 11, marginTop: 1 }}>
+                  {userAdFree ? '✨ Ad-Free Playback Active' : '📺 Ad-Supported Viewing'}
                 </Text>
               </View>
               <ChevronRight size={18} color="#475569" />

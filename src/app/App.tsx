@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RootNavigator } from '../navigation/RootNavigator';
-import { setApiAccessToken } from '../services/api/client';
-import { DEFAULT_AUTH_TOKEN } from '../constants/config';
-
-setApiAccessToken(DEFAULT_AUTH_TOKEN);
+import { restoreStoredSession } from '../services/api/authService';
 
 export default function App() {
+  useEffect(() => {
+    restoreStoredSession().catch(err => {
+      console.warn('[App] Error initializing session on startup:', err);
+    });
+  }, []);
+
   return (
     <SafeAreaProvider>
       <RootNavigator />

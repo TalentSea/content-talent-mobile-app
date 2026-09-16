@@ -2,6 +2,7 @@ import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
 import { incrementMockVideoViews, toggleMockVideoLike } from './mockVideoApi';
 import { normalizeVideoItem } from './video';
+import { getCreatorId } from '../../constants/config';
 
 export type UserHistoryResponseItem = {
   video_id: number;
@@ -23,8 +24,9 @@ export type MobileCategoriesResponse = {
 
 export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosResponse> {
   try {
+    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/history
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/history');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/history?creator_id=${cid}`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -40,8 +42,9 @@ export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosRespons
 
 export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosResponse> {
   try {
+    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/continue-watching
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/continue-watching');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/continue-watching?creator_id=${cid}`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -60,34 +63,17 @@ export async function recordUserWatchHistoryApi(
   progressPercentage: number = 10,
   lastPositionSeconds: number = 0,
 ) {
-  const roundProgress = Math.round(progressPercentage);
   const roundSeconds = Math.round(lastPositionSeconds);
 
-  const payload = {
-    video_id: videoId,
-    progress_percentage: roundProgress,
-    progress_seconds: roundSeconds,
-    last_position_seconds: roundSeconds,
-    watch_progress: roundProgress,
-  };
-
-  const candidateEndpoints = [
-    { path: `/api/v1/mobile/videos/${videoId}/progress`, method: 'POST' },
-    { path: `/api/v1/videos/${videoId}/progress`, method: 'POST' },
-    { path: `/api/v1/mobile/videos/${videoId}/progress?progress_percentage=${roundProgress}&last_position_seconds=${roundSeconds}`, method: 'POST' },
-    { path: `/api/v1/mobile/videos/${videoId}/progress`, method: 'PUT' },
-  ];
-
-  for (const ep of candidateEndpoints) {
-    try {
-      await apiRequest(ep.path, {
-        method: ep.method,
-        body: JSON.stringify(payload),
-      });
-      return;
-    } catch (error) {
-      // Continue trying next candidate endpoint fallback silently
-    }
+  try {
+    // Mobile Video API Spec #9: POST /api/v1/mobile/videos/{video_id}/progress
+    // Body: { "progress_seconds": <number> } -> Response: 204 No Content
+    await apiRequest(`/api/v1/mobile/videos/${videoId}/progress`, {
+      method: 'POST',
+      body: JSON.stringify({ progress_seconds: roundSeconds }),
+    });
+  } catch (error) {
+    console.warn(`[recordUserWatchHistoryApi] Progress sync notice for video ${videoId}:`, error);
   }
 }
 
@@ -111,8 +97,9 @@ export async function removeVideoWatchHistoryApi(videoId: number) {
 
 export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
+    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/liked
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/liked');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/liked?creator_id=${cid}`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -137,8 +124,9 @@ export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean 
 
 export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
+    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/saved
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/saved');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/saved?creator_id=${cid}`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -171,8 +159,9 @@ export async function incrementVideoViewsApi(videoId: number) {
 }
 
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
+  const cid = getCreatorId();
   const endpoints = [
-    '/api/v1/mobile/categories',
+    `/api/v1/mobile/categories?creator_id=${cid}`,
   ];
 
   for (const path of endpoints) {

@@ -1,4 +1,5 @@
 import { apiGet } from './client';
+import { getCreatorId } from '../../constants/config';
 
 export type MobileBannerItem = {
   id: string | number;
@@ -11,6 +12,7 @@ export type MobileBannerItem = {
 
 export type MobileBrandingResponse = {
   creator_name: string | null;
+  studio_name?: string | null;
   tagline: string | null;
   description: string | null;
   banner_url: string | null;
@@ -121,8 +123,10 @@ const parseBannerItem = (b: any): MobileBannerItem => {
 };
 
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
+  const cid = getCreatorId();
   const endpoints = [
-    '/api/v1/mobile/branding',
+    `/api/v1/mobile/branding?creator_id=${cid}`,
+    `/api/v1/admin/auth/me?creator_id=${cid}`,
   ];
 
   for (const path of endpoints) {
@@ -147,9 +151,20 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
           ? rawBanners.map(parseBannerItem)
           : [];
 
-        if (detectedBanner || detectedLogo || data.creator_name || data.name || parsedBanners.length > 0) {
+        const studioName = data.studio_name || rawRes.studio_name || data.studio || rawRes.studio || null;
+        const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+        const derivedCreatorName =
+          studioName ||
+          data.creator_name ||
+          data.name ||
+          (fullName.length > 0 ? fullName : null) ||
+          rawRes.creator_name ||
+          null;
+
+        if (detectedBanner || detectedLogo || derivedCreatorName || parsedBanners.length > 0) {
           return {
-            creator_name: data.creator_name || data.studio_name || data.name || rawRes.creator_name || null,
+            creator_name: derivedCreatorName,
+            studio_name: studioName || derivedCreatorName,
             tagline: data.tagline || data.subtitle || rawRes.tagline || null,
             description: data.description || data.bio || rawRes.description || null,
             banner_url: detectedBanner,
@@ -176,25 +191,20 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
 }
 
 export async function fetchMobileBannersApi(): Promise<MobileBannerItem[]> {
-  const endpoints = [
-    '/api/v1/mobile/featured-videos',
-    '/api/v1/mobile/featured_videos',
-    '/api/v1/mobile/banners',
-  ];
+  const cid = getCreatorId();
+  const path = `/api/v1/mobile/featured-videos?creator_id=${cid}`;
 
-  for (const path of endpoints) {
-    try {
-      const rawRes = await apiGet<any>(path);
-      const itemsList = Array.isArray(rawRes)
-        ? rawRes
-        : rawRes?.items || rawRes?.data || rawRes?.banners || rawRes?.featured_videos || rawRes?.featured;
+  try {
+    const rawRes = await apiGet<any>(path);
+    const itemsList = Array.isArray(rawRes)
+      ? rawRes
+      : rawRes?.items || rawRes?.data || rawRes?.banners || rawRes?.featured_videos || rawRes?.featured;
 
-      if (Array.isArray(itemsList) && itemsList.length > 0) {
-        return itemsList.map(parseBannerItem);
-      }
-    } catch (e) {
-      console.warn(`[fetchMobileBannersApi] Notice for ${path}:`, e);
+    if (Array.isArray(itemsList)) {
+      return itemsList.map(parseBannerItem);
     }
+  } catch (e) {
+    console.warn(`[fetchMobileBannersApi] Notice for ${path}:`, e);
   }
 
   return [];

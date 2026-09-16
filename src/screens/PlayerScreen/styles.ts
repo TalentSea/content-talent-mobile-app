@@ -9,8 +9,10 @@ export const styles = StyleSheet.create({
   playerVideoArea: {
     width: '100%',
     aspectRatio: 16 / 9,
+    maxHeight: 215,
     backgroundColor: '#000000',
     justifyContent: 'center',
+    alignSelf: 'center',
   },
   videoPlayer: {
     width: '100%',
@@ -21,21 +23,22 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   playerInfoContent: {
-    padding: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
   playerTitle: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   playerMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginTop: 6,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 6,
     gap: 6,
   },
   playerCategoryBadge: {
@@ -60,13 +63,13 @@ export const styles = StyleSheet.create({
   },
   playerDescription: {
     color: '#D1D5DB',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '400',
-    lineHeight: 19,
-    marginTop: 4,
+    lineHeight: 18,
+    marginTop: 2,
   },
   showMoreBtn: {
-    marginTop: 4,
+    marginTop: 3,
     alignSelf: 'flex-start',
   },
   showMoreText: {
@@ -78,8 +81,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    marginVertical: 16,
-    paddingVertical: 12,
+    marginVertical: 10,
+    paddingVertical: 8,
     backgroundColor: '#12121C',
     borderRadius: 12,
     borderWidth: 1,

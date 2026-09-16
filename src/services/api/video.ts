@@ -1,6 +1,8 @@
 import { apiGet } from './client';
-import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../../constants/config';
+import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS, getCreatorId } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
+import { fetchUserSubscriptionStatus } from './subscriptionApi';
+import { isUserAdFree } from './authService';
 import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
 import { getCleanViewCountForVideo, setBackendViewCount } from '../viewTracker';
 import { getCleanLikesCountForVideo, setBackendLikesCount } from '../userActivity';
@@ -115,6 +117,11 @@ export async function fetchVideos(
   try {
     const query = new URLSearchParams();
 
+    const cid = getCreatorId();
+    if (cid) {
+      query.set('creator_id', String(cid));
+    }
+
     if (params.search !== undefined) {
       query.set('search', params.search);
     }
@@ -165,8 +172,9 @@ export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
   try {
+    const cid = getCreatorId();
     // Mobile Video Details (/api/v1/mobile/videos/{id})
-    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}?creator_id=${cid}`);
     if (mobileRes) {
       return normalizeVideoItem(mobileRes) as VideoDetails;
     }
@@ -295,6 +303,17 @@ export async function fetchVideoPlayInfo(videoId: number) {
     downloadUrls = [{ resolution: '720p', label: 'Standard MP4', url: streamUrl }];
   }
 
+  // Query live subscription status from backend on video select
+  const liveSub = await fetchUserSubscriptionStatus();
+  const userIsAdFree = isUserAdFree() || (
+    liveSub.has_active_subscription &&
+    liveSub.subscription?.plan_type !== 'with_ads'
+  );
+
+  const resolvedAdTagUrl = userIsAdFree
+    ? undefined
+    : ((video as any).ad_tag_url || DEFAULT_AD_TAG_URL);
+
   return {
     id: video.id,
     title: video.title,
@@ -314,6 +333,6 @@ export async function fetchVideoPlayInfo(videoId: number) {
     captions,
     inbuiltCaptionTracks: hlsCaptionInfo.inbuiltCaptionTracks,
     hasInbuiltCaptions: hlsCaptionInfo.hasInbuiltCaptions,
-    adTagUrl: (video as any).ad_tag_url || DEFAULT_AD_TAG_URL,
+    adTagUrl: resolvedAdTagUrl,
   };
 }

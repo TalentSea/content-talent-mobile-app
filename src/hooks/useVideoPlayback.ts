@@ -5,7 +5,8 @@ import { fetchVideoPlayInfo, getDistinctStreamUrlForVideo } from '../services/ap
 import { API_BASE_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../constants/config';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
-import { isUserSubscribed, isUserLoggedIn } from '../services/api/authService';
+import { isUserSubscribed, isUserLoggedIn, activateSubscription } from '../services/api/authService';
+import { fetchUserSubscriptionStatus } from '../services/api/subscriptionApi';
 
 export function useVideoPlayback(videoList: ApiVideo[] = []) {
     const navigation = useNavigation<any>();
@@ -18,6 +19,23 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
     const playVideo = useCallback(async (video: ApiVideo) => {
         if (!isStreamable(video.status)) {
             return;
+        }
+
+        // Sync live backend subscription status if not currently marked subscribed in memory
+        if (!isUserSubscribed()) {
+            try {
+                const liveStatus = await fetchUserSubscriptionStatus();
+                if (liveStatus.has_active_subscription && liveStatus.subscription) {
+                    const sub = liveStatus.subscription;
+                    activateSubscription(
+                        'subscriber',
+                        sub.plan_name || 'VIP Plan',
+                        String(sub.plan_id || 'basic')
+                    );
+                }
+            } catch (e) {
+                console.warn('[useVideoPlayback] Live subscription check notice:', e);
+            }
         }
 
         // 1. Logged-in User Check: Only logged in users or users with an active subscription can view content

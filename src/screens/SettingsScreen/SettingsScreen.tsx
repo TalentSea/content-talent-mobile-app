@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Pressable,
   ScrollView,
   StatusBar,
@@ -11,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
   Bell,
+  Check,
   Download,
   Globe,
   HardDrive,
@@ -20,8 +22,10 @@ import {
   Play,
   Shield,
   Smartphone,
+  Tv,
 } from 'lucide-react-native';
 import { getCurrentUser } from '../../services/api/authService';
+import { getCreatorId, setCreatorId } from '../../constants/config';
 import { styles } from './styles';
 
 export function SettingsScreen({ navigation }: any) {
@@ -31,6 +35,18 @@ export function SettingsScreen({ navigation }: any) {
   const [wifiOnlyDownloads, setWifiOnlyDownloads] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [hdPlayback, setHdPlayback] = useState(true);
+  const [selectedCreatorId, setSelectedCreatorId] = useState(getCreatorId());
+
+  const handleSwitchCreator = (id: number, name: string) => {
+    if (id === selectedCreatorId) return;
+    setCreatorId(id);
+    setSelectedCreatorId(id);
+    Alert.alert(
+      'Creator Switched',
+      `Active creator set to Creator ${id} (${name}). Catalog and JWT session re-provisioned.`,
+      [{ text: 'OK' }],
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,6 +61,52 @@ export function SettingsScreen({ navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Section 0: Active Creator Channel Selector */}
+        <Text style={styles.sectionHeader}>Active Creator Studio Channel</Text>
+        <View style={styles.card}>
+          <Pressable
+            style={[styles.row, { paddingVertical: 14 }]}
+            onPress={() => handleSwitchCreator(2, 'Tech Labs')}
+          >
+            <View style={styles.rowLeft}>
+              <Tv size={18} color="#EC4899" />
+              <View>
+                <Text style={styles.rowTitle}>Creator #2 (Tech Labs)</Text>
+                <Text style={styles.rowSub}>Tokyo vlog, countdown, Fun & Travel</Text>
+              </View>
+            </View>
+            {selectedCreatorId === 2 ? (
+              <View style={{ backgroundColor: '#EC4899', borderRadius: 12, padding: 4 }}>
+                <Check size={16} color="#FFFFFF" />
+              </View>
+            ) : (
+              <Text style={{ color: '#64748B', fontSize: 13 }}>Select</Text>
+            )}
+          </Pressable>
+
+          <View style={{ height: 1, backgroundColor: 'rgba(255, 255, 255, 0.06)', marginVertical: 4 }} />
+
+          <Pressable
+            style={[styles.row, { paddingVertical: 14 }]}
+            onPress={() => handleSwitchCreator(1, 'Studio 1')}
+          >
+            <View style={styles.rowLeft}>
+              <Tv size={18} color="#3B82F6" />
+              <View>
+                <Text style={styles.rowTitle}>Creator #1 (Studio 1)</Text>
+                <Text style={styles.rowSub}>Katniss edit, Soup dumplings, Vlog</Text>
+              </View>
+            </View>
+            {selectedCreatorId === 1 ? (
+              <View style={{ backgroundColor: '#3B82F6', borderRadius: 12, padding: 4 }}>
+                <Check size={16} color="#FFFFFF" />
+              </View>
+            ) : (
+              <Text style={{ color: '#64748B', fontSize: 13 }}>Select</Text>
+            )}
+          </Pressable>
+        </View>
+
         {/* Section 1: Playback & Streaming */}
         <Text style={styles.sectionHeader}>Video Playback</Text>
         <View style={styles.card}>
@@ -140,7 +202,7 @@ export function SettingsScreen({ navigation }: any) {
               <Shield size={18} color="#818CF8" />
               <View>
                 <Text style={styles.rowTitle}>VIP Subscription Tiers</Text>
-                <Text style={styles.rowSub}>Basic or Premium Plans</Text>
+                <Text style={styles.rowSub}>Basic, Premium, or Annual Plans</Text>
               </View>
             </View>
             <Text style={[styles.rowValue, { color: '#6366F1', fontWeight: '800' }]}>Manage Tiers →</Text>
