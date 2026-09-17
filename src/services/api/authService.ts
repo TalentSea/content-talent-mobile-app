@@ -3,18 +3,13 @@ import { apiRequest, setApiAccessToken, getApiAccessToken, decodeJwtCreatorId } 
 import { USE_MOCK_VIDEOS, DEFAULT_AUTH_TOKEN, getCreatorId, registerCreatorIdListener } from '../../constants/config';
 import { getOrCreateDeviceId, getDeviceInfo } from '../../utils/deviceIdHelper';
 
-// Automatically purge and re-issue guest JWT session when setCreatorId is called at runtime
+// Automatically purge session when setCreatorId is called at runtime
 registerCreatorIdListener(async (newCreatorId) => {
-  console.log(`[authService] Creator ID changed to ${newCreatorId}. Purging old session & requesting fresh guest JWT...`);
+  console.log(`[authService] Creator ID changed to ${newCreatorId}. Purging old session...`);
   await removeSessionFromStorage();
   setApiAccessToken(null);
   currentAuthenticatedUser = null;
   storedRefreshToken = null;
-  try {
-    await loginAsGuest(undefined, newCreatorId);
-  } catch (e) {
-    console.warn('[authService] Error auto-provisioning guest session for new creator:', e);
-  }
 });
 
 export type SocialProvider = 'google' | 'facebook' | 'guest';
@@ -49,34 +44,6 @@ export type RefreshTokenResponse = {
 
 let storedRefreshToken: string | null = null;
 let currentAuthenticatedUser: UserProfile | null = null;
-const guestTokenByCreatorMap = new Map<number, string>();
-
-export function getGuestTokenForCreator(creatorId: number): string | null {
-  return guestTokenByCreatorMap.get(creatorId) || null;
-}
-
-export async function ensureGuestTokenForCreator(creatorId: number): Promise<string | null> {
-  const cached = guestTokenByCreatorMap.get(creatorId);
-  if (cached) return cached;
-
-  try {
-    const deviceId = await getOrCreateDeviceId();
-    const info = getDeviceInfo();
-    const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
-      method: 'POST',
-      authenticated: false,
-      body: JSON.stringify({ device_id: deviceId, device_info: info, creator_id: creatorId }),
-    });
-
-    if (response && response.access_token) {
-      guestTokenByCreatorMap.set(creatorId, response.access_token);
-      return response.access_token;
-    }
-  } catch (err) {
-    console.warn(`[ensureGuestTokenForCreator] Notice for creator ${creatorId}:`, err);
-  }
-  return null;
-}
 
 const SESSION_FILE_PATH = `${RNFS.DocumentDirectoryPath}/user_session_v1.json`;
 const USER_PLANS_DB_PATH = `${RNFS.DocumentDirectoryPath}/user_subscriptions_db.json`;
@@ -221,14 +188,7 @@ export async function restoreStoredSession(): Promise<UserProfile | null> {
     console.warn('[authService] Error restoring session from storage:', err);
   }
 
-  // Auto-provision guest JWT session token on initial launch for active creator ID
-  try {
-    const guestAuth = await loginAsGuest(undefined, activeCreatorId);
-    return guestAuth.user;
-  } catch (e) {
-    console.warn('[authService] Initial guest auto-provision notice:', e);
-    return null;
-  }
+  return null;
 }
 
 export function getStoredRefreshToken(): string | null {
@@ -519,9 +479,6 @@ export async function loginAsGuest(
 
     const guestUser = response.user || fallbackGuestProfile;
     (guestUser as any)._creatorId = creatorId;
-    if (response.access_token) {
-      guestTokenByCreatorMap.set(creatorId, response.access_token);
-    }
     setSessionTokens(response.access_token, response.refresh_token, guestUser);
     return response;
   } catch (e) {
@@ -594,11 +551,10 @@ export async function loginWithSocialToken(
     setSessionTokens(response.access_token, response.refresh_token, activeUser);
     return response;
   } catch (error) {
-    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice (falling back to guest session token):`, error);
+    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
 
-    const guestAuth = await loginAsGuest(info, creatorId);
     const activeUser: UserProfile = userProfileOverride || {
-      id: guestAuth.user?.id || 99,
+      id: Date.now(),
       name: provider === 'google' ? 'Google User' : 'Facebook User',
       email: provider === 'google' ? 'user@gmail.com' : 'user@facebook.com',
       avatar_url: null,
@@ -607,12 +563,16 @@ export async function loginWithSocialToken(
       chosen_plan: null,
       plan_id: null,
     };
+    (activeUser as any)._creatorId = creatorId;
 
-    setSessionTokens(guestAuth.access_token, guestAuth.refresh_token, activeUser);
-    return {
-      ...guestAuth,
+    const fallbackAuth: AuthResponse = {
+      access_token: `social_access_${Date.now()}`,
+      refresh_token: `social_refresh_${Date.now()}`,
       user: activeUser,
     };
+
+    setSessionTokens(fallbackAuth.access_token, fallbackAuth.refresh_token, activeUser);
+    return fallbackAuth;
   }
 }
 
@@ -623,28 +583,20 @@ export const loginWithSocial = loginWithSocialToken;
  * Rotates a 60-day Refresh Token to issue a fresh 30-minute Access Token.
  */
 export async function refreshAccessToken(): Promise<string> {
-  const activeCreatorId = getCreatorId();
   if (!storedRefreshToken || storedRefreshToken.startsWith('mock_') || storedRefreshToken.startsWith('guest_')) {
-    const guestRes = await loginAsGuest(undefined, activeCreatorId);
-    return guestRes.access_token;
+    throw new Error('No valid refresh token available');
   }
 
-  try {
-    const response = await apiRequest<RefreshTokenResponse>('/api/v1/auth/refresh', {
-      method: 'POST',
-      authenticated: false,
-      body: JSON.stringify({
-        refresh_token: storedRefreshToken,
-      }),
-    });
+  const response = await apiRequest<RefreshTokenResponse>('/api/v1/auth/refresh', {
+    method: 'POST',
+    authenticated: false,
+    body: JSON.stringify({
+      refresh_token: storedRefreshToken,
+    }),
+  });
 
-    setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken, response.user || currentAuthenticatedUser || undefined);
-    return response.access_token;
-  } catch (error) {
-    console.warn('[refreshAccessToken] Failed to refresh token, auto-issuing guest session token:', error);
-    const guestRes = await loginAsGuest(undefined, activeCreatorId);
-    return guestRes.access_token;
-  }
+  setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken, response.user || currentAuthenticatedUser || undefined);
+  return response.access_token;
 }
 
 /**
@@ -682,13 +634,8 @@ export async function clearSessionTokens() {
     // ignore
   }
 
-  // Auto-issue a fresh Guest JWT token so catalog endpoints remain 200 OK
-  try {
-    await loginAsGuest();
-  } catch (e) {
-    setApiAccessToken(DEFAULT_AUTH_TOKEN);
-    notifyAuthChange();
-  }
+  setApiAccessToken(null);
+  notifyAuthChange();
 }
 
 /**

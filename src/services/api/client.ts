@@ -1,4 +1,4 @@
-import { API_BASE_URL, DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
+import { API_BASE_URL, getCreatorId } from '../../constants/config';
 import { refreshAccessToken } from './authService';
 
 export class ApiError extends Error {
