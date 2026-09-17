@@ -428,7 +428,7 @@ export function ProfileScreen({ navigation }: any) {
             <View style={{ marginTop: 8 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                 <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
-                  Watch History & Progress ({history.length})
+                  Watch History
                 </Text>
                 {history.length > 0 && (
                   <Pressable

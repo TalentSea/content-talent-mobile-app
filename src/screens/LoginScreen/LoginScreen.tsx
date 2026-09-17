@@ -122,11 +122,9 @@ export function LoginScreen({ navigation }: any) {
                         };
                     }
                 } catch (googleErr: any) {
-                    console.warn('[GoogleSignin] Native Google error:', googleErr);
-                    if (googleErr?.code === statusCodes.SIGN_IN_CANCELLED) {
-                        setLoadingProvider(null);
-                        return;
-                    }
+                    console.warn('[GoogleSignin] Native Google notice:', googleErr);
+                    setLoadingProvider(null);
+                    return;
                 }
 
                 if (!realProfile) {
@@ -165,14 +163,17 @@ export function LoginScreen({ navigation }: any) {
                     try {
                         const currentProfile = await Profile.getCurrentProfile();
                         if (currentProfile) {
-                            realProfile = {
-                                id: Date.now(),
-                                name: currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User',
-                                email: currentProfile.email || `${currentProfile.userID}@facebook.com`,
-                                avatar_url: currentProfile.imageURL || undefined,
-                                provider: 'facebook',
-                                role: 'subscriber',
-                            };
+                            const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim();
+                            if (fullName) {
+                                realProfile = {
+                                    id: Date.now(),
+                                    name: fullName,
+                                    email: currentProfile.email || `${currentProfile.userID || 'user'}@facebook.com`,
+                                    avatar_url: currentProfile.imageURL || undefined,
+                                    provider: 'facebook',
+                                    role: 'subscriber',
+                                };
+                            }
                         }
                     } catch (e) {
                         // ignore profile fetch error
@@ -180,12 +181,13 @@ export function LoginScreen({ navigation }: any) {
 
                     if (!realProfile && realToken) {
                         try {
-                            const graphRes = await fetch(`https://graph.facebook.com/v18.0/me?fields=id,name,email,picture.type(large)&access_token=${realToken}`);
+                            const graphRes = await fetch(`https://graph.facebook.com/v18.0/me?fields=id,name,first_name,last_name,email,picture.type(large)&access_token=${realToken}`);
                             const userInfo = await graphRes.json();
                             if (userInfo && userInfo.id) {
+                                const fbName = userInfo.name || (userInfo.first_name ? `${userInfo.first_name} ${userInfo.last_name || ''}`.trim() : '');
                                 realProfile = {
                                     id: Date.now(),
-                                    name: userInfo.name || 'Facebook User',
+                                    name: fbName || 'Facebook User',
                                     email: userInfo.email || `${userInfo.id}@facebook.com`,
                                     avatar_url: userInfo.picture?.data?.url || undefined,
                                     provider: 'facebook',
@@ -198,19 +200,27 @@ export function LoginScreen({ navigation }: any) {
                     }
                 } catch (facebookErr: any) {
                     console.warn('[FacebookSignin] Native Facebook error:', facebookErr);
+                    setLoadingProvider(null);
+                    return;
                 }
             }
 
-            const sendToken = realToken || `mock_google_${realProfile?.email || 'user'}`;
+            if (!realToken && !realProfile) {
+                console.log(`[handleSocialLogin] No token or profile received for ${provider}. Aborting login.`);
+                setLoadingProvider(null);
+                return;
+            }
+
+            const sendToken = realToken;
             const authRes = await loginWithSocial(provider, sendToken, undefined, realProfile, getCreatorId());
 
-            if (realProfile && authRes.user) {
-                setSessionTokens(
-                    authRes.access_token || DEFAULT_AUTH_TOKEN,
-                    authRes.refresh_token || `${provider}_session`,
-                    authRes.user,
-                );
-            }
+            const activeProfile = realProfile ? { ...(authRes.user || {}), ...realProfile } : authRes.user;
+
+            setSessionTokens(
+                authRes.access_token || DEFAULT_AUTH_TOKEN,
+                authRes.refresh_token || `${provider}_session`,
+                activeProfile,
+            );
 
             if (navigation) {
                 navigation.reset({
@@ -220,12 +230,6 @@ export function LoginScreen({ navigation }: any) {
             }
         } catch (error) {
             console.warn(`[LoginScreen] ${provider} social login notice:`, error);
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
-            }
         } finally {
             setLoadingProvider(null);
         }

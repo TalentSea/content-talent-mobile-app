@@ -1,41 +1,15 @@
-declare const process: any;
-
-let initialCreatorId = 2;
-if (typeof process !== 'undefined' && process.env && process.env.CREATOR_ID) {
-  const parsed = typeof process.env.CREATOR_ID === 'number'
-    ? process.env.CREATOR_ID
-    : parseInt(String(process.env.CREATOR_ID), 10);
-  if (!isNaN(parsed) && parsed > 0) {
-    initialCreatorId = parsed;
-  }
-}
-
-let currentCreatorId: number = initialCreatorId;
-
+let currentCreatorId = 1;
 let onCreatorIdChangeListener: ((newId: number) => void) | null = null;
 
 export function registerCreatorIdListener(listener: (newId: number) => void): void {
   onCreatorIdChangeListener = listener;
 }
 
-export const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env && process.env.API_BASE_URL)
-    ? String(process.env.API_BASE_URL)
-    : 'http://138.68.140.83:8000';
-
+export const API_BASE_URL = 'http://138.68.140.83:8000';
 export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
-
 export const RAZORPAY_KEY_ID = 'rzp_test_TZdrjdhyuxCuaR';
 
 export function getCreatorId(): number {
-  if (typeof process !== 'undefined' && process.env && process.env.CREATOR_ID) {
-    const parsed = typeof process.env.CREATOR_ID === 'number'
-      ? process.env.CREATOR_ID
-      : parseInt(String(process.env.CREATOR_ID), 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
   return currentCreatorId;
 }
 

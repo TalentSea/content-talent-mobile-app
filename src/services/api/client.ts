@@ -96,27 +96,6 @@ export async function apiRequest<T>(
 
   let targetToken = accessToken;
 
-  // Intercept Bearer Token: If subscriber token creator_id mismatches active creatorId, use creator-specific token for mobile API calls
-  if (authenticated && accessToken) {
-    const tokenCreatorId = decodeJwtCreatorId(accessToken);
-    if (tokenCreatorId !== null && tokenCreatorId !== creatorId) {
-      const { getGuestTokenForCreator, ensureGuestTokenForCreator } = require('./authService');
-      let creatorGuestToken = getGuestTokenForCreator(creatorId);
-      if (!creatorGuestToken && !isRetry && !isRefreshing) {
-        try {
-          isRefreshing = true;
-          creatorGuestToken = await ensureGuestTokenForCreator(creatorId);
-          isRefreshing = false;
-        } catch (err) {
-          isRefreshing = false;
-        }
-      }
-      if (creatorGuestToken) {
-        targetToken = creatorGuestToken;
-      }
-    }
-  }
-
   if (authenticated && targetToken) {
     requestHeaders.set('Authorization', `Bearer ${targetToken}`);
   }
@@ -126,16 +105,11 @@ export async function apiRequest<T>(
     headers: requestHeaders,
   });
 
-  // Handle 401 Unauthorized or 403 Forbidden (Admin token on Mobile endpoints) -> Silent Refresh/Guest Interceptor
-  if ((response.status === 401 || (response.status === 403 && path.includes('/api/v1/mobile/'))) && !isRetry && !isRefreshing) {
+  // Handle 401 Unauthorized -> Silent Refresh Interceptor
+  if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/api/v1/auth/')) {
     try {
       isRefreshing = true;
-      if (response.status === 403 && path.includes('/api/v1/mobile/')) {
-        const { loginAsGuest } = require('./authService');
-        await loginAsGuest(undefined, creatorId);
-      } else {
-        await refreshAccessToken();
-      }
+      await refreshAccessToken();
       isRefreshing = false;
 
       return apiRequest<T>(path, {
@@ -144,7 +118,7 @@ export async function apiRequest<T>(
       });
     } catch (refreshErr) {
       isRefreshing = false;
-      console.warn('[client.ts] Silent token refresh/switch failed:', refreshErr);
+      console.warn('[client.ts] Silent token refresh failed:', refreshErr);
     }
   }
 
@@ -161,8 +135,8 @@ export async function apiRequest<T>(
   if (!response.ok) {
     const detail =
       typeof responseBody === 'object' &&
-      responseBody !== null &&
-      'detail' in responseBody
+        responseBody !== null &&
+        'detail' in responseBody
         ? String(responseBody.detail)
         : `Request failed with status ${response.status}`;
 
