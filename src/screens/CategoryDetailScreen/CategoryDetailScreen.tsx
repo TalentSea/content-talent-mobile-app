@@ -7,12 +7,15 @@ import {
   StatusBar,
   Text,
   View,
+  Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
   Play,
-  Heart,
+  Bookmark,
+  Shuffle,
+  Share2,
   Download,
 } from 'lucide-react-native';
 
@@ -30,21 +33,37 @@ import {
 import type { ApiVideo } from '../../types/video';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
-import { formatViews, getRelativeTimeString, formatDurationString } from '../../utils/timeUtils';
+import { formatViews, getRelativeTimeString, formatDurationString, formatExactDateString } from '../../utils/timeUtils';
 import { styles } from './styles';
 
 export function CategoryDetailScreen({ route, navigation }: any) {
   const { category: initialCategory = 'All', playlistId } = route.params || {};
 
   const { popularVideos } = useVideos();
-  const { playingVideo, playVideo, closePlayer } = useVideoPlayback(popularVideos);
-  const { toggleSavePlaylist, isPlaylistSaved } = useUserActivity();
-  const { downloadVideoInApp } = useDownloads();
-
   const [playlistDetails, setPlaylistDetails] = useState<PlaylistDetails | null>(null);
   const [playlistVideos, setPlaylistVideos] = useState<ApiVideo[]>([]);
   const [loading, setLoading] = useState<boolean>(!!playlistId);
   const [showFullDesc, setShowFullDesc] = useState(false);
+
+  const categoryFallbackVideos = popularVideos.filter(
+    v =>
+      v.category?.toLowerCase() === initialCategory.toLowerCase() ||
+      (playlistDetails?.name && v.category?.toLowerCase() === playlistDetails.name.toLowerCase()),
+  );
+
+  const finalVideos = playlistId
+    ? playlistVideos.length > 0
+      ? playlistVideos
+      : categoryFallbackVideos.length > 0
+        ? categoryFallbackVideos
+        : popularVideos
+    : categoryFallbackVideos.length > 0
+      ? categoryFallbackVideos
+      : popularVideos;
+
+  const { playingVideo, playVideo, closePlayer, handleVideoEnd, autoplay, setAutoplay } = useVideoPlayback(finalVideos);
+  const { toggleSavePlaylist, isPlaylistSaved } = useUserActivity();
+  const { downloadVideoInApp } = useDownloads();
   const [isSaved, setIsSaved] = useState(playlistId ? isPlaylistSaved(playlistId) : false);
 
   useEffect(() => {
@@ -56,7 +75,11 @@ export function CategoryDetailScreen({ route, navigation }: any) {
           setPlaylistDetails(details);
 
           const videosRes = await fetchPlaylistVideos(playlistId);
-          setPlaylistVideos(videosRes.items || []);
+          let items = videosRes.items || [];
+          if (!items.length && details?.videos && Array.isArray(details.videos)) {
+            items = details.videos;
+          }
+          setPlaylistVideos(items);
         } catch (error) {
           console.warn('[CategoryDetailScreen] Error loading playlist details:', error);
         } finally {
@@ -71,19 +94,17 @@ export function CategoryDetailScreen({ route, navigation }: any) {
   const displayCategory = playlistDetails?.name || (initialCategory !== 'All' ? initialCategory : 'Playlist');
   const displaySubtitle = playlistDetails?.description || '';
 
-  const finalVideos = playlistId
-    ? playlistVideos
-    : popularVideos.filter(
-        v => v.category?.toLowerCase() === initialCategory.toLowerCase(),
-      );
-
   const heroThumb =
     playlistDetails?.thumbnail_url ||
     (finalVideos[0] ? getThumbnailForVideo(finalVideos[0]) : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80');
 
-  function handlePlayAll() {
+  function handlePlayAll(shuffle = false) {
     if (finalVideos.length > 0) {
-      playVideo(finalVideos[0]);
+      let queueList = [...finalVideos];
+      if (shuffle) {
+        queueList.sort(() => Math.random() - 0.5);
+      }
+      playVideo(queueList[0]);
     }
   }
 
@@ -93,12 +114,11 @@ export function CategoryDetailScreen({ route, navigation }: any) {
     setIsSaved(nowSaved);
   }
 
-  function handleDownloadAll() {
-    if (finalVideos.length > 0) {
-      finalVideos.forEach(video => {
-        downloadVideoInApp(video);
-      });
-    }
+  function handleShare() {
+    Share.share({
+      title: displayTitle,
+      message: `Check out playlist "${displayTitle}" on Streamr!`,
+    }).catch(() => { });
   }
 
   function handleSelectPlaylist(playlist: PlaylistListItem) {
@@ -108,7 +128,8 @@ export function CategoryDetailScreen({ route, navigation }: any) {
     });
   }
 
-  const playlistAge = getRelativeTimeString(playlistDetails?.created_at || (finalVideos[0]?.published_at || finalVideos[0]?.created_at));
+  const rawPlaylistDate = playlistDetails?.created_at || (finalVideos[0]?.published_at || finalVideos[0]?.created_at);
+  const playlistAge = getRelativeTimeString(rawPlaylistDate);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -158,9 +179,25 @@ export function CategoryDetailScreen({ route, navigation }: any) {
 
         {/* Action Button Row */}
         <View style={styles.actionsContainer}>
-          <Pressable style={styles.playAllButton} onPress={handlePlayAll}>
+          <Pressable style={styles.playAllButton} onPress={() => handlePlayAll(false)}>
             <Play color="#FFFFFF" size={18} fill="#FFFFFF" />
             <Text style={styles.playAllText}>Play All</Text>
+          </Pressable>
+
+          <Pressable style={styles.actionOutlineBtn} onPress={() => handlePlayAll(true)}>
+            <Shuffle color="#D1D5DB" size={16} />
+            <Text style={styles.actionOutlineText}>Shuffle</Text>
+          </Pressable>
+
+          <Pressable style={styles.actionOutlineBtn} onPress={handleToggleSave}>
+            <Bookmark color={isSaved ? '#E50914' : '#D1D5DB'} fill={isSaved ? '#E50914' : 'none'} size={16} />
+            <Text style={[styles.actionOutlineText, isSaved && { color: '#E50914' }]}>
+              {isSaved ? 'Saved' : 'Save'}
+            </Text>
+          </Pressable>
+
+          <Pressable style={styles.actionOutlineBtn} onPress={handleShare}>
+            <Share2 color="#D1D5DB" size={16} />
           </Pressable>
         </View>
 
@@ -182,12 +219,16 @@ export function CategoryDetailScreen({ route, navigation }: any) {
 
         {/* Videos in this Playlist Section Title */}
         <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitleText}>Videos in this Playlist</Text>
+          <Text style={styles.sectionTitleText}>Videos in this Playlist ({finalVideos.length})</Text>
         </View>
 
         {/* Vertical Video List */}
         <View style={{ paddingBottom: 30 }}>
-          {finalVideos.length === 0 ? (
+          {loading ? (
+            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+              Loading playlist videos...
+            </Text>
+          ) : finalVideos.length === 0 ? (
             <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               No videos in this playlist yet.
             </Text>
@@ -214,7 +255,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
                       {item.title}
                     </Text>
                     <Text style={styles.itemMetaText} numberOfLines={1}>
-                      {formatViews(item.views)} • {formattedDuration} • {getRelativeTimeString(item.published_at || item.created_at)}
+                      {formatViews(item.views)} • {formattedDuration || 'Video'} • {getRelativeTimeString(item.published_at || item.created_at)}
                     </Text>
                   </View>
                 </Pressable>
@@ -224,9 +265,12 @@ export function CategoryDetailScreen({ route, navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* Video Player Modal */}
+      {/* Video Player Modal with Continuous Autoplay Advancement */}
       <PlayerModal
         playingVideo={playingVideo}
+        autoplay={autoplay}
+        onToggleAutoplay={() => setAutoplay(prev => !prev)}
+        onVideoEnd={handleVideoEnd}
         onSelectVideo={playVideo}
         onSelectPlaylist={handleSelectPlaylist}
         onUpgradeSubscription={() => {

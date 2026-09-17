@@ -61,8 +61,23 @@ export function HomeScreen({ navigation }: any) {
           fetchMobileBannersApi(),
         ]);
 
-        if (playlistsRes.status === 'fulfilled' && playlistsRes.value?.items) {
+        if (playlistsRes.status === 'fulfilled' && playlistsRes.value?.items && playlistsRes.value.items.length > 0) {
           setPlaylists(playlistsRes.value.items);
+        } else if (videos.length > 0) {
+          const categories = Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
+          const derivedPlaylists: PlaylistListItem[] = categories.map((cat, idx) => {
+            const catVideos = videos.filter(v => v.category?.toLowerCase() === cat.toLowerCase());
+            const firstVideo = catVideos[0];
+            return {
+              id: idx + 100,
+              name: cat,
+              description: `${catVideos.length} ${catVideos.length === 1 ? 'Video' : 'Videos'}`,
+              thumbnail_url: firstVideo ? getThumbnailForVideo(firstVideo) : null,
+              video_count: catVideos.length,
+              created_at: firstVideo?.published_at || firstVideo?.created_at || null,
+            };
+          });
+          setPlaylists(derivedPlaylists);
         }
 
         if (brandingRes.status === 'fulfilled' && brandingRes.value) {
@@ -264,33 +279,18 @@ export function HomeScreen({ navigation }: any) {
                       style={styles.playlistCard}
                       onPress={() => handleSelectPlaylist(item.id, item.name || 'Playlist')}
                     >
-                      <View style={{ position: 'relative' }}>
-                        <Image
-                          source={{ uri: item.thumbnail_url || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80' }}
-                          style={{ width: 140, height: 80, borderRadius: 8, backgroundColor: '#1E1E2E' }}
-                        />
-                        <View style={{
-                          position: 'absolute',
-                          bottom: 6,
-                          right: 6,
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                          paddingHorizontal: 6,
-                          paddingVertical: 2,
-                          borderRadius: 4,
-                          borderWidth: 0.5,
-                          borderColor: 'rgba(255, 255, 255, 0.2)',
-                        }}>
-                          <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '700' }}>
-                            {item.video_count || 0} Videos
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={styles.playlistsRowTitle} numberOfLines={1}>
+                      <Image
+                        source={{ uri: item.thumbnail_url || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80' }}
+                        style={styles.playlistCardImage}
+                      />
+                      <Text style={styles.playlistCardTitle} numberOfLines={1}>
                         {item.name || item.description || `Playlist`}
                       </Text>
-                      <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                        {item.description || `${item.video_count || 0} Streams`}
-                      </Text>
+                      {item.description ? (
+                        <Text style={styles.playlistCardMeta} numberOfLines={1}>
+                          {item.description}
+                        </Text>
+                      ) : null}
                     </Pressable>
                   )}
                   contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}

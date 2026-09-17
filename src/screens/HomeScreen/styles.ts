@@ -104,17 +104,14 @@ export const styles = StyleSheet.create({
         gap: 12,
     },
     playlistCard: {
-        width: 180,
-        height: 100,
-        borderRadius: 10,
-        overflow: 'hidden',
-        position: 'relative',
-        backgroundColor: '#181824',
+        width: 155,
         marginRight: 12,
     },
     playlistCardImage: {
-        width: '100%',
-        height: '100%',
+        width: 155,
+        height: 100,
+        borderRadius: 10,
+        backgroundColor: '#1E1E2E',
         resizeMode: 'cover',
     },
     playlistCardOverlay: {
@@ -131,11 +128,12 @@ export const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 13,
         fontWeight: '700',
-        marginBottom: 2,
+        marginTop: 6,
+        lineHeight: 17,
     },
     playlistCardMeta: {
         color: '#9CA3AF',
-        fontSize: 10,
-        fontWeight: '600',
+        fontSize: 11,
+        marginTop: 3,
     },
 });

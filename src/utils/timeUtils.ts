@@ -1,14 +1,14 @@
 export function getRelativeTimeString(dateString?: string | null): string {
-  if (!dateString) return '2 weeks ago';
+  if (!dateString || typeof dateString !== 'string' || !dateString.trim()) return '';
 
   try {
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '2 weeks ago';
+    if (isNaN(date.getTime())) return '';
 
     const now = new Date();
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (seconds < 60) return 'Just now';
+    if (seconds <= 0 || seconds < 60) return 'Just now';
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
@@ -22,7 +22,19 @@ export function getRelativeTimeString(dateString?: string | null): string {
     const years = Math.floor(days / 365);
     return `${years} ${years === 1 ? 'year' : 'years'} ago`;
   } catch (err) {
-    return '2 weeks ago';
+    return '';
+  }
+}
+
+export function formatExactDateString(dateString?: string | null): string {
+  if (!dateString || typeof dateString !== 'string' || !dateString.trim()) return '';
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  } catch (e) {
+    return '';
   }
 }
 

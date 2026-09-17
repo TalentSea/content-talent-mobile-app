@@ -211,10 +211,14 @@ export function VideoCard({
         <Text numberOfLines={1} style={styles.meta}>
           {displayViews}
         </Text>
-        <Text style={styles.dot}>•</Text>
-        <Text numberOfLines={1} style={styles.uploadedTimeText}>
-          {uploadedTimeAgo}
-        </Text>
+        {uploadedTimeAgo ? (
+          <>
+            <Text style={styles.dot}>•</Text>
+            <Text numberOfLines={1} style={styles.uploadedTimeText}>
+              {uploadedTimeAgo}
+            </Text>
+          </>
+        ) : null}
       </View>
 
       {/* Tag Pills (Hidden for Continue Watching) */}

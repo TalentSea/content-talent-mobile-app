@@ -45,11 +45,27 @@ export async function fetchPlaylists(
     query.set('limit', String(limit));
 
     // Mobile Playlists Endpoint (/api/v1/mobile/playlists)
-    const response = await apiGet<PaginatedPlaylistsResponse>(
+    const response = await apiGet<any>(
       `/api/v1/mobile/playlists?${query.toString()}`,
     );
-    if (response && Array.isArray(response.items)) {
-      return response;
+    if (response) {
+      let items: PlaylistListItem[] = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.items)) {
+        items = response.items;
+      } else if (Array.isArray(response.playlists)) {
+        items = response.playlists;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      }
+      return {
+        total: response.total ?? items.length,
+        page: response.page ?? page,
+        limit: response.limit ?? limit,
+        total_pages: response.total_pages ?? 1,
+        items,
+      };
     }
 
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
@@ -65,7 +81,12 @@ export async function fetchPlaylistDetails(
   try {
     const cid = getCreatorId();
     // Mobile Playlist Details API (/api/v1/mobile/playlists/{id})
-    return await apiGet<PlaylistDetails>(`/api/v1/mobile/playlists/${playlistId}?creator_id=${cid}`);
+    const response = await apiGet<any>(`/api/v1/mobile/playlists/${playlistId}?creator_id=${cid}`);
+    if (response) {
+      const details = response.data || response;
+      return details;
+    }
+    throw new Error('No playlist details returned');
   } catch (error) {
     console.warn(`[fetchPlaylistDetails] Mobile API notice for playlist ${playlistId}:`, error);
     throw error;
@@ -85,11 +106,28 @@ export async function fetchPlaylistVideos(
     query.set('limit', String(limit));
 
     // Mobile Playlist Videos API (/api/v1/mobile/playlists/{id}/videos)
-    const response = await apiGet<PaginatedPlaylistVideosResponse>(
+    const response = await apiGet<any>(
       `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
     );
-    if (response && Array.isArray(response.items)) {
-      return response;
+
+    if (response) {
+      let items: ApiVideo[] = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.items)) {
+        items = response.items;
+      } else if (Array.isArray(response.videos)) {
+        items = response.videos;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      }
+      return {
+        total: response.total ?? items.length,
+        page: response.page ?? page,
+        limit: response.limit ?? limit,
+        total_pages: response.total_pages ?? 1,
+        items,
+      };
     }
 
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };

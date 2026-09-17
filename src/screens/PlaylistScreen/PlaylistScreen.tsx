@@ -1,15 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
   RefreshControl,
   StatusBar,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Search, ListVideo, Layers } from 'lucide-react-native';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { styles } from './styles';
 
@@ -17,6 +18,7 @@ export function PlaylistScreen({ navigation }: any) {
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   async function loadPlaylists() {
     try {
@@ -39,31 +41,88 @@ export function PlaylistScreen({ navigation }: any) {
     loadPlaylists();
   }
 
+  const filteredPlaylists = useMemo(() => {
+    if (!searchQuery.trim()) return playlists;
+    const q = searchQuery.toLowerCase().trim();
+    return playlists.filter(
+      p =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)),
+    );
+  }, [playlists, searchQuery]);
+
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
+      {/* Header Bar */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>All Playlists</Text>
+
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>All Playlists</Text>
+          <Text style={styles.headerSubtitle}>
+            {playlists.length} {playlists.length === 1 ? 'Playlist' : 'Playlists'}
+          </Text>
+        </View>
+
         <View style={styles.headerPlaceholder} />
       </View>
 
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator color="#FFFFFF" size="large" />
-          <Text style={{ color: '#9CA3AF', marginTop: 12 }}>Loading playlists...</Text>
+      {/* Search Filter Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Search color="#9CA3AF" size={16} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search playlists..."
+            placeholderTextColor="#6B7280"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')}>
+              <Text style={styles.clearSearchText}>Clear</Text>
+            </Pressable>
+          )}
         </View>
-      ) : playlists.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center' }}>No playlists available.</Text>
+      </View>
+
+      {/* Skeleton Loading State */}
+      {loading ? (
+        <View style={styles.listContent}>
+          <View style={styles.columnWrapper}>
+            <View style={styles.skeletonCard} />
+            <View style={styles.skeletonCard} />
+          </View>
+          <View style={styles.columnWrapper}>
+            <View style={styles.skeletonCard} />
+            <View style={styles.skeletonCard} />
+          </View>
+        </View>
+      ) : filteredPlaylists.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <ListVideo color="#4B5563" size={48} />
+          <Text style={styles.emptyText}>
+            {searchQuery
+              ? `No playlists found matching "${searchQuery}"`
+              : 'No playlists available.'}
+          </Text>
+          {searchQuery.length > 0 && (
+            <Pressable
+              style={styles.resetSearchBtn}
+              onPress={() => setSearchQuery('')}
+            >
+              <Text style={styles.resetSearchText}>Show all playlists</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
-        /* 2-Column Vertical Grid list (VL) of Playlists */
+        /* 2-Column Grid List of Playlists */
         <FlatList
-          data={playlists}
+          data={filteredPlaylists}
           keyExtractor={(item, index) => `pl-${item.id}-${index}`}
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
@@ -93,11 +152,22 @@ export function PlaylistScreen({ navigation }: any) {
                 }}
                 style={styles.cardImage}
               />
-              <View style={styles.cardOverlay}>
-                <Text style={styles.cardTitle} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.cardMeta}>{item.video_count || 0} Videos</Text>
+              <View style={styles.cardGradientOverlay}>
+                <View style={styles.cardTopRow}>
+                  <View style={styles.badge}>
+                    <Layers color="#FFFFFF" size={11} />
+                    <Text style={styles.badgeText}>{item.video_count || 0}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.cardBottom}>
+                  <Text style={styles.cardTitle} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.cardMeta}>
+                    {item.video_count || 0} {item.video_count === 1 ? 'Video' : 'Videos'}
+                  </Text>
+                </View>
               </View>
             </Pressable>
           )}
