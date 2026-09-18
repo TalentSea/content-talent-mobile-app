@@ -14,8 +14,10 @@ export type MobileCategoryItem = {
   id: number;
   name: string;
   slug: string;
+  description?: string | null;
   icon?: string;
   color?: string;
+  video_count?: number;
 };
 
 export type MobileCategoriesResponse = {
@@ -176,8 +178,10 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
           id: item.id || idx + 1,
           name: item.name || item.title || item.category_name || 'Category',
           slug: item.slug || (item.name ? item.name.toLowerCase().replace(/\s+/g, '-') : `cat_${idx}`),
+          description: item.description || item.subtitle || item.desc || null,
           color: item.color,
           icon: item.icon,
+          video_count: item.video_count ?? item.videos_count ?? item.count ?? item.total_videos ?? undefined,
         }));
       }
     } catch (error) {

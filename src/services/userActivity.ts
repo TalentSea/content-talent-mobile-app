@@ -22,9 +22,16 @@ function getGlobalUserLikesFilePath(): string {
   return `${RNFS.DocumentDirectoryPath}/streamr_global_user_likes.json`;
 }
 
+export type PlaylistActivityItem = {
+  id: number | string;
+  name: string;
+  thumbnail_url?: string;
+};
+
 let likedVideosStore: ApiVideo[] = [];
 let savedVideosStore: ApiVideo[] = [];
-let savedPlaylistsStore: { id: number; name: string }[] = [];
+let savedPlaylistsStore: PlaylistActivityItem[] = [];
+let likedPlaylistsStore: PlaylistActivityItem[] = [];
 
 let globalLikesCounts: Record<string, number> = {};
 let globalUserLikesMap: Record<string, Record<string, boolean>> = {};
@@ -43,6 +50,7 @@ async function persistUserActivityToDisk() {
       liked: likedVideosStore,
       saved: savedVideosStore,
       savedPlaylists: savedPlaylistsStore,
+      likedPlaylists: likedPlaylistsStore,
     });
     await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
@@ -60,18 +68,21 @@ async function restoreUserActivityFromDisk() {
       likedVideosStore = parsed && Array.isArray(parsed.liked) ? parsed.liked : [];
       savedVideosStore = parsed && Array.isArray(parsed.saved) ? parsed.saved : [];
       savedPlaylistsStore = parsed && Array.isArray(parsed.savedPlaylists) ? parsed.savedPlaylists : [];
+      likedPlaylistsStore = parsed && Array.isArray(parsed.likedPlaylists) ? parsed.likedPlaylists : [];
       notifyActivityListeners();
       return;
     }
     likedVideosStore = [];
     savedVideosStore = [];
     savedPlaylistsStore = [];
+    likedPlaylistsStore = [];
     notifyActivityListeners();
   } catch (err) {
     console.warn('[userActivity] Disk restore notice:', err);
     likedVideosStore = [];
     savedVideosStore = [];
     savedPlaylistsStore = [];
+    likedPlaylistsStore = [];
     notifyActivityListeners();
   }
 }
@@ -293,19 +304,53 @@ export function toggleSaveVideo(video: ApiVideo): boolean {
   return isNowSaved;
 }
 
-export function isPlaylistSaved(playlistId: number): boolean {
-  return savedPlaylistsStore.some(p => p.id === playlistId);
+export function isPlaylistLiked(playlistId: number | string): boolean {
+  return likedPlaylistsStore.some(p => String(p.id) === String(playlistId));
 }
 
-export function toggleSavePlaylist(playlistId: number, playlistName: string): boolean {
-  const index = savedPlaylistsStore.findIndex(p => p.id === playlistId);
+export function toggleLikePlaylist(
+  playlistId: number | string,
+  playlistName: string,
+  thumbnailUrl?: string,
+): boolean {
+  const index = likedPlaylistsStore.findIndex(p => String(p.id) === String(playlistId));
+  let isNowLiked = false;
+
+  if (index >= 0) {
+    likedPlaylistsStore.splice(index, 1);
+    isNowLiked = false;
+  } else {
+    likedPlaylistsStore.unshift({ id: playlistId, name: playlistName, thumbnail_url: thumbnailUrl });
+    isNowLiked = true;
+  }
+
+  notifyActivityListeners();
+  persistUserActivityToDisk();
+
+  return isNowLiked;
+}
+
+export function getLikedPlaylists(): PlaylistActivityItem[] {
+  return [...likedPlaylistsStore];
+}
+
+export function isPlaylistSaved(playlistId: number | string): boolean {
+  return savedPlaylistsStore.some(p => String(p.id) === String(playlistId));
+}
+
+export function toggleSavePlaylist(
+  playlistId: number | string,
+  playlistName: string,
+  thumbnailUrl?: string,
+): boolean {
+  const index = savedPlaylistsStore.findIndex(p => String(p.id) === String(playlistId));
   let isNowSaved = false;
 
   if (index >= 0) {
     savedPlaylistsStore.splice(index, 1);
     isNowSaved = false;
   } else {
-    savedPlaylistsStore.unshift({ id: playlistId, name: playlistName });
+    savedPlaylistsStore.unshift({ id: playlistId, name: playlistName, thumbnail_url: thumbnailUrl });
     isNowSaved = true;
   }
 
@@ -315,7 +360,7 @@ export function toggleSavePlaylist(playlistId: number, playlistName: string): bo
   return isNowSaved;
 }
 
-export function getSavedPlaylists(): { id: number; name: string }[] {
+export function getSavedPlaylists(): PlaylistActivityItem[] {
   return [...savedPlaylistsStore];
 }
 

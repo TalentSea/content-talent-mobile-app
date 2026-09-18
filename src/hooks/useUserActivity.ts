@@ -2,40 +2,35 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   getLikedVideos,
   getSavedVideos,
+  getLikedPlaylists,
+  getSavedPlaylists,
   isVideoLiked,
   isVideoSaved,
   subscribeUserActivity,
   toggleLikeVideo,
   toggleSaveVideo,
+  isPlaylistLiked,
+  toggleLikePlaylist,
   isPlaylistSaved,
   toggleSavePlaylist,
+  PlaylistActivityItem,
 } from '../services/userActivity';
 import type { ApiVideo } from '../types/video';
 
 export function useUserActivity(availableVideos: ApiVideo[] = []) {
   const [likedVideos, setLikedVideos] = useState<ApiVideo[]>(getLikedVideos);
   const [savedVideos, setSavedVideos] = useState<ApiVideo[]>(getSavedVideos);
+  const [likedPlaylists, setLikedPlaylists] = useState<PlaylistActivityItem[]>(getLikedPlaylists);
+  const [savedPlaylists, setSavedPlaylists] = useState<PlaylistActivityItem[]>(getSavedPlaylists);
 
   useEffect(() => {
     let mounted = true;
     const update = () => {
       if (!mounted) return;
-      const nextLiked = getLikedVideos();
-      const nextSaved = getSavedVideos();
-
-      setLikedVideos(prev => {
-        if (prev.length === nextLiked.length && prev.every((v, i) => v.id === nextLiked[i]?.id)) {
-          return prev;
-        }
-        return nextLiked;
-      });
-
-      setSavedVideos(prev => {
-        if (prev.length === nextSaved.length && prev.every((v, i) => v.id === nextSaved[i]?.id)) {
-          return prev;
-        }
-        return nextSaved;
-      });
+      setLikedVideos(getLikedVideos());
+      setSavedVideos(getSavedVideos());
+      setLikedPlaylists(getLikedPlaylists());
+      setSavedPlaylists(getSavedPlaylists());
     };
     update();
     const unsubscribe = subscribeUserActivity(update);
@@ -66,10 +61,14 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
   return {
     likedVideos: filteredLikedVideos,
     savedVideos: filteredSavedVideos,
+    likedPlaylists,
+    savedPlaylists,
     isVideoLiked,
     isVideoSaved,
     toggleLikeVideo,
     toggleSaveVideo,
+    isPlaylistLiked,
+    toggleLikePlaylist,
     isPlaylistSaved,
     toggleSavePlaylist,
   };

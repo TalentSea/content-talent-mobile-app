@@ -12,9 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, ListVideo, Layers } from 'lucide-react-native';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
+import { useVideos } from '../../hooks/useVideo';
+import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import { styles } from './styles';
 
 export function PlaylistScreen({ navigation }: any) {
+  const { videos } = useVideos();
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -23,7 +26,26 @@ export function PlaylistScreen({ navigation }: any) {
   async function loadPlaylists() {
     try {
       const response = await fetchPlaylists();
-      setPlaylists(response.items || []);
+      if (response.items && response.items.length > 0) {
+        setPlaylists(response.items);
+      } else if (videos && videos.length > 0) {
+        const categories = Array.from(new Set(videos.map(v => v.category).filter(Boolean) as string[]));
+        const derivedPlaylists: PlaylistListItem[] = categories.map((cat, idx) => {
+          const catVideos = videos.filter(v => v.category?.toLowerCase() === cat.toLowerCase());
+          const firstVideo = catVideos[0];
+          return {
+            id: idx + 100,
+            name: cat,
+            description: `${catVideos.length} ${catVideos.length === 1 ? 'Video' : 'Videos'}`,
+            thumbnail_url: firstVideo ? getThumbnailForVideo(firstVideo) : null,
+            video_count: catVideos.length,
+            created_at: firstVideo?.published_at || firstVideo?.created_at || null,
+          };
+        });
+        setPlaylists(derivedPlaylists);
+      } else {
+        setPlaylists([]);
+      }
     } catch (error) {
       console.warn('[PlaylistScreen] Error loading playlists:', error);
     } finally {
@@ -34,7 +56,7 @@ export function PlaylistScreen({ navigation }: any) {
 
   useEffect(() => {
     loadPlaylists();
-  }, []);
+  }, [videos]);
 
   function handleRefresh() {
     setRefreshing(true);

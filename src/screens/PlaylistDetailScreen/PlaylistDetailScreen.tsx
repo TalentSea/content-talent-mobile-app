@@ -13,17 +13,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ChevronLeft,
   Play,
-  Bookmark,
   Shuffle,
+  Bookmark,
+  Heart,
   Share2,
-  Download,
 } from 'lucide-react-native';
 
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useUserActivity } from '../../hooks/useUserActivity';
-import { useDownloads } from '../../hooks/useDownloads';
 import {
   fetchPlaylistDetails,
   fetchPlaylistVideos,
@@ -34,21 +33,20 @@ import { normalizeVideoItem } from '../../services/api/video';
 import type { ApiVideo } from '../../types/video';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
-import { formatViews, getRelativeTimeString, formatDurationString, formatExactDateString } from '../../utils/timeUtils';
+import { formatViews, getRelativeTimeString, formatDurationString } from '../../utils/timeUtils';
 import { styles } from './styles';
 
-export function CategoryDetailScreen({ route, navigation }: any) {
-  const { category: initialCategory = 'All', playlistId, description: routeDescription } = route.params || {};
+export function PlaylistDetailScreen({ route, navigation }: any) {
+  const { playlistId, category: initialCategory = 'Playlist', description: routeDescription } = route.params || {};
 
   const { popularVideos } = useVideos();
   const [playlistDetails, setPlaylistDetails] = useState<PlaylistDetails | null>(null);
   const [playlistVideos, setPlaylistVideos] = useState<ApiVideo[]>([]);
   const [loading, setLoading] = useState<boolean>(!!playlistId);
-  const [showFullDesc, setShowFullDesc] = useState(false);
 
   const categoryFallbackVideos = popularVideos.filter(
     v =>
-      v.category?.toLowerCase() === initialCategory.toLowerCase() ||
+      (v.category && v.category.toLowerCase() === initialCategory.toLowerCase()) ||
       (playlistDetails?.name && v.category?.toLowerCase() === playlistDetails.name.toLowerCase()),
   );
 
@@ -63,13 +61,19 @@ export function CategoryDetailScreen({ route, navigation }: any) {
       : popularVideos;
 
   const { playingVideo, playVideo, closePlayer, handleVideoEnd, autoplay, setAutoplay } = useVideoPlayback(finalVideos);
-  const { toggleSavePlaylist, isPlaylistSaved } = useUserActivity();
-  const { downloadVideoInApp } = useDownloads();
-  const [isSaved, setIsSaved] = useState(playlistId ? isPlaylistSaved(playlistId) : false);
+  const { toggleSavePlaylist, isPlaylistSaved, toggleLikePlaylist, isPlaylistLiked } = useUserActivity();
+
+  const targetId = playlistId || initialCategory;
+  const [isSaved, setIsSaved] = useState(isPlaylistSaved(targetId));
+  const [isLiked, setIsLiked] = useState(isPlaylistLiked(targetId));
+
+  useEffect(() => {
+    setIsSaved(isPlaylistSaved(targetId));
+    setIsLiked(isPlaylistLiked(targetId));
+  }, [targetId]);
 
   useEffect(() => {
     if (playlistId) {
-      setIsSaved(isPlaylistSaved(playlistId));
       async function loadPlaylistData() {
         try {
           const details = await fetchPlaylistDetails(playlistId);
@@ -97,7 +101,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
           let items = Array.from(combinedMap.values());
           setPlaylistVideos(items);
         } catch (error) {
-          console.warn('[CategoryDetailScreen] Error loading playlist details:', error);
+          console.warn('[PlaylistDetailScreen] Error loading playlist details:', error);
         } finally {
           setLoading(false);
         }
@@ -107,12 +111,21 @@ export function CategoryDetailScreen({ route, navigation }: any) {
   }, [playlistId]);
 
   const displayTitle = playlistDetails?.name || initialCategory;
-  const displayCategory = playlistDetails?.name || (initialCategory !== 'All' ? initialCategory : 'Playlist');
-  const heroDescription = playlistDetails?.description || routeDescription || '';
+  const displayCategoryTag = playlistDetails?.name || (initialCategory !== 'Playlist' ? initialCategory : 'Technology');
+  const playlistDescription = playlistDetails?.description || routeDescription || '';
 
   const heroThumb =
     playlistDetails?.thumbnail_url ||
     (finalVideos[0] ? getThumbnailForVideo(finalVideos[0]) : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80');
+
+  // Calculate total playlist views
+  const totalPlaylistViews = finalVideos.reduce(
+    (acc, v) => acc + getCleanViewCountForVideo(v.id),
+    0,
+  );
+
+  const rawPlaylistDate = playlistDetails?.created_at || route.params?.createdAt || route.params?.created_at || (finalVideos[0] ? finalVideos[0].published_at || finalVideos[0].created_at : null);
+  const playlistAge = getRelativeTimeString(rawPlaylistDate);
 
   function handlePlayAll(shuffle = false) {
     if (finalVideos.length > 0) {
@@ -124,9 +137,13 @@ export function CategoryDetailScreen({ route, navigation }: any) {
     }
   }
 
+  function handleToggleLike() {
+    const nowLiked = toggleLikePlaylist(targetId, displayTitle, heroThumb);
+    setIsLiked(nowLiked);
+  }
+
   function handleToggleSave() {
-    const targetId = playlistId || 1;
-    const nowSaved = toggleSavePlaylist(targetId, displayTitle);
+    const nowSaved = toggleSavePlaylist(targetId, displayTitle, heroThumb);
     setIsSaved(nowSaved);
   }
 
@@ -138,14 +155,11 @@ export function CategoryDetailScreen({ route, navigation }: any) {
   }
 
   function handleSelectPlaylist(playlist: PlaylistListItem) {
-    navigation.push('CategoryDetail', {
+    navigation.push('PlaylistDetail', {
       category: playlist.name,
       playlistId: playlist.id,
     });
   }
-
-  const rawPlaylistDate = playlistDetails?.created_at || route.params?.createdAt || route.params?.created_at || null;
-  const playlistAge = getRelativeTimeString(rawPlaylistDate);
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -164,54 +178,91 @@ export function CategoryDetailScreen({ route, navigation }: any) {
             </Pressable>
 
             <View style={styles.heroContent}>
+              <Text style={styles.playlistTagLabel}>PLAYLIST</Text>
               <Text style={styles.heroTitle} numberOfLines={2}>
                 {displayTitle}
               </Text>
 
-              {heroDescription ? (
-                <Text style={styles.heroDescription} numberOfLines={2}>
-                  {heroDescription}
-                </Text>
-              ) : null}
-
               <View style={styles.heroMetaRow}>
-                <View style={styles.videoCountBadge}>
-                  <Text style={styles.videoCountBadgeText}>
-                    {finalVideos.length} {finalVideos.length === 1 ? 'video' : 'videos'}
-                  </Text>
-                </View>
+                {displayCategoryTag ? (
+                  <View style={styles.categoryBadgeRed}>
+                    <Text style={styles.categoryBadgeRedText}>{displayCategoryTag}</Text>
+                  </View>
+                ) : null}
+
+                <Text style={styles.metaTextLight}>
+                  {finalVideos.length} {finalVideos.length === 1 ? 'video' : 'videos'}
+                </Text>
+                <Text style={styles.dotMeta}>•</Text>
+                <Text style={styles.metaTextLight}>
+                  {formatViews(totalPlaylistViews || 2)}
+                </Text>
+                <Text style={styles.dotMeta}>•</Text>
+                <Text style={styles.metaTextLight}>{playlistAge}</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Category Description Section */}
-        {heroDescription ? (
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.descriptionText}>
-              {heroDescription}
-            </Text>
+        {/* Action Controls Bar */}
+        <View style={styles.actionBarRow}>
+          <Pressable style={styles.playAllButton} onPress={() => handlePlayAll(false)}>
+            <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
+            <Text style={styles.playAllText}>Play All</Text>
+          </Pressable>
+
+          <Pressable style={styles.actionIconButton} onPress={() => handlePlayAll(true)}>
+            <Shuffle color="#FFFFFF" size={16} />
+            <Text style={styles.actionIconLabel}>Shuffle</Text>
+          </Pressable>
+
+          <Pressable style={styles.actionIconButton} onPress={handleToggleLike}>
+            <Heart color={isLiked ? '#EF4444' : '#FFFFFF'} size={16} fill={isLiked ? '#EF4444' : 'transparent'} />
+            <Text style={[styles.actionIconLabel, isLiked && { color: '#EF4444' }]}>{isLiked ? 'Liked' : 'Like'}</Text>
+          </Pressable>
+
+          <Pressable style={styles.actionIconButton} onPress={handleToggleSave}>
+            <Bookmark color={isSaved ? '#3B82F6' : '#FFFFFF'} size={16} fill={isSaved ? '#3B82F6' : 'transparent'} />
+            <Text style={[styles.actionIconLabel, isSaved && { color: '#3B82F6' }]}>{isSaved ? 'Saved' : 'Save'}</Text>
+          </Pressable>
+
+          <Pressable style={styles.iconOnlyButton} onPress={handleShare}>
+            <Share2 color="#FFFFFF" size={16} />
+          </Pressable>
+        </View>
+
+        {/* Playlist Description if present */}
+        {playlistDescription ? (
+          <View style={styles.playlistDescriptionContainer}>
+            <Text style={styles.playlistDescriptionText}>{playlistDescription}</Text>
           </View>
         ) : null}
 
+        {/* Section Header: Videos in this Playlist (X) */}
+        <Text style={styles.sectionTitleHeader}>
+          Videos in this Playlist ({finalVideos.length})
+        </Text>
+
         {/* Vertical Video List */}
-        <View style={{ paddingTop: 12, paddingBottom: 30 }}>
+        <View style={{ paddingBottom: 30 }}>
           {loading ? (
             <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
-              Loading videos...
+              Loading playlist videos...
             </Text>
           ) : finalVideos.length === 0 ? (
             <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
-              No videos in this category yet.
+              No videos in this playlist yet.
             </Text>
           ) : (
             finalVideos.map((item, index) => {
               const itemThumb = getThumbnailForVideo(item);
               const formattedDuration = formatDurationString(item.duration);
-              const itemCat = item.category || displayCategory;
+              const viewsStr = formatViews(item.views);
+              const dateStr = getRelativeTimeString(item.published_at || item.created_at);
+
               return (
                 <Pressable
-                  key={`cat-item-${item.id}-${index}`}
+                  key={`playlist-video-item-${item.id}-${index}`}
                   style={styles.playlistItemRow}
                   onPress={() => playVideo(item)}
                 >
@@ -228,16 +279,10 @@ export function CategoryDetailScreen({ route, navigation }: any) {
                       {item.title}
                     </Text>
                     <View style={styles.itemMetaRow}>
-                      {itemCat && itemCat !== 'All' && itemCat !== 'Playlist' ? (
-                        <>
-                          <Text style={styles.categoryTagRed}>{itemCat}</Text>
-                          <Text style={styles.dotMeta}>•</Text>
-                        </>
-                      ) : null}
-                      <Text style={styles.itemMetaText}>{formatViews(item.views)}</Text>
-                      <Text style={styles.dotMeta}>•</Text>
                       <Text style={styles.itemMetaText}>
-                        {getRelativeTimeString(item.published_at || item.created_at)}
+                        {viewsStr}
+                        {formattedDuration ? ` • ${formattedDuration}` : ''}
+                        {dateStr ? ` • ${dateStr}` : ''}
                       </Text>
                     </View>
                   </View>
@@ -248,7 +293,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* Video Player Modal with Continuous Autoplay Advancement */}
+      {/* Video Player Modal */}
       <PlayerModal
         playingVideo={playingVideo}
         autoplay={autoplay}
@@ -265,4 +310,3 @@ export function CategoryDetailScreen({ route, navigation }: any) {
     </SafeAreaView>
   );
 }
-

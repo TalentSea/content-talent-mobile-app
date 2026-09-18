@@ -45,21 +45,32 @@ export const styles = StyleSheet.create({
   },
   card: {
     width: '48%',
-    height: 110,
+    minHeight: 110,
     borderRadius: 12,
     padding: 14,
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
+  cardHeaderContent: {
+    flex: 1,
+  },
   cardTitle: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '800',
   },
+  cardDescription: {
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontSize: 11,
+    fontWeight: '400',
+    marginTop: 4,
+    lineHeight: 15,
+  },
   cardMeta: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 11,
     fontWeight: '600',
+    marginTop: 6,
   },
 });

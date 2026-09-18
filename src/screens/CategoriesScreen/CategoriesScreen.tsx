@@ -22,6 +22,7 @@ type RealCategoryItem = {
   count: number;
   color: string;
   icon?: string;
+  description?: string | null;
 };
 
 const DEFAULT_CATEGORY_COLORS = [
@@ -76,6 +77,7 @@ export function CategoriesScreen({ navigation }: any) {
               count: countFromVideos,
               color: item.color || DEFAULT_CATEGORY_COLORS[idx % DEFAULT_CATEGORY_COLORS.length],
               icon: item.icon,
+              description: item.description || null,
             };
           });
         } else {
@@ -87,6 +89,7 @@ export function CategoriesScreen({ navigation }: any) {
             slug: catKey,
             count: catCounts[catKey] || 0,
             color: DEFAULT_CATEGORY_COLORS[idx % DEFAULT_CATEGORY_COLORS.length],
+            description: null,
           }));
         }
 
@@ -139,13 +142,21 @@ export function CategoriesScreen({ navigation }: any) {
                 navigation.navigate('CategoryDetail', {
                   category: item.name,
                   slug: item.slug,
+                  description: item.description,
                 })
               }
             >
-              <Text style={styles.cardTitle}>
-                {item.icon ? `${item.icon} ` : ''}
-                {item.name}
-              </Text>
+              <View style={styles.cardHeaderContent}>
+                <Text style={styles.cardTitle} numberOfLines={1}>
+                  {item.icon ? `${item.icon} ` : ''}
+                  {item.name}
+                </Text>
+                {item.description ? (
+                  <Text style={styles.cardDescription} numberOfLines={2}>
+                    {item.description}
+                  </Text>
+                ) : null}
+              </View>
               <Text style={styles.cardMeta}>
                 {item.count} {item.count === 1 ? 'Video' : 'Videos'}
               </Text>
