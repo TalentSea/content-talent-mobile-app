@@ -105,7 +105,7 @@ export async function apiRequest<T>(
     headers: requestHeaders,
   });
 
-  // Handle 401 Unauthorized -> Silent Refresh Interceptor
+  // Handle 401 Unauthorized -> Refresh access token
   if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/api/v1/auth/')) {
     try {
       isRefreshing = true;

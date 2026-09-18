@@ -51,9 +51,10 @@ export type ApiVideo = {
 
 export type VideoDetails = ApiVideo & {
   playback_url: string | null;
-  alt_thumbnail_urls: string[];
+  alt_thumbnail_urls?: string[];
   caption_url?: string;
   caption_lang?: string;
+  captions?: Array<{ language?: string; label?: string; srclang?: string; url?: string; isInbuilt?: boolean; is_default?: boolean }>;
   captions_data?: Array<{ label?: string; srclang?: string; url?: string; isInbuilt?: boolean; is_default?: boolean }>;
 };
 

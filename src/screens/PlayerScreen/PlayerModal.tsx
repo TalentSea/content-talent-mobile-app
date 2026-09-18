@@ -22,7 +22,7 @@ import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
 import { isUserSubscribed, getUserSubscriptionTier, subscribeAuthChange } from '../../services/api/authService';
-import { DEFAULT_AD_TAG_URL } from '../../constants/config';
+import { API_BASE_URL, DEFAULT_AD_TAG_URL } from '../../constants/config';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
@@ -327,10 +327,15 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
           }
         >
           {(() => {
-            const subTier = getUserSubscriptionTier();
-            const isUserSub = subTier !== 'none';
+            const hasStreamUrl = Boolean(
+              playingVideo &&
+              (playingVideo.stream_url || playingVideo.playback_url) &&
+              (playingVideo.stream_url || playingVideo.playback_url)!.trim().length > 0 &&
+              (playingVideo.stream_url || playingVideo.playback_url) !== API_BASE_URL
+            );
 
-            if (playingVideo && isUserSub) {
+            if (playingVideo && hasStreamUrl) {
+              const subTier = getUserSubscriptionTier();
               const isPremium = subTier === 'premium';
               // Basic: Ads from backend API + 720p max; Premium: No ads + 1080p resolution unlocked
               const activeAdTagUrl = isPremium ? undefined : (playingVideo.adTagUrl || DEFAULT_AD_TAG_URL);
@@ -409,7 +414,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                   <View
                     style={{
                       ...StyleSheet.absoluteFill,
-                      backgroundColor: 'rgba(10, 10, 16, 0.78)',
+                      backgroundColor: 'rgba(10, 10, 16, 0.82)',
                       justifyContent: 'center',
                       alignItems: 'center',
                       padding: 20,
@@ -443,7 +448,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                     </Text>
 
                     <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 270, lineHeight: 16 }}>
-                      Unsubscribed users must upgrade to watch. Basic plan: 720p HD + ads. Premium plan: 1080p HD + ad-free.
+                      Protected video content. Upgrade your subscription to watch high-definition HLS streams and download offline MP4s.
                     </Text>
 
                     <Pressable
@@ -464,7 +469,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                       }}
                     >
                       <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                        Upgrade Now
+                        Subscribe Now
                       </Text>
                     </Pressable>
                   </View>

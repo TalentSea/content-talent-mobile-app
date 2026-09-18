@@ -20,14 +20,6 @@ export type FetchVideosParams = {
   limit?: number;
 };
 
-const DISTINCT_STREAM_FALLBACKS = [
-  'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-  'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-  'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-  'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-];
-
 export function getDistinctStreamUrlForVideo(video: any): string {
   let url =
     video?.hls_stream_url ||
@@ -50,8 +42,7 @@ export function getDistinctStreamUrlForVideo(video: any): string {
     return url;
   }
 
-  const idNum = typeof video?.id === 'number' ? video.id : 1;
-  return DISTINCT_STREAM_FALLBACKS[Math.abs(idNum) % DISTINCT_STREAM_FALLBACKS.length];
+  return '';
 }
 
 export function normalizeVideoItem(item: any): import('../../../types/video').ApiVideo {
@@ -99,6 +90,16 @@ export function normalizeVideoItem(item: any): import('../../../types/video').Ap
 
   const streamUrl = getDistinctStreamUrlForVideo(item);
 
+  let rawHlsUrl = item.hls_stream_url || item.playback_url || item.stream_url;
+  if (rawHlsUrl && typeof rawHlsUrl === 'string' && rawHlsUrl.trim().length > 0) {
+    rawHlsUrl = rawHlsUrl.trim();
+    if (rawHlsUrl.startsWith('/')) {
+      rawHlsUrl = `${API_BASE_URL}${rawHlsUrl}`;
+    }
+  } else {
+    rawHlsUrl = streamUrl;
+  }
+
   return {
     ...item,
     views: finalViews,
@@ -106,6 +107,7 @@ export function normalizeVideoItem(item: any): import('../../../types/video').Ap
     views_count: finalViews,
     likes_count: finalLikes,
     main_thumbnail_url: thumbUrl,
+    hls_stream_url: rawHlsUrl,
     playback_url: streamUrl,
     stream_url: streamUrl,
   };
@@ -198,7 +200,7 @@ export async function fetchVideoDetails(
     published_at: new Date().toISOString(),
     scheduled_at: null,
     created_at: new Date().toISOString(),
-    playback_url: MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS,
+    playback_url: '',
   }) as VideoDetails;
 }
 
@@ -212,8 +214,9 @@ export async function fetchVideoPlayInfo(videoId: number) {
     ? playUrl.split('?')[1]
     : '';
 
-  if (Array.isArray(video.captions_data) && video.captions_data.length > 0) {
-    for (const cap of video.captions_data) {
+  const rawCaptions = video.captions || video.captions_data;
+  if (Array.isArray(rawCaptions) && rawCaptions.length > 0) {
+    for (const cap of rawCaptions) {
       if (cap.url) {
         let captionUri = cap.url.startsWith('http')
           ? cap.url
@@ -225,7 +228,7 @@ export async function fetchVideoPlayInfo(videoId: number) {
           captionUri += `${captionUri.includes('?') ? '&' : '?'}${tokenParams}`;
         }
 
-        const rawLang = (cap.srclang || 'en').toLowerCase();
+        const rawLang = (cap.srclang || (cap as any).language || 'en').toLowerCase();
         const lang = rawLang.startsWith('en')
           ? 'en'
           : rawLang.startsWith('hi')
@@ -241,7 +244,7 @@ export async function fetchVideoPlayInfo(videoId: number) {
               ? 'Hindi'
               : lang === 'ta'
                 ? 'Tamil'
-                : rawLang.toUpperCase();
+                : ((cap as any).language || rawLang.toUpperCase());
 
         captions.push({
           uri: captionUri,
@@ -277,11 +280,9 @@ export async function fetchVideoPlayInfo(videoId: number) {
 
   const hlsCaptionInfo = await fetchHLSCaptions(videoId);
 
-  const streamUrl = playUrl.startsWith('http')
-    ? playUrl
-    : `${API_BASE_URL}${playUrl}`;
-
-  const mp4Url = (video as any).mp4_download_url || (streamUrl.includes('.m3u8') ? streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') : streamUrl);
+  const streamUrl = playUrl && playUrl.trim().length > 0 && playUrl !== API_BASE_URL
+    ? (playUrl.startsWith('http') ? playUrl : `${API_BASE_URL}${playUrl}`)
+    : '';
 
   const rawDownloadUrls = (video as any).download_urls;
   let downloadUrls: Array<{ resolution: string; label: string; url: string }> = [];
@@ -292,16 +293,22 @@ export async function fetchVideoPlayInfo(videoId: number) {
       label: item.label || `${item.resolution || '720p'} quality`,
       url: item.url,
     }));
-  } else if (streamUrl.includes('.m3u8')) {
+  } else if (streamUrl && streamUrl.includes('.m3u8')) {
     downloadUrls = [
-      { resolution: '1080p', label: '1080p HD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_1080p.mp4') },
-      { resolution: '720p', label: '720p HD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') },
-      { resolution: '480p', label: '480p SD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_480p.mp4') },
-      { resolution: '240p', label: '240p SD', url: streamUrl.replace(/playlist\.m3u8.*$/, 'play_240p.mp4') },
+      { resolution: '1080p', label: '1080p HD', url: streamUrl.replace('playlist.m3u8', 'play_1080p.mp4') },
+      { resolution: '720p', label: '720p HD', url: streamUrl.replace('playlist.m3u8', 'play_720p.mp4') },
+      { resolution: '480p', label: '480p SD', url: streamUrl.replace('playlist.m3u8', 'play_480p.mp4') },
+      { resolution: '240p', label: '240p SD', url: streamUrl.replace('playlist.m3u8', 'play_240p.mp4') },
     ];
-  } else {
+  } else if (streamUrl) {
     downloadUrls = [{ resolution: '720p', label: 'Standard MP4', url: streamUrl }];
   }
+
+  const mp4Url =
+    (video as any).mp4_download_url ||
+    downloadUrls.find(d => d.resolution === '720p')?.url ||
+    downloadUrls[0]?.url ||
+    (streamUrl.includes('.m3u8') ? streamUrl.replace('playlist.m3u8', 'play_720p.mp4') : (streamUrl || undefined));
 
   // Query live subscription status from backend on video select
   const liveSub = await fetchUserSubscriptionStatus();
@@ -312,7 +319,9 @@ export async function fetchVideoPlayInfo(videoId: number) {
 
   const resolvedAdTagUrl = userIsAdFree
     ? undefined
-    : ((video as any).ad_tag_url || DEFAULT_AD_TAG_URL);
+    : ((video as any).ad_tag_url || undefined);
+
+  const effectiveStream = (mp4Url && mp4Url.trim().length > 0) ? mp4Url : streamUrl;
 
   return {
     id: video.id,
@@ -325,8 +334,8 @@ export async function fetchVideoPlayInfo(videoId: number) {
     duration: video.duration,
     published_at: video.published_at,
     created_at: video.created_at,
-    stream_url: streamUrl,
-    playback_url: streamUrl,
+    stream_url: effectiveStream,
+    playback_url: effectiveStream,
     mp4Url,
     downloadUrls,
     poster: video.main_thumbnail_url || undefined,

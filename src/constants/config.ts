@@ -1,4 +1,16 @@
-let currentCreatorId = 1;
+declare const process: any;
+
+let initialCreatorId = 1;
+if (typeof process !== 'undefined' && process.env && process.env.CREATOR_ID) {
+  const parsed = typeof process.env.CREATOR_ID === 'number'
+    ? process.env.CREATOR_ID
+    : parseInt(String(process.env.CREATOR_ID), 10);
+  if (!isNaN(parsed) && parsed > 0) {
+    initialCreatorId = parsed;
+  }
+}
+
+let currentCreatorId: number = initialCreatorId;
 let onCreatorIdChangeListener: ((newId: number) => void) | null = null;
 
 export function registerCreatorIdListener(listener: (newId: number) => void): void {

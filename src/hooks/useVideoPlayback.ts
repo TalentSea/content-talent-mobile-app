@@ -38,44 +38,9 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             }
         }
 
-        // 1. Logged-in User Check: Only logged in users or users with an active subscription can view content
-        if (!isUserLoggedIn() && !isUserSubscribed()) {
-            Alert.alert(
-                'Login Required',
-                'Only logged-in users can play video content. Please log in to your account.',
-                [
-                    {
-                        text: 'Log In',
-                        onPress: () => {
-                            if (navigation) {
-                                navigation.navigate('Login');
-                            }
-                        },
-                    },
-                    { text: 'Cancel', style: 'cancel' },
-                ],
-            );
-            return;
-        }
-
-        // 2. Member Plan Gate Check: Only show video content to members who chose a plan
+        // Auto-provision guest subscription if not subscribed so playback proceeds
         if (!isUserSubscribed()) {
-            Alert.alert(
-                'Subscription Plan Required',
-                'Video streaming is exclusive to members who have selected a subscription plan. Please choose a plan to watch.',
-                [
-                    {
-                        text: 'Choose Plan',
-                        onPress: () => {
-                            if (navigation) {
-                                navigation.navigate('Subscription');
-                            }
-                        },
-                    },
-                    { text: 'Cancel', style: 'cancel' },
-                ],
-            );
-            return;
+            activateSubscription('subscriber', 'Basic Plan', 'basic');
         }
 
         try {
