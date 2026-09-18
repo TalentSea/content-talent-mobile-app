@@ -56,8 +56,13 @@ export function SubscriptionScreen({ navigation }: any) {
         const data = await fetchSubscriptionPlans();
         if (isMounted && data.length > 0) {
           setPlans(data);
-          const popular = data.find(p => p.popular) || data[0];
-          setSelectedPlanId(popular.id);
+          const currentUserPlanId = user?.plan_id ? String(user.plan_id) : '';
+          if (currentUserPlanId && data.some(p => p.id === currentUserPlanId)) {
+            setSelectedPlanId(currentUserPlanId);
+          } else {
+            const popular = data.find(p => p.popular) || data[0];
+            setSelectedPlanId(popular.id);
+          }
         }
       } catch (err) {
         console.warn('[SubscriptionScreen] Error loading plans:', err);
@@ -171,7 +176,8 @@ export function SubscriptionScreen({ navigation }: any) {
     const planName = chosenPlan ? chosenPlan.name : 'VIP Member Plan';
 
     // 1. Immediately activate VIP subscription locally to unlock video playback
-    activateSubscription('subscriber', planName, selectedPlanId);
+    const isPrem = selectedPlanId === '2' || planName.toLowerCase().includes('premium');
+    activateSubscription(isPrem ? 'premium' : 'subscriber', planName, selectedPlanId);
     setIsSubscribing(false);
     setIsSuccess(true);
 
@@ -186,7 +192,7 @@ export function SubscriptionScreen({ navigation }: any) {
 
       Alert.alert(
         'Membership Activated! 🎉',
-        `Payment verified successfully!\n\nPayment ID:\n${payload.razorpay_payment_id}\n\nOrder ID:\n${payload.razorpay_order_id}\n\nRazorpay Signature:\n${payload.razorpay_signature}\n\nYou now have full access to stream all 4K videos.`,
+        `Payment verified successfully!\n\nPayment ID: ${payload.razorpay_payment_id}\n\nYou now have full access to stream all 4K videos.`,
         [
           {
             text: 'Start Watching',
@@ -198,7 +204,7 @@ export function SubscriptionScreen({ navigation }: any) {
       console.warn('[SubscriptionScreen] Verification notice:', err);
       Alert.alert(
         'Membership Activated! 🎉',
-        `Payment Authorized!\n\nPayment ID:\n${payload.razorpay_payment_id}\n\nOrder ID:\n${payload.razorpay_order_id}\n\nRazorpay Signature:\n${payload.razorpay_signature}\n\nYou now have full access to stream all 4K videos.`,
+        `Payment Authorized!\n\nPayment ID: ${payload.razorpay_payment_id}\n\nYou now have full access to stream all 4K videos.`,
         [
           {
             text: 'Start Watching',
@@ -265,24 +271,12 @@ export function SubscriptionScreen({ navigation }: any) {
                 borderColor: 'rgba(16, 185, 129, 0.3)',
               }}>
                 <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '800', marginBottom: 8, letterSpacing: 0.5 }}>
-                  🛡️ RAZORPAY PAYMENT & SIGNATURE RECEIPT
+                  🛡️ PAYMENT RECEIPT
                 </Text>
 
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>PAYMENT ID:</Text>
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{latestPayload.razorpay_payment_id}</Text>
-                </View>
-
-                <View style={{ marginBottom: 6 }}>
-                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>ORDER ID:</Text>
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{latestPayload.razorpay_order_id}</Text>
-                </View>
-
                 <View style={{ marginBottom: 2 }}>
-                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>HMAC-SHA256 SIGNATURE:</Text>
-                  <Text style={{ color: '#A5B4FC', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginTop: 2 }}>
-                    {latestPayload.razorpay_signature}
-                  </Text>
+                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>PAYMENT ID:</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginTop: 2 }}>{latestPayload.razorpay_payment_id}</Text>
                 </View>
               </View>
             ) : null}

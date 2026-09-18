@@ -123,6 +123,10 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                 when (state) {
                     Player.STATE_READY -> {
                         if (!player.isPlayingAd) {
+                            if (!desiredPaused && !player.isPlaying) {
+                                player.playWhenReady = true
+                            }
+
                             if (!hasSentLoadEvent) {
                                 hasSentLoadEvent = true
 
@@ -164,6 +168,21 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
                         if (!player.isPlayingAd) {
                             sendEvent("onEnd", Arguments.createMap())
                         }
+                    }
+                }
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                // If transitioning from an AD back to main video content, automatically start main video playback
+                if (oldPosition.adGroupIndex != C.INDEX_UNSET && newPosition.adGroupIndex == C.INDEX_UNSET) {
+                    Log.d("NativeVideoPlayer", "Ad completed/skipped. Resuming main content playback. desiredPaused=$desiredPaused")
+                    if (!desiredPaused) {
+                        player.playWhenReady = true
+                        player.play()
                     }
                 }
             }

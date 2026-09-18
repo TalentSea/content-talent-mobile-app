@@ -182,8 +182,19 @@ export async function verifyRazorpayPayment(payload: {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  plan_id: string;
+  plan_id: string | number;
 }): Promise<SubscribeResponse> {
+  const numericPlanId = typeof payload.plan_id === 'number'
+    ? payload.plan_id
+    : (parseInt(payload.plan_id, 10) || (payload.plan_id === 'premium' ? 2 : 1));
+
+  const body = JSON.stringify({
+    razorpay_order_id: payload.razorpay_order_id,
+    razorpay_payment_id: payload.razorpay_payment_id,
+    razorpay_signature: payload.razorpay_signature,
+    plan_id: numericPlanId,
+  });
+
   const endpoints = [
     '/api/v1/mobile/payments/verify',
     '/api/v1/mobile/subscriptions/verify-payment',
@@ -195,7 +206,7 @@ export async function verifyRazorpayPayment(payload: {
     try {
       const res = await apiRequest<SubscribeResponse>(path, {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body,
       });
       if (res) return res;
     } catch (e) {
@@ -209,7 +220,11 @@ export async function verifyRazorpayPayment(payload: {
 /**
  * Subscribes user to a selected creator plan via backend API.
  */
-export async function createSubscription(planId: string): Promise<SubscribeResponse> {
+export async function createSubscription(planId: string | number): Promise<SubscribeResponse> {
+  const numericPlanId = typeof planId === 'number'
+    ? planId
+    : (parseInt(planId, 10) || (planId === 'premium' ? 2 : 1));
+
   const endpoints = [
     '/api/v1/mobile/subscriptions/subscribe',
     '/api/v1/subscriptions/subscribe',
@@ -220,7 +235,7 @@ export async function createSubscription(planId: string): Promise<SubscribeRespo
     try {
       const res = await apiRequest<SubscribeResponse>(path, {
         method: 'POST',
-        body: JSON.stringify({ plan_id: planId }),
+        body: JSON.stringify({ plan_id: numericPlanId }),
       });
       if (res) return res;
     } catch (e) {
@@ -265,4 +280,50 @@ export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionSta
 
   return { has_active_subscription: false, subscription: null };
 }
+
+export type DeviceAccessCheckResult = {
+  allowed: boolean;
+  maxDevices: number;
+  activeDevicesCount: number;
+  message?: string;
+};
+
+/**
+ * Registers an active playback session for the current device and verifies
+ * concurrent device streaming limits based on the user's active plan tier.
+ * - Standard Plan: 1 concurrent device allowed
+ * - Premium Plan: Up to 3 concurrent devices allowed
+ */
+export async function registerDevicePlaybackSession(videoId: number): Promise<DeviceAccessCheckResult> {
+  const cid = getCreatorId();
+  try {
+    const { getOrCreateDeviceId, getDeviceInfo } = require('../../utils/deviceIdHelper');
+    const deviceId = await getOrCreateDeviceId();
+    const deviceInfo = getDeviceInfo();
+
+    const res = await apiRequest<any>('/api/v1/mobile/streams/start', {
+      method: 'POST',
+      body: JSON.stringify({
+        device_id: deviceId,
+        device_info: deviceInfo,
+        video_id: videoId,
+        creator_id: cid,
+      }),
+    });
+
+    if (res) {
+      return {
+        allowed: res.allowed !== false,
+        maxDevices: res.max_devices || res.allowed_devices || 1,
+        activeDevicesCount: res.active_devices_count || 1,
+        message: res.message,
+      };
+    }
+  } catch (e) {
+    console.warn('[subscriptionApi] Notice registering device playback session with backend:', e);
+  }
+
+  return { allowed: true, maxDevices: 1, activeDevicesCount: 1 };
+}
+
 

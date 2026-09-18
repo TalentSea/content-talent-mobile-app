@@ -177,6 +177,8 @@ export default function NativeVideoPlayer({
   const [nativeTextTracks, setNativeTextTracks] = useState<any[]>([]);
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState<number>(-1);
   const [showCaptionMenu, setShowCaptionMenu] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [selectedQuality, setSelectedQuality] = useState<string>('Auto');
   const [currentVolume, setCurrentVolume] = useState(volume);
   const [activeCaptions, setActiveCaptions] = useState(captions);
 
@@ -264,6 +266,7 @@ export default function NativeVideoPlayer({
         setShowControls(false);
         setShowMoreMenu(false);
         setShowCaptionMenu(false);
+        setShowQualityMenu(false);
         setShowSettingsMenu(false);
         setShowDownloadMenu(false);
       }, 4000);
@@ -336,7 +339,7 @@ export default function NativeVideoPlayer({
     setRetryCount(prev => prev + 1);
   };
 
-  // Download Options (240p, 480p, 720p, 1080p) with planTier resolution caps
+  // Download Options (240p, 480p, 720p, 1080p) - Downloads unlocked ONLY for Premium Plan users
   const rawDownloadUrls: DownloadItem[] =
     downloadUrls.length > 0
       ? downloadUrls
@@ -349,23 +352,14 @@ export default function NativeVideoPlayer({
         ]
       : [{ resolution: '720p', label: 'Standard MP4', url: mp4Url || uri }];
 
-  const availableDownloadUrls: (DownloadItem & { isLocked?: boolean })[] = rawDownloadUrls.map(item => {
-    if (planTier === 'basic' && (item.resolution === '1080p' || item.label.includes('1080p'))) {
-      return {
-        ...item,
-        isLocked: true,
-        label: '1080p HD 🔒 (Requires Premium Plan)',
-      };
-    }
-    return item;
-  });
+  const availableDownloadUrls: DownloadItem[] = rawDownloadUrls;
 
-  const handleStartDownload = async (targetUrl: string, label: string, isLocked?: boolean) => {
+  const handleStartDownload = async (targetUrl: string, label: string) => {
     setShowDownloadMenu(false);
-    if (isLocked) {
+    if (planTier !== 'premium') {
       Alert.alert(
         'Upgrade to Premium Plan 👑',
-        '1080p HD quality streaming and downloads are exclusively available on the Premium Plan. Your current Basic Plan supports up to 720p HD.',
+        'Offline video downloads are exclusively available on the Premium Plan. Upgrade your subscription plan to download videos.',
       );
       return;
     }
@@ -606,15 +600,6 @@ export default function NativeVideoPlayer({
         }}
       />
 
-      {/* Subtitle Cue Text Overlay */}
-      {selectedCaptionIndex !== -1 && activeCueText ? (
-        <View style={styles.subtitleOverlayContainer} pointerEvents="none">
-          <View style={styles.subtitleTextBackground}>
-            <Text style={styles.subtitleText}>{activeCueText}</Text>
-          </View>
-        </View>
-      ) : null}
-
 
       {controls ? (
         <Pressable
@@ -847,7 +832,7 @@ export default function NativeVideoPlayer({
                   <Pressable
                     key={idx}
                     style={styles.speedItem}
-                    onPress={() => handleStartDownload(item.url, item.label, item.isLocked)}
+                    onPress={() => handleStartDownload(item.url, item.label)}
                   >
                     <Text style={styles.speedText}>
                       {item.label} ({item.resolution})
@@ -861,6 +846,15 @@ export default function NativeVideoPlayer({
             {showSettingsMenu ? (
               <View style={styles.speedMenu}>
                 <Text style={styles.menuHeaderTitle}>Settings</Text>
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setShowQualityMenu(true);
+                    setShowSettingsMenu(false);
+                  }}
+                >
+                  <Text style={styles.speedText}>Video Quality ({selectedQuality}) ›</Text>
+                </Pressable>
                 <Pressable
                   style={styles.speedItem}
                   onPress={() => {
@@ -878,6 +872,99 @@ export default function NativeVideoPlayer({
                   }}
                 >
                   <Text style={styles.speedText}>Captions / Subtitles ›</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {/* Video Quality Menu Dropdown */}
+            {showQualityMenu ? (
+              <View style={styles.speedMenu}>
+                <Text style={styles.menuHeaderTitle}>Video Quality</Text>
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setSelectedQuality('Auto');
+                    setShowQualityMenu(false);
+                    if (uri && uri.includes('.m3u8')) {
+                      setActiveUri(uri);
+                    }
+                  }}
+                >
+                  <Text style={[styles.speedText, selectedQuality === 'Auto' && styles.speedTextActive]}>
+                    Auto (Recommended){selectedQuality === 'Auto' ? '  ✓' : ''}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setSelectedQuality('720p HD');
+                    setShowQualityMenu(false);
+                    if (uri && uri.includes('.m3u8')) {
+                      setActiveUri(uri.replace(/playlist\.m3u8.*$/, 'play_720p.m3u8'));
+                    }
+                  }}
+                >
+                  <Text style={[styles.speedText, selectedQuality === '720p HD' && styles.speedTextActive]}>
+                    720p HD{selectedQuality === '720p HD' ? '  ✓' : ''}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setSelectedQuality('480p SD');
+                    setShowQualityMenu(false);
+                    if (uri && uri.includes('.m3u8')) {
+                      setActiveUri(uri.replace(/playlist\.m3u8.*$/, 'play_480p.m3u8'));
+                    }
+                  }}
+                >
+                  <Text style={[styles.speedText, selectedQuality === '480p SD' && styles.speedTextActive]}>
+                    480p SD{selectedQuality === '480p SD' ? '  ✓' : ''}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    setSelectedQuality('240p SD');
+                    setShowQualityMenu(false);
+                    if (uri && uri.includes('.m3u8')) {
+                      setActiveUri(uri.replace(/playlist\.m3u8.*$/, 'play_240p.m3u8'));
+                    }
+                  }}
+                >
+                  <Text style={[styles.speedText, selectedQuality === '240p SD' && styles.speedTextActive]}>
+                    240p SD{selectedQuality === '240p SD' ? '  ✓' : ''}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.speedItem}
+                  onPress={() => {
+                    if (planTier !== 'premium') {
+                      Alert.alert(
+                        'Upgrade to Premium Plan 👑',
+                        '1080p Full HD video quality streaming is exclusively available on the Premium Plan. Your current plan supports up to 720p HD.',
+                      );
+                      return;
+                    }
+                    setSelectedQuality('1080p Full HD');
+                    setShowQualityMenu(false);
+                    if (uri && uri.includes('.m3u8')) {
+                      setActiveUri(uri.replace(/playlist\.m3u8.*$/, 'play_1080p.m3u8'));
+                    }
+                  }}
+                >
+                  <Text style={[
+                    styles.speedText,
+                    selectedQuality === '1080p Full HD' && styles.speedTextActive,
+                    planTier !== 'premium' && { color: '#9CA3AF' },
+                  ]}>
+                    {planTier === 'premium' ? '1080p Full HD' : '1080p HD 🔒 (Requires Premium Plan)'}
+                    {selectedQuality === '1080p Full HD' ? '  ✓' : ''}
+                  </Text>
                 </Pressable>
               </View>
             ) : null}

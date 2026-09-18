@@ -217,7 +217,17 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => navigation?.navigate('Subscription')}
+              onPress={async () => {
+                try {
+                  const status = await fetchUserSubscriptionStatus();
+                  if (status.subscription) {
+                    setLiveSub(status.subscription);
+                  }
+                } catch (e) {
+                  // ignore
+                }
+                navigation?.navigate('Subscription');
+              }}
             >
               <View
                 style={{
@@ -237,7 +247,7 @@ export function ProfileScreen({ navigation }: any) {
                   My Subscription
                 </Text>
                 <Text style={{ color: userIsSubscribed ? '#A855F7' : '#64748B', fontSize: 12, marginTop: 1, fontWeight: userIsSubscribed ? '600' : '400' }}>
-                  Active Plan: {activePlanName}{daysRemainingStr}
+                  Current plan: {activePlanName}{daysRemainingStr}
                 </Text>
                 <Text style={{ color: userAdFree ? '#10B981' : '#94A3B8', fontSize: 11, marginTop: 1 }}>
                   {userAdFree ? '✨ Ad-Free Playback Active' : '📺 Ad-Supported Viewing'}
