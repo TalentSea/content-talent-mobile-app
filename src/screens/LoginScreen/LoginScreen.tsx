@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Play } from 'lucide-react-native';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-
 let LoginManager: any = null;
 let AccessToken: any = null;
 let Profile: any = null;
@@ -251,10 +250,11 @@ export function LoginScreen({ navigation }: any) {
                         try {
                             const currentProfile = await Profile.getCurrentProfile();
                             if (currentProfile) {
+                                const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User';
                                 realProfile = {
                                     id: Date.now(),
-                                    name: currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User',
-                                    email: currentProfile.email || `${currentProfile.userID}@facebook.com`,
+                                    name: fullName,
+                                    email: currentProfile.email || `${currentProfile.userID || 'user'}@facebook.com`,
                                     avatar_url: currentProfile.imageURL || undefined,
                                     provider: 'facebook',
                                     role: 'subscriber',
@@ -295,6 +295,12 @@ export function LoginScreen({ navigation }: any) {
                     setShowFacebookModal(true);
                     return;
                 }
+            }
+
+            if (!realToken && !realProfile) {
+                console.log(`[handleSocialLogin] No token or profile received for ${provider}. Aborting login.`);
+                setLoadingProvider(null);
+                return;
             }
 
             const sendToken = realToken || `token_${provider}_${Date.now()}`;
