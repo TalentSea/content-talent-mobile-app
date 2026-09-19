@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -40,10 +41,11 @@ import { styles } from './styles';
 export function CategoryDetailScreen({ route, navigation }: any) {
   const { category: initialCategory = 'All', playlistId, description: routeDescription } = route.params || {};
 
-  const { popularVideos } = useVideos();
+  const { popularVideos, reload } = useVideos();
   const [playlistDetails, setPlaylistDetails] = useState<PlaylistDetails | null>(null);
   const [playlistVideos, setPlaylistVideos] = useState<ApiVideo[]>([]);
   const [loading, setLoading] = useState<boolean>(!!playlistId);
+  const [refreshing, setRefreshing] = useState(false);
   const [showFullDesc, setShowFullDesc] = useState(false);
 
   const categoryFallbackVideos = popularVideos.filter(
@@ -112,7 +114,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
 
   const heroThumb =
     playlistDetails?.thumbnail_url ||
-    (finalVideos[0] ? getThumbnailForVideo(finalVideos[0]) : 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80');
+    (finalVideos[0] ? getThumbnailForVideo(finalVideos[0]) : '');
 
   function handlePlayAll(shuffle = false) {
     if (finalVideos.length > 0) {
@@ -151,10 +153,27 @@ export function CategoryDetailScreen({ route, navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await reload();
+              setRefreshing(false);
+            }}
+            tintColor="#FFFFFF"
+          />
+        }
+      >
         {/* Top Hero Banner Header */}
         <View style={styles.heroBannerContainer}>
-          <Image source={{ uri: heroThumb }} style={styles.heroImage} />
+          {heroThumb ? (
+            <Image source={{ uri: heroThumb }} style={styles.heroImage} />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: '#1E1E2E' }]} />
+          )}
           <View style={styles.heroOverlay}>
             <Pressable
               style={styles.backButtonFloating}

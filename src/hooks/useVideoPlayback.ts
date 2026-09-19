@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fetchVideoPlayInfo, getDistinctStreamUrlForVideo } from '../services/api/video';
-import { API_BASE_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS } from '../constants/config';
+import { API_BASE_URL } from '../constants/config';
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
 import { isUserSubscribed, isUserLoggedIn, activateSubscription } from '../services/api/authService';

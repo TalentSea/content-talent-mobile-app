@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -140,7 +141,42 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={async () => {
+              if (playlistId) {
+                setLoading(true);
+                try {
+                  const details = await fetchPlaylistDetails(playlistId);
+                  setPlaylistDetails(details);
+                  const videosRes = await fetchPlaylistVideos(playlistId);
+                  const rawDetailsList = Array.isArray((details?.videos as any)?.items)
+                    ? (details.videos as any).items
+                    : Array.isArray(details?.videos)
+                      ? details.videos
+                      : Array.isArray((details as any)?.items)
+                        ? (details as any).items
+                        : [];
+                  const rawApiList = videosRes?.items || [];
+                  const combinedMap = new Map<number, ApiVideo>();
+                  [...rawDetailsList, ...rawApiList].forEach((v: any) => {
+                    if (v && v.id) combinedMap.set(v.id, normalizeVideoItem(v));
+                  });
+                  setPlaylistVideos(Array.from(combinedMap.values()));
+                } catch (err) {
+                  // Ignore
+                } finally {
+                  setLoading(false);
+                }
+              }
+            }}
+            tintColor="#FFFFFF"
+          />
+        }
+      >
         {/* Top Hero Banner Header */}
         <View style={styles.heroBannerContainer}>
           {heroThumb ? (

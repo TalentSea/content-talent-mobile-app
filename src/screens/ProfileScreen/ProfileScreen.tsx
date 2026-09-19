@@ -3,6 +3,7 @@ import {
   Alert,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -170,7 +171,17 @@ export function ProfileScreen({ navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" backgroundColor="#05050A" />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={reload}
+            tintColor="#FFFFFF"
+          />
+        }
+      >
         {/* Profile Card Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>My Account</Text>

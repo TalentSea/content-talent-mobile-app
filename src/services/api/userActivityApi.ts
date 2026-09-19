@@ -1,6 +1,5 @@
 import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
-import { incrementMockVideoViews, toggleMockVideoLike } from './mockVideoApi';
 import { normalizeVideoItem } from './video';
 import { getCreatorId } from '../../constants/config';
 

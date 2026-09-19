@@ -167,14 +167,14 @@ export function PlaylistScreen({ navigation }: any) {
                 })
               }
             >
-              <Image
-                source={{
-                  uri:
-                    item.thumbnail_url ||
-                    'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80',
-                }}
-                style={styles.cardImage}
-              />
+              {item.thumbnail_url ? (
+                <Image
+                  source={{ uri: item.thumbnail_url }}
+                  style={styles.cardImage}
+                />
+              ) : (
+                <View style={[styles.cardImage, { backgroundColor: '#1E1E2E' }]} />
+              )}
               <View style={styles.cardGradientOverlay}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.badge}>

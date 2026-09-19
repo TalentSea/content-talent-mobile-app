@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Alert,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Switch,
@@ -60,7 +61,16 @@ export function SettingsScreen({ navigation }: any) {
         <Text style={styles.headerTitle}>App Settings</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => {}}
+            tintColor="#FFFFFF"
+          />
+        }
+      >
         {/* Section 0: Active Creator Channel Selector */}
         <Text style={styles.sectionHeader}>Active Creator Studio Channel</Text>
         <View style={styles.card}>

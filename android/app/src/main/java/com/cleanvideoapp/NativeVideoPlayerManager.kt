@@ -62,6 +62,11 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         view.setSelectedTextTrack(selectedTextTrack)
     }
 
+    @ReactProp(name = "isFullscreen", defaultBoolean = false)
+    fun setIsFullscreen(view: NativeVideoPlayerView, isFullscreen: Boolean) {
+        view.setIsFullscreen(isFullscreen)
+    }
+
 
     override fun getExportedCustomDirectEventTypeConstants(): MutableMap<String, Any> {
         val builder = MapBuilder.newHashMap<String, Any>()
@@ -72,6 +77,7 @@ class NativeVideoPlayerManager : SimpleViewManager<NativeVideoPlayerView>() {
         builder["onBuffer"] = MapBuilder.of("registrationName", "onBuffer")
         builder["onEnd"] = MapBuilder.of("registrationName", "onEnd")
         builder["onTracksAvailable"] = MapBuilder.of("registrationName", "onTracksAvailable")
+        builder["onAdEvent"] = MapBuilder.of("registrationName", "onAdEvent")
         return builder
     }
 

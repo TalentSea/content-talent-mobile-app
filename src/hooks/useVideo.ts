@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { fetchVideos } from '../services/api/video';
-import { subscribeVideoCatalog } from '../services/api/mockVideoApi';
 import type { ApiVideo } from '../../types/video';
 import { isStreamable } from '../constants/videoStatus';
 
@@ -28,14 +27,6 @@ export function useVideos() {
 
   useEffect(() => {
     loadVideos();
-
-    const unsubscribeCatalog = subscribeVideoCatalog(() => {
-      loadVideos(false);
-    });
-
-    return () => {
-      unsubscribeCatalog();
-    };
   }, []);
 
   const filteredPopular = videos.filter(video =>

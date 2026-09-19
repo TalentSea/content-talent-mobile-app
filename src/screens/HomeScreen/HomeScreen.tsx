@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -105,18 +106,21 @@ export function HomeScreen({ navigation }: any) {
     loadLiveMobileData();
   }, [videos]);
 
-  // 1. Recently Added: sorted by latest published_at/created_at timestamp
+  // Max video count limits per section:
+  // 1. Recently Added: up to 15 videos
   const recentlyAddedVideos = [...videos].sort((a, b) => {
     const timeA = new Date(a.published_at || a.created_at || 0).getTime();
     const timeB = new Date(b.published_at || b.created_at || 0).getTime();
     return timeB - timeA;
-  });
+  }).slice(0, 15);
 
-  // 2. Popular Videos: sorted by highest views engagement
-  const popularVideosSorted = [...videos].sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id));
+  // 2. Popular Videos: up to 15 videos
+  const popularVideosSorted = [...videos]
+    .sort((a, b) => getCleanViewCountForVideo(b.id) - getCleanViewCountForVideo(a.id))
+    .slice(0, 15);
 
-  // 3. Continue Watching: watch history filtered to available videos
-  const continueWatchingList = continueWatching;
+  // 3. Continue Watching: up to 10 started videos
+  const continueWatchingList = continueWatching.slice(0, 10);
 
   // Extract custom featured banners configured in studio branding
   const combinedBanners: MobileBannerItem[] = [
@@ -171,7 +175,16 @@ export function HomeScreen({ navigation }: any) {
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={reload}
+            tintColor="#FFFFFF"
+          />
+        }
+      >
         {/* Top Header: Logo + Search + Profile */}
         <View style={styles.header}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 8 }}>
@@ -223,12 +236,7 @@ export function HomeScreen({ navigation }: any) {
           />
         )}
 
-        {/* Video Horizontal Carousels in EXACT requested order: */}
-        {/* 1. Continue Watching */}
-        {/* 2. Popular Videos */}
-        {/* 3. Playlists */}
-        {/* 4. Recently Updated */}
-        {/* 5. Category-Wise Videos */}
+        {/* Video Horizontal Carousels: */}
         {!loading && (
           <View style={{ marginTop: 4 }}>
             {/* 1. Continue Watching Section */}
@@ -305,7 +313,7 @@ export function HomeScreen({ navigation }: any) {
 
             {/* 5. Category-Wise Video Rows using API categories ONLY */}
             {apiCategories.map(cat => {
-              const catVideos = videos.filter(v => v.category?.toLowerCase() === cat.toLowerCase());
+              const catVideos = videos.filter(v => v.category?.toLowerCase() === cat.toLowerCase()).slice(0, 15);
               if (catVideos.length === 0) return null;
               return (
                 <HorizontalList
@@ -321,8 +329,8 @@ export function HomeScreen({ navigation }: any) {
         )}
       </ScrollView>
 
-      {/* Permanent Bottom Navigation Bar */}
-      <BottomNavBar activeTab="Home" navigation={navigation} />
+      {/* Permanent Bottom Navigation Bar (Hidden when Player is open) */}
+      {!playingVideo && <BottomNavBar activeTab="Home" navigation={navigation} />}
 
       {/* Embedded HLS Video Player Modal */}
       <PlayerModal

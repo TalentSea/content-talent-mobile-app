@@ -60,7 +60,20 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
         playerView = LayoutInflater.from(context)
                 .inflate(R.layout.player_view_layout, this, false) as PlayerView
 
-        imaAdsLoader = ImaAdsLoader.Builder(context).build()
+        imaAdsLoader = ImaAdsLoader.Builder(context)
+            .setAdEventListener { adEvent ->
+                try {
+                    val eventTypeName = adEvent.type.name
+                    Log.d("NativeVideoPlayer", "IMA AdEvent: $eventTypeName")
+                    val event = Arguments.createMap().apply {
+                        putString("eventType", eventTypeName)
+                    }
+                    sendEvent("onAdEvent", event)
+                } catch (e: Exception) {
+                    Log.w("NativeVideoPlayer", "Error sending onAdEvent: ${e.message}")
+                }
+            }
+            .build()
 
         val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
             .setUserAgent("Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
@@ -80,7 +93,7 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
         playerView.player = player
         playerView.subtitleView?.apply {
-            setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 14f)
+            setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, 11f)
             setStyle(
                 androidx.media3.ui.CaptionStyleCompat(
                     android.graphics.Color.WHITE,
@@ -349,6 +362,7 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
     }
 
     private fun sendProgressEvent() {
+        val isAdPlaying = player.isPlayingAd
         val duration = player.duration
         val currentPosition = player.currentPosition
 
@@ -356,6 +370,7 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
             val event = Arguments.createMap().apply {
                 putDouble("currentTime", currentPosition.toDouble() / 1000.0)
                 putDouble("duration", duration.toDouble() / 1000.0)
+                putBoolean("isAdPlaying", isAdPlaying)
             }
 
             sendEvent("onProgress", event)
@@ -500,6 +515,11 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
             putArray("textTracks", tracksArray)
         }
         sendEvent("onTracksAvailable", event)
+    }
+
+    fun setIsFullscreen(isFullscreen: Boolean) {
+        val sizeDp = if (isFullscreen) 16f else 11f
+        playerView.subtitleView?.setFixedTextSize(android.util.TypedValue.COMPLEX_UNIT_DIP, sizeDp)
     }
 }
 

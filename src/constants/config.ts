@@ -37,20 +37,6 @@ export function setCreatorId(id: number): void {
 }
 
 /**
- * Flags to enable mock API for videos and HLS inbuilt captions.
- * Set to `false` to query live server http://138.68.140.83:8000 with talentsea_secret_api_key_2026 credentials.
- */
-export const USE_MOCK_VIDEOS = false;
-export const USE_MOCK_CAPTIONS = false;
-
-/**
- * Standard test HLS stream with in-stream / embedded captions (multi-language: EN, ES, FR, DE)
- * Used when USE_MOCK_CAPTIONS is true or when testing native ExoPlayer HLS embedded subtitle detection.
- */
-export const MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS =
-  'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
-
-/**
  * Default ad tag URL (set to undefined so only adTagUrls explicitly returned by backend API are used).
  */
 export const DEFAULT_AD_TAG_URL = undefined;

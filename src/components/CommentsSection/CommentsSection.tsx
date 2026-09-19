@@ -406,7 +406,7 @@ export function CommentsSection({ videoId = 1 }: CommentsSectionProps) {
           });
 
           // Creator logo_url for heart badge, replies button, or creator avatar
-          const creatorAvatarUri = creatorLogo || comment.creator_avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&q=80';
+          const creatorAvatarUri = creatorLogo || comment.creator_avatar || undefined;
 
           return (
             <View key={`comment-${comment.id}-${idx}`} style={styles.commentCard}>

@@ -32,7 +32,7 @@ import {
   toggleLikeVideo,
   toggleSaveVideo,
 } from '../../services/userActivity';
-import { incrementVideoViewsApi } from '../../services/api/userActivityApi';
+import { incrementVideoViewsApi, recordAdImpressionApi } from '../../services/api/userActivityApi';
 import {
   getCleanViewCountForVideo,
   hasUserViewedVideo,
@@ -78,6 +78,9 @@ export function PlayerModal({
   const [viewsCount, setViewsCount] = useState<number>(0);
   const [likesCount, setLikesCount] = useState<number>(0);
   const hasCountedViewRef = useRef(false);
+  const hasRecordedAdImpressionRef = useRef(false);
+  const hasRecordedAdMidpointRef = useRef(false);
+  const hasRecordedAdCompleteRef = useRef(false);
   const [videoRatio, setVideoRatio] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
   const [isSubscribed, setIsSubscribed] = useState(isUserSubscribed());
@@ -140,6 +143,9 @@ export function PlayerModal({
       setIsSubscribed(isUserSubscribed());
       initViewTracker();
       hasCountedViewRef.current = false;
+      hasRecordedAdImpressionRef.current = false;
+      hasRecordedAdMidpointRef.current = false;
+      hasRecordedAdCompleteRef.current = false;
       const initialViews = getCleanViewCountForVideo(currentVideoId);
       const initialLikes = getCleanLikesCountForVideo(currentVideoId);
       setViewsCount(initialViews);
@@ -190,7 +196,55 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
   return 0;
 }
 
-  function handlePlayerProgress(currentTime: number, duration?: number) {
+  function handleAdEvent(rawEventType: string) {
+    const eventType = rawEventType?.toUpperCase();
+    const defaultAdDuration = 15;
+
+    if (eventType === 'IMPRESSION' || eventType === 'STARTED') {
+      if (!hasRecordedAdImpressionRef.current) {
+        hasRecordedAdImpressionRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'impression', defaultAdDuration);
+      }
+    } else if (eventType === 'MIDPOINT') {
+      if (!hasRecordedAdMidpointRef.current) {
+        hasRecordedAdMidpointRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'midpoint', defaultAdDuration);
+      }
+    } else if (eventType === 'COMPLETED') {
+      if (!hasRecordedAdCompleteRef.current) {
+        hasRecordedAdCompleteRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'complete', defaultAdDuration);
+      }
+    }
+  }
+
+  function handlePlayerProgress(currentTime: number, duration?: number, isAdPlaying?: boolean) {
+    // Handle ad impression telemetry during preroll ad playback
+    if (isAdPlaying) {
+      const adDuration = (typeof duration === 'number' && duration > 0) ? Math.round(duration) : 15;
+
+      // 1. Impression event (when ad begins playing)
+      if (!hasRecordedAdImpressionRef.current) {
+        hasRecordedAdImpressionRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'impression', adDuration);
+      }
+
+      // 2. Midpoint event (at 50% of ad duration)
+      if (!hasRecordedAdMidpointRef.current && currentTime >= adDuration * 0.5) {
+        hasRecordedAdMidpointRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'midpoint', adDuration);
+      }
+
+      // 3. Complete event (when ad completes / reaches end)
+      if (!hasRecordedAdCompleteRef.current && currentTime >= Math.max(adDuration - 1, 1)) {
+        hasRecordedAdCompleteRef.current = true;
+        recordAdImpressionApi(currentVideoId, 'complete', adDuration);
+      }
+
+      // Views & watch history must ONLY trigger for main video content, NEVER during preroll ad playback
+      return;
+    }
+
     const effectiveDuration = (typeof duration === 'number' && duration > 0)
       ? duration
       : parseDurationInSeconds((playingVideo as any)?.duration);
@@ -199,7 +253,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
       ? Math.round((currentTime / effectiveDuration) * 100)
       : 0;
 
-    // Record user-specific watch progress dynamically as the user watches
+    // Record user-specific watch progress dynamically as the user watches main video
     if (currentTime > 2) {
       recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
     }
@@ -379,6 +433,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                   onClose={handleClose}
                   onEnd={onVideoEnd}
                   onProgress={handlePlayerProgress}
+                  onAdEvent={handleAdEvent}
                 />
               );
             }

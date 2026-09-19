@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   StatusBar,
   Text,
   View,
@@ -55,6 +56,13 @@ export function NotificationsScreen({ navigation }: any) {
         data={notifications}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => {}}
+            tintColor="#FFFFFF"
+          />
+        }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 20 }}>
             <Bell size={44} color="#475569" style={{ marginBottom: 12 }} />

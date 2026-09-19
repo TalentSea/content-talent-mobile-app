@@ -1,9 +1,8 @@
 import { apiGet } from './client';
-import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS, getCreatorId } from '../../constants/config';
+import { API_BASE_URL, DEFAULT_AD_TAG_URL, getCreatorId } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchUserSubscriptionStatus } from './subscriptionApi';
 import { isUserAdFree, activateSubscription } from './authService';
-import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
 import { getCleanViewCountForVideo, setBackendViewCount } from '../viewTracker';
 import { getCleanLikesCountForVideo, setBackendLikesCount } from '../userActivity';
 import type {

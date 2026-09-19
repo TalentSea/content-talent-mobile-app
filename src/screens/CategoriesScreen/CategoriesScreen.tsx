@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   FlatList,
   Pressable,
+  RefreshControl,
   StatusBar,
   Text,
   View,
@@ -39,7 +40,7 @@ const DEFAULT_CATEGORY_COLORS = [
 import { CategoryGridSkeleton } from '../../components/SkeletonLoader/HotstarSkeleton';
 
 export function CategoriesScreen({ navigation }: any) {
-  const { videos, loading: videosLoading } = useVideos();
+  const { videos, loading: videosLoading, reload } = useVideos();
   const [categoriesList, setCategoriesList] = useState<RealCategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -135,6 +136,16 @@ export function CategoriesScreen({ navigation }: any) {
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading || videosLoading}
+              onRefresh={() => {
+                setLoading(true);
+                reload();
+              }}
+              tintColor="#FFFFFF"
+            />
+          }
           renderItem={({ item }) => (
             <Pressable
               style={[styles.card, { backgroundColor: item.color }]}

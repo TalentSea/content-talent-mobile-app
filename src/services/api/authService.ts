@@ -1,6 +1,6 @@
 import RNFS from 'react-native-fs';
 import { apiRequest, setApiAccessToken, getApiAccessToken, decodeJwtCreatorId } from './client';
-import { USE_MOCK_VIDEOS, DEFAULT_AUTH_TOKEN, getCreatorId, registerCreatorIdListener } from '../../constants/config';
+import { DEFAULT_AUTH_TOKEN, getCreatorId, registerCreatorIdListener } from '../../constants/config';
 import { getOrCreateDeviceId, getDeviceInfo } from '../../utils/deviceIdHelper';
 
 // Automatically purge session when setCreatorId is called at runtime
@@ -517,25 +517,6 @@ export async function loginWithSocialToken(
 
   const info = customDeviceInfo || getDeviceInfo();
 
-  if (USE_MOCK_VIDEOS) {
-    const mockAuth: AuthResponse = {
-      access_token: `mock_access_token_${Date.now()}`,
-      refresh_token: `mock_refresh_token_${Date.now()}`,
-      token_type: 'bearer',
-      expires_in: 1800,
-      user: userProfileOverride || {
-        id: 99,
-        name: provider === 'google' ? 'Jane Doe' : 'John Smith',
-        email: provider === 'google' ? 'jane.doe@gmail.com' : 'john.smith@facebook.com',
-        avatar_url: 'https://lh3.googleusercontent.com/a/AEdFT...',
-        provider,
-        role: 'member',
-      },
-    };
-    setSessionTokens(mockAuth.access_token, mockAuth.refresh_token, mockAuth.user);
-    return mockAuth;
-  }
-
   const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
   const body =
     provider === 'google'
@@ -609,7 +590,7 @@ export const loginWithSocial = loginWithSocialToken;
  * Rotates a 60-day Refresh Token to issue a fresh 30-minute Access Token.
  */
 export async function refreshAccessToken(): Promise<string> {
-  if (!storedRefreshToken || storedRefreshToken.startsWith('mock_') || storedRefreshToken.startsWith('guest_')) {
+  if (!storedRefreshToken || storedRefreshToken.startsWith('guest_')) {
     throw new Error('No valid refresh token available');
   }
 
@@ -630,7 +611,7 @@ export async function refreshAccessToken(): Promise<string> {
  * Revokes the refresh token and terminates the subscriber's session.
  */
 export async function clearSessionTokens() {
-  if (storedRefreshToken && !storedRefreshToken.startsWith('mock_') && !storedRefreshToken.startsWith('guest_')) {
+  if (storedRefreshToken && !storedRefreshToken.startsWith('guest_')) {
     try {
       await apiRequest<{ success: boolean; message?: string }>('/api/v1/auth/logout', {
         method: 'POST',

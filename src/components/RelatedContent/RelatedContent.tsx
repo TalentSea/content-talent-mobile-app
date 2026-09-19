@@ -7,13 +7,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { VideoCard } from '../VideoCard/VideoCard';
 import { fetchVideos } from '../../services/api/video';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { formatViews, getRelativeTimeString, formatDurationString } from '../../utils/timeUtils';
 import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
-
 
 type RelatedContentProps = {
   currentVideoId?: number;
@@ -72,7 +72,6 @@ export function RelatedContent({
             return true;
           }
           if (tags && tags.length > 0 && v.tags && v.tags.some((t: string) => tags.includes(t))) {
-
             return true;
           }
           return false;
@@ -137,37 +136,16 @@ export function RelatedContent({
             keyExtractor={(item, idx) => `rel-vid-${item.id}-${idx}`}
             contentContainerStyle={styles.horizontalListContainer}
             renderItem={({ item }) => (
-              <Pressable
-                style={styles.videoCard}
+              <VideoCard
+                video={item}
+                id={String(item.id)}
+                title={item.title}
+                thumbnailUrl={item.main_thumbnail_url || undefined}
+                category={item.category || undefined}
+                durationText={item.duration || undefined}
+                badgeText={item.status}
                 onPress={() => onSelectVideo && onSelectVideo(item)}
-              >
-                <View>
-                  <Image
-                    source={{
-                      uri:
-                        item.main_thumbnail_url ||
-                        'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-                    }}
-                    style={styles.videoThumbnail}
-                  />
-                  {item.duration ? (
-                    <View style={styles.videoDurationBadge}>
-                      <Text style={styles.durationText}>{formatDurationString(item.duration)}</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <View style={styles.videoContent}>
-                  <Text style={styles.videoTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.videoMeta} numberOfLines={1}>
-                    {item.category || 'General'} • {formatViews(getCleanViewCountForVideo(item.id))}
-                  </Text>
-                  <Text style={{ color: '#9CA3AF', fontSize: 10, marginTop: 2 }}>
-                    {getRelativeTimeString(item.published_at || item.created_at)}
-                  </Text>
-                </View>
-              </Pressable>
+              />
             )}
           />
         </View>
@@ -195,14 +173,14 @@ export function RelatedContent({
                 onPress={() => onSelectPlaylist && onSelectPlaylist(item)}
               >
                 <View>
-                  <Image
-                    source={{
-                      uri:
-                        item.thumbnail_url ||
-                        'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80',
-                    }}
-                    style={styles.playlistThumbnail}
-                  />
+                  {item.thumbnail_url ? (
+                    <Image
+                      source={{ uri: item.thumbnail_url }}
+                      style={styles.playlistThumbnail}
+                    />
+                  ) : (
+                    <View style={[styles.playlistThumbnail, { backgroundColor: '#1E1E2E' }]} />
+                  )}
                   <View style={styles.playlistOverlay}>
                     <Text style={styles.playlistOverlayText}>{item.video_count} Streams</Text>
                   </View>

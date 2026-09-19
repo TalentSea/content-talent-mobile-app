@@ -121,7 +121,8 @@ type VideoPlayerProps = {
   style?: ViewStyle;
   onClose?: () => void;
   onEnd?: () => void;
-  onProgress?: (currentTime: number, duration: number) => void;
+  onProgress?: (currentTime: number, duration: number, isAdPlaying?: boolean) => void;
+  onAdEvent?: (eventType: string) => void;
 };
 
 export default function NativeVideoPlayer({
@@ -155,6 +156,7 @@ export default function NativeVideoPlayer({
   onClose,
   onEnd,
   onProgress,
+  onAdEvent,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const hasSentLoadEventRef = useRef(false);
@@ -403,7 +405,7 @@ export default function NativeVideoPlayer({
           id: realVideoId,
           title: videoTitle,
           description: description || null,
-          main_thumbnail_url: thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+          main_thumbnail_url: thumbnailUrl || null,
           category: category || 'General',
           tags: [],
           status: 'published',
@@ -470,16 +472,20 @@ export default function NativeVideoPlayer({
   const handleProgress = (e: any) => {
     const newCurrentTime = e.nativeEvent.currentTime || 0;
     const seekable = e.nativeEvent.seekableDuration || e.nativeEvent.duration || 0;
-    setCurrentTime(newCurrentTime);
+    const isAdPlaying = Boolean(e.nativeEvent.isAdPlaying);
 
-    if (seekable > 0 && seekable > duration) {
-      setDuration(seekable);
-    } else if (newCurrentTime > duration && duration > 0) {
-      setDuration(newCurrentTime);
+    if (!isAdPlaying) {
+      setCurrentTime(newCurrentTime);
+
+      if (seekable > 0 && seekable > duration) {
+        setDuration(seekable);
+      } else if (newCurrentTime > duration && duration > 0) {
+        setDuration(newCurrentTime);
+      }
     }
 
     if (onProgress) {
-      onProgress(newCurrentTime, seekable || duration || 0);
+      onProgress(newCurrentTime, seekable || duration || 0, isAdPlaying);
     }
   };
 
@@ -554,6 +560,7 @@ export default function NativeVideoPlayer({
         key={`${activeUri}-${retryCount}`}
         ref={playerRef}
         useTextureView={true}
+        isFullscreen={isFullscreen}
         source={{
           uri: activeUri,
           type: activeUri.includes('.m3u8') ? 'm3u8' : 'mp4',
@@ -575,6 +582,7 @@ export default function NativeVideoPlayer({
         onBuffer={handleBuffer}
         onEnd={handleEnd}
         onTracksAvailable={handleTracksAvailable}
+        onAdEvent={(e: any) => onAdEvent?.(e.nativeEvent?.eventType)}
         captionsEnabled={selectedCaptionIndex !== -1}
         selectedTextTrack={getSelectedTextTrack()}
         onError={(e: any) => {
@@ -600,6 +608,32 @@ export default function NativeVideoPlayer({
         }}
       />
 
+      {/* Subtitle Cue Overlay for External VTT Captions */}
+      {activeCueText ? (
+        <View
+          style={[
+            styles.subtitleOverlayContainer,
+            isFullscreen && styles.subtitleOverlayContainerFullscreen,
+          ]}
+          pointerEvents="none"
+        >
+          <View
+            style={[
+              styles.subtitleTextBackground,
+              isFullscreen && styles.subtitleTextBackgroundFullscreen,
+            ]}
+          >
+            <Text
+              style={[
+                styles.subtitleText,
+                isFullscreen && styles.subtitleTextFullscreen,
+              ]}
+            >
+              {activeCueText}
+            </Text>
+          </View>
+        </View>
+      ) : null}
 
       {controls ? (
         <Pressable
@@ -619,7 +653,7 @@ export default function NativeVideoPlayer({
             <View style={styles.topBarLeft}>
               {(onClose || (isFullscreen && onToggleFullscreen)) ? (
                 <Pressable
-                  style={styles.topIconButton}
+                  style={[styles.topIconButton, isFullscreen && styles.topIconButtonFullscreen]}
                   onPress={() => {
                     if (isFullscreen && onToggleFullscreen) {
                       onToggleFullscreen();
@@ -629,18 +663,19 @@ export default function NativeVideoPlayer({
                   }}
                   hitSlop={12}
                 >
-                  <Text style={styles.backIconText}>‹</Text>
+                  <Text style={[styles.backIconText, isFullscreen && styles.backIconTextFullscreen]}>‹</Text>
                 </Pressable>
               ) : null}
             </View>
 
-            <View style={styles.topBarRight}>
+            <View style={[styles.topBarRight, isFullscreen && styles.topBarRightFullscreen]}>
               {/* Autoplay Toggle Switch Pill */}
               {onToggleAutoplay ? (
                 <Pressable
                   style={[
                     styles.autoplayToggleTrack,
                     autoplay ? styles.autoplayToggleTrackOn : styles.autoplayToggleTrackOff,
+                    isFullscreen && styles.autoplayToggleTrackFullscreen,
                   ]}
                   onPress={() => {
                     onToggleAutoplay();
@@ -652,35 +687,44 @@ export default function NativeVideoPlayer({
                     style={[
                       styles.autoplayToggleThumb,
                       autoplay ? styles.autoplayToggleThumbOn : styles.autoplayToggleThumbOff,
+                      isFullscreen && (autoplay ? styles.autoplayToggleThumbOnFullscreen : styles.autoplayToggleThumbOffFullscreen),
                     ]}
                   >
                     {autoplay ? (
-                      <Pause color="#111111" size={9} fill="#111111" />
+                      <Pause color="#111111" size={isFullscreen ? 11 : 9} fill="#111111" />
                     ) : (
-                      <Play color="#666666" size={9} fill="#666666" style={{ marginLeft: 1 }} />
+                      <Play color="#666666" size={isFullscreen ? 11 : 9} fill="#666666" style={{ marginLeft: 1 }} />
                     )}
                   </View>
                 </Pressable>
               ) : null}
 
               {/* CC Subtitles Badge Button */}
-              {/* CC (Closed Captions / Subtitles) Button */}
               <Pressable
                 style={[
                   styles.ytIconButton,
                   selectedCaptionIndex !== -1 && styles.ytIconButtonActive,
+                  isFullscreen && styles.ytIconButtonFullscreen,
                 ]}
                 onPress={() => {
                   setSelectedCaptionIndex(prev => (prev === -1 ? 0 : -1));
                   setShowControls(true);
                 }}
               >
-                <Text style={styles.ccBadgeText}>CC</Text>
+                <Text
+                  style={[
+                    styles.ccBadgeText,
+                    selectedCaptionIndex !== -1 && styles.darkCcText,
+                    isFullscreen && (selectedCaptionIndex !== -1 ? styles.darkCcTextFullscreen : styles.ccBadgeTextFullscreen),
+                  ]}
+                >
+                  CC
+                </Text>
               </Pressable>
 
               {/* Settings Gear Button */}
               <Pressable
-                style={styles.ytIconButton}
+                style={[styles.ytIconButton, isFullscreen && styles.ytIconButtonFullscreen]}
                 onPress={() => {
                   setShowSettingsMenu(prev => !prev);
                   setShowMoreMenu(false);
@@ -689,31 +733,46 @@ export default function NativeVideoPlayer({
                   setShowControls(true);
                 }}
               >
-                <Settings color="#FFFFFF" size={18} />
+                <Settings color="#FFFFFF" size={isFullscreen ? 24 : 18} />
               </Pressable>
             </View>
           </View>
 
           {/* Center Controls */}
-          <View style={styles.centerControlsRow} pointerEvents="box-none">
+          <View style={[styles.centerControlsRow, isFullscreen && styles.centerControlsRowFullscreen]} pointerEvents="box-none">
             {!error && !isBuffering ? (
               <>
-                <Pressable style={styles.ytSkipButton} onPress={skipBackward}>
-                  <RotateCcw color="#FFFFFF" size={26} />
-                  <Text style={styles.ytSkipText}>-10s</Text>
+                <Pressable
+                  style={[styles.ytSkipButton, isFullscreen && styles.ytSkipButtonFullscreen]}
+                  onPress={skipBackward}
+                  hitSlop={8}
+                >
+                  <RotateCcw color="#FFFFFF" size={isFullscreen ? 38 : 26} />
+                  <Text style={[styles.ytSkipText, isFullscreen && styles.ytSkipTextFullscreen]}>-10s</Text>
                 </Pressable>
 
-                <Pressable style={styles.ytCenterPlayButton} onPress={togglePlayPause}>
+                <Pressable
+                  style={[styles.ytCenterPlayButton, isFullscreen && styles.ytCenterPlayButtonFullscreen]}
+                  onPress={togglePlayPause}
+                >
                   {paused ? (
-                    <Play color="#FFFFFF" size={32} style={{ marginLeft: 4 }} />
+                    <Play
+                      color="#FFFFFF"
+                      size={isFullscreen ? 44 : 32}
+                      style={{ marginLeft: isFullscreen ? 6 : 4 }}
+                    />
                   ) : (
-                    <Pause color="#FFFFFF" size={32} />
+                    <Pause color="#FFFFFF" size={isFullscreen ? 44 : 32} />
                   )}
                 </Pressable>
 
-                <Pressable style={styles.ytSkipButton} onPress={skipForward}>
-                  <RotateCw color="#FFFFFF" size={26} />
-                  <Text style={styles.ytSkipText}>+10s</Text>
+                <Pressable
+                  style={[styles.ytSkipButton, isFullscreen && styles.ytSkipButtonFullscreen]}
+                  onPress={skipForward}
+                  hitSlop={8}
+                >
+                  <RotateCw color="#FFFFFF" size={isFullscreen ? 38 : 26} />
+                  <Text style={[styles.ytSkipText, isFullscreen && styles.ytSkipTextFullscreen]}>+10s</Text>
                 </Pressable>
               </>
             ) : null}
@@ -722,17 +781,17 @@ export default function NativeVideoPlayer({
           {/* Bottom Control Panel */}
           <View style={[styles.bottomPanel, isFullscreen ? { paddingBottom: 28, paddingHorizontal: 28 } : null]} pointerEvents="box-none">
             {/* Duration Time Text and Progress Bar in the same horizontal line */}
-            <View style={styles.progressRow}>
-              <Text style={styles.timeText}>
+            <View style={[styles.progressRow, isFullscreen && styles.progressRowFullscreen]}>
+              <Text style={[styles.timeText, isFullscreen && styles.timeTextFullscreen]}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </Text>
 
               <Pressable
-                style={styles.progressBarWrapperFlex}
+                style={[styles.progressBarWrapperFlex, isFullscreen && styles.progressBarWrapperFlexFullscreen]}
                 onLayout={e => setProgressBarWidth(e.nativeEvent.layout.width)}
                 onPress={handleProgressBarPress}
               >
-                <View style={styles.progressBarBackground}>
+                <View style={[styles.progressBarBackground, isFullscreen && styles.progressBarBackgroundFullscreen]}>
                   <View
                     style={[
                       styles.progressBarFill,
@@ -743,13 +802,12 @@ export default function NativeVideoPlayer({
                     style={[
                       styles.progressThumb,
                       { left: `${progressPercent}%` as any },
+                      isFullscreen && styles.progressThumbFullscreen,
                     ]}
                   />
                 </View>
               </Pressable>
             </View>
-
-
 
             {isDownloading ? (
               <Text style={styles.downloadProgressText}>
@@ -758,24 +816,28 @@ export default function NativeVideoPlayer({
             ) : null}
 
             {/* Bottom Actions Row (Grouped in bottom right: Sound, Download, Fullscreen/Landscape) */}
-            <View style={styles.bottomActions}>
-              <View style={styles.bottomRightGroup}>
-                <View style={styles.volumeControlRow}>
-                  <Pressable style={styles.actionButton} onPress={toggleMute} hitSlop={6}>
+            <View style={[styles.bottomActions, isFullscreen && styles.bottomActionsFullscreen]}>
+              <View style={[styles.bottomRightGroup, isFullscreen && styles.bottomRightGroupFullscreen]}>
+                <View style={[styles.volumeControlRow, isFullscreen && styles.volumeControlRowFullscreen]}>
+                  <Pressable
+                    style={[styles.actionButton, isFullscreen && styles.actionButtonFullscreen]}
+                    onPress={toggleMute}
+                    hitSlop={6}
+                  >
                     {isMuted ? (
-                      <VolumeX color="#FFFFFF" size={16} />
+                      <VolumeX color="#FFFFFF" size={isFullscreen ? 22 : 16} />
                     ) : (
-                      <Volume2 color="#FFFFFF" size={16} />
+                      <Volume2 color="#FFFFFF" size={isFullscreen ? 22 : 16} />
                     )}
                   </Pressable>
 
                   <View
-                    style={styles.volumeSliderWrapper}
+                    style={[styles.volumeSliderWrapper, isFullscreen && styles.volumeSliderWrapperFullscreen]}
                     onStartShouldSetResponder={() => true}
                     onResponderMove={handleVolumeChange}
                     onResponderGrant={handleVolumeChange}
                   >
-                    <View style={styles.volumeSliderBg}>
+                    <View style={[styles.volumeSliderBg, isFullscreen && styles.volumeSliderBgFullscreen]}>
                       <View
                         style={[
                           styles.volumeSliderFill,
@@ -786,6 +848,7 @@ export default function NativeVideoPlayer({
                         style={[
                           styles.volumeSliderThumb,
                           { left: `${(isMuted ? 0 : currentVolume) * 100}%` as any },
+                          isFullscreen && styles.volumeSliderThumbFullscreen,
                         ]}
                       />
                     </View>
@@ -794,7 +857,7 @@ export default function NativeVideoPlayer({
 
                 {/* In-App Download Quality Button */}
                 <Pressable
-                  style={styles.actionButton}
+                  style={[styles.actionButton, isFullscreen && styles.actionButtonFullscreen]}
                   onPress={() => {
                     setShowDownloadMenu(prev => !prev);
                     setShowCaptionMenu(false);
@@ -807,17 +870,21 @@ export default function NativeVideoPlayer({
                   {isDownloading ? (
                     <ActivityIndicator size="small" color="#FF0000" />
                   ) : (
-                    <Download color="#FFFFFF" size={16} />
+                    <Download color="#FFFFFF" size={isFullscreen ? 22 : 16} />
                   )}
                 </Pressable>
 
                 {/* Landscape / Fullscreen Toggle Button */}
                 {onToggleFullscreen ? (
-                  <Pressable style={styles.actionButton} onPress={onToggleFullscreen} hitSlop={6}>
-                    {style && (style as any).width ? (
-                      <Minimize color="#FFFFFF" size={16} />
+                  <Pressable
+                    style={[styles.actionButton, isFullscreen && styles.actionButtonFullscreen]}
+                    onPress={onToggleFullscreen}
+                    hitSlop={6}
+                  >
+                    {isFullscreen || (style && (style as any).width) ? (
+                      <Minimize color="#FFFFFF" size={isFullscreen ? 22 : 16} />
                     ) : (
-                      <Maximize color="#FFFFFF" size={16} />
+                      <Maximize color="#FFFFFF" size={isFullscreen ? 22 : 16} />
                     )}
                   </Pressable>
                 ) : null}
@@ -1096,23 +1163,37 @@ const styles = StyleSheet.create({
   },
   subtitleOverlayContainer: {
     position: 'absolute',
-    bottom: 60,
-    left: 20,
-    right: 20,
+    bottom: 52,
+    left: 16,
+    right: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  subtitleOverlayContainerFullscreen: {
+    bottom: 70,
+    left: 40,
+    right: 40,
+  },
   subtitleTextBackground: {
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  subtitleTextBackgroundFullscreen: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 6,
   },
   subtitleText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  subtitleTextFullscreen: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   controlsLayer: {
     ...StyleSheet.absoluteFill,
@@ -1124,7 +1205,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 6,
   },
   topBarLeft: {
     flexDirection: 'row',
@@ -1136,10 +1217,17 @@ const styles = StyleSheet.create({
     padding: 6,
     marginRight: 8,
   },
+  topIconButtonFullscreen: {
+    padding: 8,
+    marginRight: 12,
+  },
   backIconText: {
     fontSize: 24,
     color: '#FFFFFF',
     fontWeight: '300',
+  },
+  backIconTextFullscreen: {
+    fontSize: 32,
   },
   playerTitle: {
     fontSize: 14,
@@ -1152,12 +1240,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  topBarRightFullscreen: {
+    gap: 18,
+  },
   autoplayToggleTrack: {
     width: 40,
     height: 22,
     borderRadius: 11,
     padding: 2,
     justifyContent: 'center',
+  },
+  autoplayToggleTrackFullscreen: {
+    width: 48,
+    height: 26,
+    borderRadius: 13,
+    padding: 2,
   },
   autoplayToggleTrackOn: {
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
@@ -1173,17 +1270,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  autoplayToggleThumbFullscreen: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+  },
   autoplayToggleThumbOn: {
     alignSelf: 'flex-end',
   },
   autoplayToggleThumbOff: {
     alignSelf: 'flex-start',
   },
+  autoplayToggleThumbOnFullscreen: {
+    alignSelf: 'flex-end',
+  },
+  autoplayToggleThumbOffFullscreen: {
+    alignSelf: 'flex-start',
+  },
   ytIconButton: {
     padding: 6,
   },
+  ytIconButtonFullscreen: {
+    padding: 8,
+  },
   ytIconButtonActive: {
-    backgroundColor: 'rgba(229, 9, 20, 0.4)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 4,
   },
   ccBadgeText: {
@@ -1194,6 +1305,28 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     paddingHorizontal: 4,
     borderRadius: 2,
+  },
+  ccBadgeTextFullscreen: {
+    fontSize: 14,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  darkCcText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '900',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    paddingHorizontal: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFFFFF',
+  },
+  darkCcTextFullscreen: {
+    fontSize: 14,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 3,
   },
   ytSpeedText: {
     color: '#FFFFFF',
@@ -1206,14 +1339,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 32,
   },
+  centerControlsRowFullscreen: {
+    gap: 56,
+  },
   ytSkipButton: {
+    width: 50,
+    height: 60,
     alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  ytSkipButtonFullscreen: {
+    width: 70,
+    height: 80,
   },
   ytSkipText: {
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '600',
-    marginTop: 2,
+    position: 'absolute',
+    bottom: 4,
+  },
+  ytSkipTextFullscreen: {
+    fontSize: 13,
+    bottom: 6,
   },
   ytCenterPlayButton: {
     width: 60,
@@ -1222,6 +1371,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  ytCenterPlayButtonFullscreen: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   bottomPanel: {
     paddingHorizontal: 16,
@@ -1233,10 +1387,17 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 4,
   },
+  progressRowFullscreen: {
+    gap: 14,
+    marginBottom: 8,
+  },
   progressBarWrapperFlex: {
     flex: 1,
     height: 20,
     justifyContent: 'center',
+  },
+  progressBarWrapperFlexFullscreen: {
+    height: 26,
   },
   timeRow: {
     flexDirection: 'row',
@@ -1248,6 +1409,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '600',
+  },
+  timeTextFullscreen: {
+    fontSize: 15,
   },
   downloadProgressText: {
     color: '#FF0000',
@@ -1264,6 +1428,10 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     position: 'relative',
   },
+  progressBarBackgroundFullscreen: {
+    height: 6,
+    borderRadius: 3,
+  },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#FF0000',
@@ -1278,35 +1446,62 @@ const styles = StyleSheet.create({
     top: -4,
     marginLeft: -6,
   },
+  progressThumbFullscreen: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    top: -5,
+    marginLeft: -8,
+  },
   bottomActions: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
     marginTop: 6,
   },
+  bottomActionsFullscreen: {
+    marginTop: 8,
+  },
   bottomRightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  bottomRightGroupFullscreen: {
+    gap: 18,
   },
   volumeControlRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+  volumeControlRowFullscreen: {
+    gap: 8,
+  },
   actionButton: {
     padding: 6,
+  },
+  actionButtonFullscreen: {
+    padding: 8,
   },
   volumeSliderWrapper: {
     width: 50,
     height: 20,
     justifyContent: 'center',
   },
+  volumeSliderWrapperFullscreen: {
+    width: 70,
+    height: 26,
+  },
   volumeSliderBg: {
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.3)',
     borderRadius: 2,
     position: 'relative',
+  },
+  volumeSliderBgFullscreen: {
+    height: 6,
+    borderRadius: 3,
   },
   volumeSliderFill: {
     height: '100%',
@@ -1321,6 +1516,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -3,
     marginLeft: -5,
+  },
+  volumeSliderThumbFullscreen: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    top: -4,
+    marginLeft: -7,
   },
   speedMenu: {
     position: 'absolute',
