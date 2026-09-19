@@ -62,7 +62,16 @@ class NativeVideoPlayerView(context: Context) : FrameLayout(context) {
 
         imaAdsLoader = ImaAdsLoader.Builder(context).build()
 
+        val httpDataSourceFactory = androidx.media3.datasource.DefaultHttpDataSource.Factory()
+            .setUserAgent("Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+            .setAllowCrossProtocolRedirects(true)
+            .setDefaultRequestProperties(mapOf(
+                "Referer" to "http://138.68.140.83:8000/",
+                "Origin" to "http://138.68.140.83:8000"
+            ))
+
         val mediaSourceFactory = DefaultMediaSourceFactory(context)
+            .setDataSourceFactory(httpDataSourceFactory)
             .setLocalAdInsertionComponents({ imaAdsLoader }, playerView)
 
         player = ExoPlayer.Builder(context)

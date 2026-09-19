@@ -132,10 +132,10 @@ export function HomeScreen({ navigation }: any) {
     ))
   );
 
-  // If API banners list is empty, take the featured/primary uploaded video (e.g. Katniss edit) as featured video
+  // If API banners list is empty, take the featured/primary uploaded videos as featured carousel items
   if (featuredBannersList.length === 0 && videos.length > 0) {
     const explicitlyFeatured = videos.filter(v => (v as any).is_featured || (v as any).featured || (v as any).is_banner);
-    const targetVideos = explicitlyFeatured.length > 0 ? explicitlyFeatured : videos.slice(0, 1);
+    const targetVideos = explicitlyFeatured.length > 0 ? explicitlyFeatured : videos.slice(0, 3);
     featuredBannersList = targetVideos.map(v => ({
       id: v.id,
       video_id: v.id,
@@ -175,7 +175,7 @@ export function HomeScreen({ navigation }: any) {
   });
 
   function handleSelectPlaylist(playlistId: number, playlistTitle: string) {
-    navigation.navigate('CategoryDetail', {
+    navigation.navigate('PlaylistDetail', {
       playlistId,
       category: playlistTitle,
     });
@@ -188,7 +188,14 @@ export function HomeScreen({ navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Top Header: Logo + Search + Profile */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Streamr</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 8 }}>
+            {branding?.logo_url ? (
+              <Image source={{ uri: branding.logo_url }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="contain" />
+            ) : null}
+            <Text style={styles.appTitle} numberOfLines={1}>
+              {branding?.studio_name || branding?.creator_name || 'Streamr'}
+            </Text>
+          </View>
 
           <View style={styles.headerActions}>
             <Pressable
@@ -280,7 +287,7 @@ export function HomeScreen({ navigation }: any) {
                       onPress={() => handleSelectPlaylist(item.id, item.name || 'Playlist')}
                     >
                       <Image
-                        source={{ uri: item.thumbnail_url || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=800&q=80' }}
+                        source={{ uri: item.thumbnail_url || '' }}
                         style={styles.playlistCardImage}
                       />
                       <Text style={styles.playlistCardTitle} numberOfLines={1}>

@@ -26,6 +26,7 @@ import {
   VolumeX,
 } from 'lucide-react-native';
 import RNFS from 'react-native-fs';
+import { API_BASE_URL } from '../../constants/config';
 import { registerInAppDownload } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
 
@@ -227,8 +228,13 @@ export default function NativeVideoPlayer({
 
   useEffect(() => {
     setPaused(!autoStart);
-    setError(null);
     hasSentLoadEventRef.current = false;
+    if (!uri || uri.trim() === '' || uri === API_BASE_URL) {
+      setError('Stream Unavailable\nNo valid HLS stream URL is configured for this video on the server.');
+      setIsBuffering(false);
+    } else {
+      setError(null);
+    }
   }, [autoStart, uri]);
 
   useEffect(() => {
@@ -319,17 +325,14 @@ export default function NativeVideoPlayer({
   };
 
   const handleRetry = () => {
+    if (!uri || uri.trim() === '' || uri === API_BASE_URL) {
+      setError('Stream Unavailable\nNo valid HLS stream URL is configured for this video on the server.');
+      return;
+    }
     setError(null);
     setIsBuffering(true);
     hasSentLoadEventRef.current = false;
-    const fallbackList = [
-      'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-      'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-      'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-      'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    ];
-    const nextUri = fallbackList[retryCount % fallbackList.length];
-    setActiveUri(nextUri);
+    setActiveUri(uri);
     setRetryCount(prev => prev + 1);
   };
 
@@ -559,7 +562,7 @@ export default function NativeVideoPlayer({
         useTextureView={true}
         source={{
           uri: activeUri,
-          type: 'm3u8',
+          type: activeUri.includes('.m3u8') ? 'm3u8' : 'mp4',
           captions: activeCaptions,
           textTracks: formattedTextTracks,
           adTagUrl,
@@ -588,18 +591,12 @@ export default function NativeVideoPlayer({
             (message && (message.includes('403') || message.includes('BAD_HTTP_STATUS'))) ||
             (errorCode && (String(errorCode).includes('403') || String(errorCode).includes('BAD_HTTP_STATUS')));
 
-          if (is403Error) {
-            setIsCdnFallback(true);
-            const safeFallback = (mp4Url && !mp4Url.includes('b-cdn.net'))
-              ? mp4Url
-              : 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
-
-            if (activeUri !== safeFallback) {
-              setActiveUri(safeFallback);
-              setError(null);
-              setRetryCount(prev => prev + 1);
-              return;
-            }
+          if (is403Error && mp4Url && activeUri !== mp4Url) {
+            console.log('[NativeVideoPlayer] HLS stream error, trying signed MP4 fallback:', mp4Url);
+            setActiveUri(mp4Url);
+            setError(null);
+            setRetryCount(prev => prev + 1);
+            return;
           }
 
           if (!hasSentLoadEventRef.current && (errorCode || message)) {

@@ -160,6 +160,25 @@ export async function incrementVideoViewsApi(videoId: number) {
   }
 }
 
+export async function recordAdImpressionApi(
+  videoId: number,
+  eventType: 'impression' | 'midpoint' | 'complete' = 'impression',
+  adDurationSeconds: number = 15,
+) {
+  try {
+    // Mobile Video API Spec #13: POST /api/v1/mobile/videos/{video_id}/ad-impression
+    await apiRequest(`/api/v1/mobile/videos/${videoId}/ad-impression`, {
+      method: 'POST',
+      body: JSON.stringify({
+        event_type: eventType,
+        ad_duration_seconds: adDurationSeconds,
+      }),
+    });
+  } catch (error) {
+    console.warn(`[recordAdImpressionApi] Telemetry notice for video ${videoId}:`, error);
+  }
+}
+
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   const cid = getCreatorId();
   const endpoints = [

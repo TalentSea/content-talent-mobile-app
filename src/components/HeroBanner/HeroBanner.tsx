@@ -175,18 +175,18 @@ export function HeroBanner({
   const items: HeroItem[] = [];
 
   // 1. Add Studio Branding slide ONLY if branding API returns real creator data
-  if (branding && (branding.creator_name || branding.banner_url || branding.logo_url)) {
+  if (branding && (branding.studio_name || branding.creator_name || branding.banner_url || branding.logo_url)) {
     const bannerUri = resolveImageUrl(branding.banner_url, '');
     const logoUri = resolveImageUrl(branding.logo_url, '');
     items.push({
       id: 'hero_branding_0',
       type: 'branding',
-      title: branding.creator_name || 'Creator Studio',
+      title: branding.studio_name || branding.creator_name || '',
       tagline: branding.tagline || '',
       description: branding.description || '',
       thumbnail_url: bannerUri,
       creatorAvatar: logoUri,
-      creatorName: branding.creator_name || 'Creator Studio',
+      creatorName: branding.studio_name || branding.creator_name || '',
       badgeLabel: 'STUDIO BRANDING',
       category: 'OFFICIAL',
     });
@@ -202,10 +202,10 @@ export function HeroBanner({
       title: video.title,
       description: video.description || '',
       thumbnail_url: resolveImageUrl(video.main_thumbnail_url, ''),
-      category: video.category || 'Featured',
+      category: video.category || '',
       badgeLabel: 'SPOTLIGHT',
       duration: video.duration || '',
-      creatorName: branding?.creator_name || 'Streamr',
+      creatorName: branding?.studio_name || branding?.creator_name || '',
       creatorAvatar: resolveImageUrl(branding?.logo_url, ''),
       rawVideo: video,
     });

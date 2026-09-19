@@ -155,7 +155,10 @@ export async function downloadVideoInApp(
   const targetPath = `${DOWNLOAD_DIR}/video_${video.id}.mp4`;
   const urlToDownload =
     downloadUrl ||
-    'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
+    (video as any).mp4_download_url ||
+    video.stream_url ||
+    video.playback_url ||
+    '';
 
   const downloadItem: DownloadedVideoItem = {
     video,

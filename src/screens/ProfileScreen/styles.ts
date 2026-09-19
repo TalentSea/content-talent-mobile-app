@@ -61,10 +61,11 @@ export const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 18,
-    backgroundColor: '#C026D3',
+    backgroundColor: '#1877F2',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
+    overflow: 'hidden',
   },
   avatarImage: {
     width: 60,

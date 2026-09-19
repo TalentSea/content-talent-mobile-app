@@ -11,8 +11,8 @@ export type MobileBannerItem = {
 };
 
 export type MobileBrandingResponse = {
+  studio_name: string | null;
   creator_name: string | null;
-  studio_name?: string | null;
   tagline: string | null;
   description: string | null;
   banner_url: string | null;
@@ -123,63 +123,39 @@ const parseBannerItem = (b: any): MobileBannerItem => {
 };
 
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
-  const cid = getCreatorId();
-  const endpoints = [
-    `/api/v1/mobile/branding?creator_id=${cid}`,
-    `/api/v1/admin/auth/me?creator_id=${cid}`,
-  ];
+  try {
+    const rawRes = await apiGet<any>('/api/v1/mobile/branding');
+    if (rawRes) {
+      const data = rawRes.data || rawRes.branding || rawRes;
+      const studioName = data.studio_name ?? null;
+      const tagline = data.tagline ?? null;
+      const description = data.description ?? null;
+      const bannerUrl = data.banner_url ?? null;
+      const logoUrl = data.logo_url ?? null;
+      const updatedAt = data.updated_at ?? null;
 
-  for (const path of endpoints) {
-    try {
-      const rawRes = await apiGet<any>(path);
-      if (rawRes) {
-        const data = rawRes.data || rawRes.branding || rawRes.creator || rawRes;
-        const detectedBanner = findBannerUrl(data) || findBannerUrl(rawRes);
-        const detectedLogo = findLogoUrl(data) || findLogoUrl(rawRes);
+      const rawBanners = data.featured_videos || data.featured_banners || [];
+      const parsedBanners: MobileBannerItem[] = Array.isArray(rawBanners)
+        ? rawBanners.map(parseBannerItem)
+        : [];
 
-        const rawBanners =
-          data.featured_videos ||
-          data.featured_banners ||
-          data.featured ||
-          data.banners ||
-          rawRes.featured_videos ||
-          rawRes.featured_banners ||
-          rawRes.banners ||
-          [];
-
-        const parsedBanners: MobileBannerItem[] = Array.isArray(rawBanners)
-          ? rawBanners.map(parseBannerItem)
-          : [];
-
-        const studioName = data.studio_name || rawRes.studio_name || data.studio || rawRes.studio || null;
-        const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
-        const derivedCreatorName =
-          studioName ||
-          data.creator_name ||
-          data.name ||
-          (fullName.length > 0 ? fullName : null) ||
-          rawRes.creator_name ||
-          null;
-
-        if (detectedBanner || detectedLogo || derivedCreatorName || parsedBanners.length > 0) {
-          return {
-            creator_name: derivedCreatorName,
-            studio_name: studioName || derivedCreatorName,
-            tagline: data.tagline || data.subtitle || rawRes.tagline || null,
-            description: data.description || data.bio || rawRes.description || null,
-            banner_url: detectedBanner,
-            logo_url: detectedLogo,
-            updated_at: data.updated_at || rawRes.updated_at || null,
-            featured_videos: parsedBanners,
-          };
-        }
-      }
-    } catch (error) {
-      console.warn(`[fetchMobileBrandingApi] Notice for ${path}:`, error);
+      return {
+        studio_name: studioName,
+        creator_name: studioName || data.creator_name || null,
+        tagline: tagline,
+        description: description,
+        banner_url: bannerUrl,
+        logo_url: logoUrl,
+        updated_at: updatedAt,
+        featured_videos: parsedBanners,
+      };
     }
+  } catch (error) {
+    console.warn('[fetchMobileBrandingApi] Error fetching /api/v1/mobile/branding:', error);
   }
 
   return {
+    studio_name: null,
     creator_name: null,
     tagline: null,
     description: null,
@@ -191,20 +167,17 @@ export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> 
 }
 
 export async function fetchMobileBannersApi(): Promise<MobileBannerItem[]> {
-  const cid = getCreatorId();
-  const path = `/api/v1/mobile/featured-videos?creator_id=${cid}`;
-
   try {
-    const rawRes = await apiGet<any>(path);
+    const rawRes = await apiGet<any>('/api/v1/mobile/featured-videos');
     const itemsList = Array.isArray(rawRes)
       ? rawRes
-      : rawRes?.items || rawRes?.data || rawRes?.banners || rawRes?.featured_videos || rawRes?.featured;
+      : rawRes?.items || rawRes?.data || rawRes?.featured_videos;
 
-    if (Array.isArray(itemsList)) {
+    if (Array.isArray(itemsList) && itemsList.length > 0) {
       return itemsList.map(parseBannerItem);
     }
   } catch (e) {
-    console.warn(`[fetchMobileBannersApi] Notice for ${path}:`, e);
+    console.warn('[fetchMobileBannersApi] Error fetching /api/v1/mobile/featured-videos:', e);
   }
 
   return [];

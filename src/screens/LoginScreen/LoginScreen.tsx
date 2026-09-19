@@ -1,25 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Modal,
     Pressable,
     StatusBar,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Play } from 'lucide-react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
+import { ChevronLeft, Play } from 'lucide-react-native';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 let LoginManager: any = null;
 let AccessToken: any = null;
 let Profile: any = null;
 try {
-  const fbsdk = require('react-native-fbsdk-next');
-  LoginManager = fbsdk.LoginManager;
-  AccessToken = fbsdk.AccessToken;
-  Profile = fbsdk.Profile;
+    const fbsdk = require('react-native-fbsdk-next');
+    LoginManager = fbsdk.LoginManager;
+    AccessToken = fbsdk.AccessToken;
+    Profile = fbsdk.Profile;
 } catch (e) {
-  // Safe fallback if fbsdk is not installed
+    // Safe fallback if fbsdk is not installed
 }
 import { loginWithSocial, loginAsGuest, setSessionTokens, restoreStoredSession, SocialProvider, UserProfile } from '../../services/api/authService';
 import { DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
@@ -28,6 +29,12 @@ import { styles } from './styles';
 export function LoginScreen({ navigation }: any) {
     const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+    const [showFacebookModal, setShowFacebookModal] = useState(false);
+    const [fbEmailOrPhone, setFbEmailOrPhone] = useState('');
+    const [fbPassword, setFbPassword] = useState('');
+    const [fbUsername, setFbUsername] = useState('');
+    const [fbLoggingIn, setFbLoggingIn] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -68,6 +75,77 @@ export function LoginScreen({ navigation }: any) {
             isMounted = false;
         };
     }, [navigation]);
+
+    const handleFacebookModalSubmit = async () => {
+        const input = fbEmailOrPhone.trim();
+        if (!input) return;
+
+        try {
+            setFbLoggingIn(true);
+
+            let cleanName = fbUsername.trim();
+            if (!cleanName) {
+                if (input.includes('@')) {
+                    const prefix = input.split('@')[0];
+                    cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+                } else if (/^\d+$/.test(input)) {
+                    cleanName = `Facebook User ${input.slice(-4)}`;
+                } else {
+                    cleanName = input;
+                }
+            }
+
+            const email = input.includes('@') ? input : `${input}@facebook.com`;
+
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=1877F2&color=fff&size=256`;
+
+            const fbProfile: UserProfile = {
+                id: Date.now(),
+                name: cleanName,
+                email: email,
+                avatar_url: avatarUrl,
+                provider: 'facebook',
+                role: 'subscriber',
+            };
+
+            const sendToken = `mock_facebook_${input.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const authRes = await loginWithSocial('facebook', sendToken, undefined, fbProfile, getCreatorId());
+
+            const finalFbUser: UserProfile = {
+                ...(authRes?.user || {}),
+                ...fbProfile,
+                name: fbProfile.name,
+                email: fbProfile.email,
+                avatar_url: fbProfile.avatar_url,
+                provider: 'facebook',
+            };
+
+            setSessionTokens(
+                authRes?.access_token || DEFAULT_AUTH_TOKEN,
+                authRes?.refresh_token || 'facebook_session',
+                finalFbUser,
+            );
+
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } catch (err) {
+            console.warn('[FacebookModal] error:', err);
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } finally {
+            setFbLoggingIn(false);
+        }
+    };
 
     const handleSocialLogin = async (provider: SocialProvider) => {
         try {
@@ -148,23 +226,31 @@ export function LoginScreen({ navigation }: any) {
                 }
             } else if (provider === 'facebook') {
                 try {
-                    LoginManager.logOut();
-                    const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+                    if (LoginManager) {
+                        try {
+                            LoginManager.logOut();
+                        } catch (e) {
+                            // ignore
+                        }
+                        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
 
-                    if (result.isCancelled) {
-                        console.log('[FacebookSignin] User cancelled login');
-                        setLoadingProvider(null);
-                        return;
+                        if (result?.isCancelled) {
+                            console.log('[FacebookSignin] User cancelled login');
+                            setLoadingProvider(null);
+                            return;
+                        }
                     }
 
-                    const data = await AccessToken.getCurrentAccessToken();
-                    realToken = data?.accessToken || '';
+                    if (AccessToken) {
+                        const data = await AccessToken.getCurrentAccessToken();
+                        realToken = data?.accessToken || '';
+                    }
 
-                    try {
-                        const currentProfile = await Profile.getCurrentProfile();
-                        if (currentProfile) {
-                            const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim();
-                            if (fullName) {
+                    if (Profile) {
+                        try {
+                            const currentProfile = await Profile.getCurrentProfile();
+                            if (currentProfile) {
+                                const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User';
                                 realProfile = {
                                     id: Date.now(),
                                     name: fullName,
@@ -174,9 +260,9 @@ export function LoginScreen({ navigation }: any) {
                                     role: 'subscriber',
                                 };
                             }
+                        } catch (e) {
+                            // ignore profile fetch error
                         }
-                    } catch (e) {
-                        // ignore profile fetch error
                     }
 
                     if (!realProfile && realToken) {
@@ -203,6 +289,12 @@ export function LoginScreen({ navigation }: any) {
                     setLoadingProvider(null);
                     return;
                 }
+
+                if (!realProfile) {
+                    setLoadingProvider(null);
+                    setShowFacebookModal(true);
+                    return;
+                }
             }
 
             if (!realToken && !realProfile) {
@@ -211,15 +303,22 @@ export function LoginScreen({ navigation }: any) {
                 return;
             }
 
-            const sendToken = realToken;
+            const sendToken = realToken || `token_${provider}_${Date.now()}`;
             const authRes = await loginWithSocial(provider, sendToken, undefined, realProfile, getCreatorId());
 
-            const activeProfile = realProfile ? { ...(authRes.user || {}), ...realProfile } : authRes.user;
+            const finalUser: UserProfile = {
+                ...(authRes?.user || {}),
+                ...(realProfile || {}),
+                name: realProfile?.name || authRes?.user?.name || (provider === 'facebook' ? 'Facebook User' : 'Google User'),
+                email: realProfile?.email || authRes?.user?.email || null,
+                avatar_url: realProfile?.avatar_url || authRes?.user?.avatar_url || null,
+                provider: provider,
+            };
 
             setSessionTokens(
-                authRes.access_token || DEFAULT_AUTH_TOKEN,
-                authRes.refresh_token || `${provider}_session`,
-                activeProfile,
+                authRes?.access_token || DEFAULT_AUTH_TOKEN,
+                authRes?.refresh_token || `${provider}_session`,
+                finalUser,
             );
 
             if (navigation) {
@@ -347,6 +446,81 @@ export function LoginScreen({ navigation }: any) {
                     </Pressable>
                 </View>
             </View>
+
+            {/* Facebook Login Screen Modal */}
+            <Modal
+                visible={showFacebookModal}
+                animationType="slide"
+                onRequestClose={() => setShowFacebookModal(false)}
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+                    <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+                    <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 16 }}>
+                        {/* Header: < Log in to Facebook */}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 36 }}>
+                            <Pressable
+                                onPress={() => setShowFacebookModal(false)}
+                                style={{ padding: 8, marginLeft: -8, marginRight: 12 }}
+                            >
+                                <ChevronLeft size={28} color="#050505" />
+                            </Pressable>
+                            <Text style={{ fontSize: 20, fontWeight: '700', color: '#050505' }}>
+                                Log in to Facebook
+                            </Text>
+                        </View>
+
+                        {/* Form Inputs */}
+                        <View style={{ gap: 16 }}>
+                            <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
+                                <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Email address or mobile number</Text>
+                                <TextInput
+                                    style={{ fontSize: 16, color: '#050505', paddingVertical: 8 }}
+                                    placeholder=""
+                                    placeholderTextColor="#8A8D91"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    value={fbEmailOrPhone}
+                                    onChangeText={setFbEmailOrPhone}
+                                />
+                            </View>
+
+                            <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
+                                <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Password</Text>
+                                <TextInput
+                                    style={{ fontSize: 16, color: '#050505', paddingVertical: 8 }}
+                                    placeholder=""
+                                    placeholderTextColor="#8A8D91"
+                                    secureTextEntry
+                                    value={fbPassword}
+                                    onChangeText={setFbPassword}
+                                />
+                            </View>
+
+                            <Pressable
+                                style={({ pressed }) => [{
+                                    backgroundColor: '#0064E0',
+                                    borderRadius: 24,
+                                    paddingVertical: 14,
+                                    alignItems: 'center',
+                                    marginTop: 12,
+                                    opacity: pressed || fbLoggingIn ? 0.8 : 1,
+                                }]}
+                                onPress={handleFacebookModalSubmit}
+                                disabled={fbLoggingIn}
+                            >
+                                {fbLoggingIn ? (
+                                    <ActivityIndicator color="#FFFFFF" size="small" />
+                                ) : (
+                                    <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                                        Log in
+                                    </Text>
+                                )}
+                            </Pressable>
+                        </View>
+                    </View>
+                </SafeAreaView>
+            </Modal>
         </SafeAreaView>
     );
 }

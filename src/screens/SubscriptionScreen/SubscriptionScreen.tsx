@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -161,8 +162,11 @@ export function SubscriptionScreen({ navigation }: any) {
     }
   };
 
+  const [latestPayload, setLatestPayload] = useState<RazorpaySuccessPayload | null>(null);
+
   const handleRazorpaySuccess = async (payload: RazorpaySuccessPayload) => {
     setShowRazorpayModal(false);
+    setLatestPayload(payload);
     const chosenPlan = plans.find(p => p.id === selectedPlanId);
     const planName = chosenPlan ? chosenPlan.name : 'VIP Member Plan';
 
@@ -182,7 +186,7 @@ export function SubscriptionScreen({ navigation }: any) {
 
       Alert.alert(
         'Membership Activated! 🎉',
-        `Payment verified successfully!\nPayment ID: ${payload.razorpay_payment_id}\n\nYou now have full access to stream all 4K videos.`,
+        `Payment verified successfully!\n\nPayment ID:\n${payload.razorpay_payment_id}\n\nOrder ID:\n${payload.razorpay_order_id}\n\nRazorpay Signature:\n${payload.razorpay_signature}\n\nYou now have full access to stream all 4K videos.`,
         [
           {
             text: 'Start Watching',
@@ -194,7 +198,7 @@ export function SubscriptionScreen({ navigation }: any) {
       console.warn('[SubscriptionScreen] Verification notice:', err);
       Alert.alert(
         'Membership Activated! 🎉',
-        `Payment authorized!\nPayment ID: ${payload.razorpay_payment_id}\n\nYou now have full access to stream all 4K videos.`,
+        `Payment Authorized!\n\nPayment ID:\n${payload.razorpay_payment_id}\n\nOrder ID:\n${payload.razorpay_order_id}\n\nRazorpay Signature:\n${payload.razorpay_signature}\n\nYou now have full access to stream all 4K videos.`,
         [
           {
             text: 'Start Watching',
@@ -249,6 +253,39 @@ export function SubscriptionScreen({ navigation }: any) {
             <Text style={styles.successSub}>
               Your account ({user?.email || 'User'}) is active with Unlimited 4K Ultra HD access.
             </Text>
+
+            {latestPayload ? (
+              <View style={{
+                width: '100%',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                borderRadius: 12,
+                padding: 12,
+                marginTop: 14,
+                borderWidth: 1,
+                borderColor: 'rgba(16, 185, 129, 0.3)',
+              }}>
+                <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '800', marginBottom: 8, letterSpacing: 0.5 }}>
+                  🛡️ RAZORPAY PAYMENT & SIGNATURE RECEIPT
+                </Text>
+
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>PAYMENT ID:</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{latestPayload.razorpay_payment_id}</Text>
+                </View>
+
+                <View style={{ marginBottom: 6 }}>
+                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>ORDER ID:</Text>
+                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{latestPayload.razorpay_order_id}</Text>
+                </View>
+
+                <View style={{ marginBottom: 2 }}>
+                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>HMAC-SHA256 SIGNATURE:</Text>
+                  <Text style={{ color: '#A5B4FC', fontSize: 11, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', marginTop: 2 }}>
+                    {latestPayload.razorpay_signature}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </View>
         ) : null}
 

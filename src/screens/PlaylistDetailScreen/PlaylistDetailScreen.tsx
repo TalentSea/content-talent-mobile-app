@@ -154,159 +154,159 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
     }).catch(() => { });
   }
 
-  function handleSelectPlaylist(playlist: PlaylistListItem) {
-    navigation.push('PlaylistDetail', {
-      category: playlist.name,
-      playlistId: playlist.id,
-    });
-  }
+function handleSelectPlaylist(playlist: PlaylistListItem) {
+  navigation.push('PlaylistDetail', {
+    category: playlist.name,
+    playlistId: playlist.id,
+  });
+}
 
-  return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+return (
+  <SafeAreaView style={styles.screen}>
+    <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Top Hero Banner Header */}
-        <View style={styles.heroBannerContainer}>
-          <Image source={{ uri: heroThumb }} style={styles.heroImage} />
-          <View style={styles.heroOverlay}>
-            <Pressable
-              style={styles.backButtonFloating}
-              onPress={() => navigation.goBack()}
-            >
-              <ChevronLeft color="#FFFFFF" size={22} />
-            </Pressable>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Top Hero Banner Header */}
+      <View style={styles.heroBannerContainer}>
+        <Image source={{ uri: heroThumb }} style={styles.heroImage} />
+        <View style={styles.heroOverlay}>
+          <Pressable
+            style={styles.backButtonFloating}
+            onPress={() => navigation.goBack()}
+          >
+            <ChevronLeft color="#FFFFFF" size={22} />
+          </Pressable>
 
-            <View style={styles.heroContent}>
-              <Text style={styles.playlistTagLabel}>PLAYLIST</Text>
-              <Text style={styles.heroTitle} numberOfLines={2}>
-                {displayTitle}
+          <View style={styles.heroContent}>
+            <Text style={styles.playlistTagLabel}>PLAYLIST</Text>
+            <Text style={styles.heroTitle} numberOfLines={2}>
+              {displayTitle}
+            </Text>
+
+            <View style={styles.heroMetaRow}>
+              {displayCategoryTag ? (
+                <View style={styles.categoryBadgeRed}>
+                  <Text style={styles.categoryBadgeRedText}>{displayCategoryTag}</Text>
+                </View>
+              ) : null}
+
+              <Text style={styles.metaTextLight}>
+                {finalVideos.length} {finalVideos.length === 1 ? 'video' : 'videos'}
               </Text>
-
-              <View style={styles.heroMetaRow}>
-                {displayCategoryTag ? (
-                  <View style={styles.categoryBadgeRed}>
-                    <Text style={styles.categoryBadgeRedText}>{displayCategoryTag}</Text>
-                  </View>
-                ) : null}
-
-                <Text style={styles.metaTextLight}>
-                  {finalVideos.length} {finalVideos.length === 1 ? 'video' : 'videos'}
-                </Text>
-                <Text style={styles.dotMeta}>•</Text>
-                <Text style={styles.metaTextLight}>
-                  {formatViews(totalPlaylistViews || 2)}
-                </Text>
-                <Text style={styles.dotMeta}>•</Text>
-                <Text style={styles.metaTextLight}>{playlistAge}</Text>
-              </View>
+              <Text style={styles.dotMeta}>•</Text>
+              <Text style={styles.metaTextLight}>
+                {formatViews(totalPlaylistViews || 2)}
+              </Text>
+              <Text style={styles.dotMeta}>•</Text>
+              <Text style={styles.metaTextLight}>{playlistAge}</Text>
             </View>
           </View>
         </View>
+      </View>
 
-        {/* Action Controls Bar */}
-        <View style={styles.actionBarRow}>
-          <Pressable style={styles.playAllButton} onPress={() => handlePlayAll(false)}>
-            <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
-            <Text style={styles.playAllText}>Play All</Text>
-          </Pressable>
+      {/* Action Controls Bar */}
+      <View style={styles.actionBarRow}>
+        <Pressable style={styles.playAllButton} onPress={() => handlePlayAll(false)}>
+          <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
+          <Text style={styles.playAllText}>Play All</Text>
+        </Pressable>
 
-          <Pressable style={styles.actionIconButton} onPress={() => handlePlayAll(true)}>
-            <Shuffle color="#FFFFFF" size={16} />
-            <Text style={styles.actionIconLabel}>Shuffle</Text>
-          </Pressable>
+        <Pressable style={styles.actionIconButton} onPress={() => handlePlayAll(true)}>
+          <Shuffle color="#FFFFFF" size={16} />
+          <Text style={styles.actionIconLabel}>Shuffle</Text>
+        </Pressable>
 
-          <Pressable style={styles.actionIconButton} onPress={handleToggleLike}>
-            <Heart color={isLiked ? '#EF4444' : '#FFFFFF'} size={16} fill={isLiked ? '#EF4444' : 'transparent'} />
-            <Text style={[styles.actionIconLabel, isLiked && { color: '#EF4444' }]}>{isLiked ? 'Liked' : 'Like'}</Text>
-          </Pressable>
+        <Pressable style={styles.actionIconButton} onPress={handleToggleLike}>
+          <Heart color={isLiked ? '#EF4444' : '#FFFFFF'} size={16} fill={isLiked ? '#EF4444' : 'transparent'} />
+          <Text style={[styles.actionIconLabel, isLiked && { color: '#EF4444' }]}>{isLiked ? 'Liked' : 'Like'}</Text>
+        </Pressable>
 
-          <Pressable style={styles.actionIconButton} onPress={handleToggleSave}>
-            <Bookmark color={isSaved ? '#3B82F6' : '#FFFFFF'} size={16} fill={isSaved ? '#3B82F6' : 'transparent'} />
-            <Text style={[styles.actionIconLabel, isSaved && { color: '#3B82F6' }]}>{isSaved ? 'Saved' : 'Save'}</Text>
-          </Pressable>
+        <Pressable style={styles.actionIconButton} onPress={handleToggleSave}>
+          <Bookmark color={isSaved ? '#3B82F6' : '#FFFFFF'} size={16} fill={isSaved ? '#3B82F6' : 'transparent'} />
+          <Text style={[styles.actionIconLabel, isSaved && { color: '#3B82F6' }]}>{isSaved ? 'Saved' : 'Save'}</Text>
+        </Pressable>
 
-          <Pressable style={styles.iconOnlyButton} onPress={handleShare}>
-            <Share2 color="#FFFFFF" size={16} />
-          </Pressable>
+        <Pressable style={styles.iconOnlyButton} onPress={handleShare}>
+          <Share2 color="#FFFFFF" size={16} />
+        </Pressable>
+      </View>
+
+      {/* Playlist Description if present */}
+      {playlistDescription ? (
+        <View style={styles.playlistDescriptionContainer}>
+          <Text style={styles.playlistDescriptionText}>{playlistDescription}</Text>
         </View>
+      ) : null}
 
-        {/* Playlist Description if present */}
-        {playlistDescription ? (
-          <View style={styles.playlistDescriptionContainer}>
-            <Text style={styles.playlistDescriptionText}>{playlistDescription}</Text>
-          </View>
-        ) : null}
+      {/* Section Header: Videos in this Playlist (X) */}
+      <Text style={styles.sectionTitleHeader}>
+        Videos in this Playlist ({finalVideos.length})
+      </Text>
 
-        {/* Section Header: Videos in this Playlist (X) */}
-        <Text style={styles.sectionTitleHeader}>
-          Videos in this Playlist ({finalVideos.length})
-        </Text>
+      {/* Vertical Video List */}
+      <View style={{ paddingBottom: 30 }}>
+        {loading ? (
+          <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            Loading playlist videos...
+          </Text>
+        ) : finalVideos.length === 0 ? (
+          <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            No videos in this playlist yet.
+          </Text>
+        ) : (
+          finalVideos.map((item, index) => {
+            const itemThumb = getThumbnailForVideo(item);
+            const formattedDuration = formatDurationString(item.duration);
+            const viewsStr = formatViews(item.views);
+            const dateStr = getRelativeTimeString(item.published_at || item.created_at);
 
-        {/* Vertical Video List */}
-        <View style={{ paddingBottom: 30 }}>
-          {loading ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
-              Loading playlist videos...
-            </Text>
-          ) : finalVideos.length === 0 ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
-              No videos in this playlist yet.
-            </Text>
-          ) : (
-            finalVideos.map((item, index) => {
-              const itemThumb = getThumbnailForVideo(item);
-              const formattedDuration = formatDurationString(item.duration);
-              const viewsStr = formatViews(item.views);
-              const dateStr = getRelativeTimeString(item.published_at || item.created_at);
-
-              return (
-                <Pressable
-                  key={`playlist-video-item-${item.id}-${index}`}
-                  style={styles.playlistItemRow}
-                  onPress={() => playVideo(item)}
-                >
-                  <View style={styles.itemThumbWrap}>
-                    <Image source={{ uri: itemThumb }} style={styles.itemThumb} />
-                    {formattedDuration ? (
-                      <View style={styles.durationBadge}>
-                        <Text style={styles.durationBadgeText}>{formattedDuration}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle} numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    <View style={styles.itemMetaRow}>
-                      <Text style={styles.itemMetaText}>
-                        {viewsStr}
-                        {formattedDuration ? ` • ${formattedDuration}` : ''}
-                        {dateStr ? ` • ${dateStr}` : ''}
-                      </Text>
+            return (
+              <Pressable
+                key={`playlist-video-item-${item.id}-${index}`}
+                style={styles.playlistItemRow}
+                onPress={() => playVideo(item)}
+              >
+                <View style={styles.itemThumbWrap}>
+                  <Image source={{ uri: itemThumb }} style={styles.itemThumb} />
+                  {formattedDuration ? (
+                    <View style={styles.durationBadge}>
+                      <Text style={styles.durationBadgeText}>{formattedDuration}</Text>
                     </View>
+                  ) : null}
+                </View>
+                <View style={styles.itemDetails}>
+                  <Text style={styles.itemTitle} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <View style={styles.itemMetaRow}>
+                    <Text style={styles.itemMetaText}>
+                      {viewsStr}
+                      {formattedDuration ? ` • ${formattedDuration}` : ''}
+                      {dateStr ? ` • ${dateStr}` : ''}
+                    </Text>
                   </View>
-                </Pressable>
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
+                </View>
+              </Pressable>
+            );
+          })
+        )}
+      </View>
+    </ScrollView>
 
-      {/* Video Player Modal */}
-      <PlayerModal
-        playingVideo={playingVideo}
-        autoplay={autoplay}
-        onToggleAutoplay={() => setAutoplay(prev => !prev)}
-        onVideoEnd={handleVideoEnd}
-        onSelectVideo={playVideo}
-        onSelectPlaylist={handleSelectPlaylist}
-        onUpgradeSubscription={() => {
-          closePlayer();
-          navigation?.navigate('Subscription');
-        }}
-        onClose={closePlayer}
-      />
-    </SafeAreaView>
-  );
+    {/* Video Player Modal */}
+    <PlayerModal
+      playingVideo={playingVideo}
+      autoplay={autoplay}
+      onToggleAutoplay={() => setAutoplay(prev => !prev)}
+      onVideoEnd={handleVideoEnd}
+      onSelectVideo={playVideo}
+      onSelectPlaylist={handleSelectPlaylist}
+      onUpgradeSubscription={() => {
+        closePlayer();
+        navigation?.navigate('Subscription');
+      }}
+      onClose={closePlayer}
+    />
+  </SafeAreaView>
+);
 }
