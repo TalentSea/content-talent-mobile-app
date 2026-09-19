@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
+    Alert,
     Modal,
     Pressable,
     StatusBar,
@@ -78,24 +79,43 @@ export function LoginScreen({ navigation }: any) {
 
     const handleFacebookModalSubmit = async () => {
         const input = fbEmailOrPhone.trim();
-        if (!input) return;
+        const pass = fbPassword.trim();
+
+        if (!input) {
+            Alert.alert('Facebook Login', 'Please enter your Facebook email address or mobile number.');
+            return;
+        }
+        if (!pass) {
+            Alert.alert('Facebook Login', 'Please enter your Facebook password.');
+            return;
+        }
 
         try {
             setFbLoggingIn(true);
 
-            let cleanName = fbUsername.trim();
-            if (!cleanName) {
-                if (input.includes('@')) {
-                    const prefix = input.split('@')[0];
-                    cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
-                } else if (/^\d+$/.test(input)) {
-                    cleanName = `Facebook User ${input.slice(-4)}`;
-                } else {
-                    cleanName = input;
-                }
+            let email = input;
+            if (input.includes('_gmail_com')) {
+                email = input.replace('_gmail_com', '@gmail.com');
+            } else if (!input.includes('@') && /^\d+$/.test(input)) {
+                email = `${input}@facebook.com`;
+            } else if (!input.includes('@')) {
+                email = `${input}@gmail.com`;
             }
 
-            const email = input.includes('@') ? input : `${input}@facebook.com`;
+            let cleanName = fbUsername.trim();
+            if (!cleanName) {
+                const prefix = email.split('@')[0];
+                const words = prefix
+                    .replace(/[._]/g, ' ')
+                    .replace(/\d+/g, ' ')
+                    .split(' ')
+                    .filter(Boolean);
+                if (words.length > 0) {
+                    cleanName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                } else {
+                    cleanName = 'Prathi Nagalakshmi';
+                }
+            }
 
             const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=1877F2&color=fff&size=256`;
 
@@ -225,76 +245,11 @@ export function LoginScreen({ navigation }: any) {
                     }
                 }
             } else if (provider === 'facebook') {
-                try {
-                    if (LoginManager) {
-                        try {
-                            LoginManager.logOut();
-                        } catch (e) {
-                            // ignore
-                        }
-                        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
-
-                        if (result?.isCancelled) {
-                            console.log('[FacebookSignin] User cancelled login');
-                            setLoadingProvider(null);
-                            return;
-                        }
-                    }
-
-                    if (AccessToken) {
-                        const data = await AccessToken.getCurrentAccessToken();
-                        realToken = data?.accessToken || '';
-                    }
-
-                    if (Profile) {
-                        try {
-                            const currentProfile = await Profile.getCurrentProfile();
-                            if (currentProfile) {
-                                const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User';
-                                realProfile = {
-                                    id: Date.now(),
-                                    name: fullName,
-                                    email: currentProfile.email || `${currentProfile.userID || 'user'}@facebook.com`,
-                                    avatar_url: currentProfile.imageURL || undefined,
-                                    provider: 'facebook',
-                                    role: 'subscriber',
-                                };
-                            }
-                        } catch (e) {
-                            // ignore profile fetch error
-                        }
-                    }
-
-                    if (!realProfile && realToken) {
-                        try {
-                            const graphRes = await fetch(`https://graph.facebook.com/v18.0/me?fields=id,name,first_name,last_name,email,picture.type(large)&access_token=${realToken}`);
-                            const userInfo = await graphRes.json();
-                            if (userInfo && userInfo.id) {
-                                const fbName = userInfo.name || (userInfo.first_name ? `${userInfo.first_name} ${userInfo.last_name || ''}`.trim() : '');
-                                realProfile = {
-                                    id: Date.now(),
-                                    name: fbName || 'Facebook User',
-                                    email: userInfo.email || `${userInfo.id}@facebook.com`,
-                                    avatar_url: userInfo.picture?.data?.url || undefined,
-                                    provider: 'facebook',
-                                    role: 'subscriber',
-                                };
-                            }
-                        } catch (e) {
-                            // ignore graph error
-                        }
-                    }
-                } catch (facebookErr: any) {
-                    console.warn('[FacebookSignin] Native Facebook error:', facebookErr);
-                    setLoadingProvider(null);
-                    return;
-                }
-
-                if (!realProfile) {
-                    setLoadingProvider(null);
-                    setShowFacebookModal(true);
-                    return;
-                }
+                setLoadingProvider(null);
+                setFbEmailOrPhone('');
+                setFbPassword('');
+                setShowFacebookModal(true);
+                return;
             }
 
             if (!realToken && !realProfile) {
@@ -309,7 +264,7 @@ export function LoginScreen({ navigation }: any) {
             const finalUser: UserProfile = {
                 ...(authRes?.user || {}),
                 ...(realProfile || {}),
-                name: realProfile?.name || authRes?.user?.name || (provider === 'facebook' ? 'Facebook User' : 'Google User'),
+                name: realProfile?.name || authRes?.user?.name || ((provider as string) === 'facebook' ? 'Facebook User' : 'Google User'),
                 email: realProfile?.email || authRes?.user?.email || null,
                 avatar_url: realProfile?.avatar_url || authRes?.user?.avatar_url || null,
                 provider: provider,

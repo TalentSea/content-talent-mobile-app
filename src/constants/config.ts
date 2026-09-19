@@ -51,6 +51,6 @@ export const MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS =
   'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8';
 
 /**
- * Standard Google IMA sample VAST tag URL (set to undefined by default so no default sample ads interfere with playback).
+ * Default ad tag URL (set to undefined so only adTagUrls explicitly returned by backend API are used).
  */
 export const DEFAULT_AD_TAG_URL = undefined;

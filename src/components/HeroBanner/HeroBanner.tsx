@@ -192,23 +192,9 @@ export function HeroBanner({
     });
   }
 
-  // 2. Add Featured Video slides from live API banners or uploaded videos
+  // 2. Add Featured Video slides strictly from live API banners
   if (heroItems && heroItems.length > 0) {
     items.push(...heroItems);
-  } else if (video) {
-    items.push({
-      id: video.id,
-      type: 'video',
-      title: video.title,
-      description: video.description || '',
-      thumbnail_url: resolveImageUrl(video.main_thumbnail_url, ''),
-      category: video.category || '',
-      badgeLabel: 'SPOTLIGHT',
-      duration: video.duration || '',
-      creatorName: branding?.studio_name || branding?.creator_name || '',
-      creatorAvatar: resolveImageUrl(branding?.logo_url, ''),
-      rawVideo: video,
-    });
   }
 
   useEffect(() => {

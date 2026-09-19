@@ -307,7 +307,13 @@ export function isUserAdFree(): boolean {
   if (['admin', 'creator'].includes(role)) return true;
 
   if (['subscriber', 'premium', 'vip'].includes(role) || planVal.length > 0) {
-    if (planVal.includes('with_ads') || planVal.includes('ad-supported')) {
+    if (
+      planVal.includes('with_ads') ||
+      planVal.includes('ad-supported') ||
+      planVal.includes('standard') ||
+      planVal === '1' ||
+      planVal === 'basic'
+    ) {
       return false;
     }
     return true;
@@ -533,8 +539,24 @@ export async function loginWithSocialToken(
   const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
   const body =
     provider === 'google'
-      ? JSON.stringify({ creator_id: creatorId, id_token: token, device_info: info })
-      : JSON.stringify({ creator_id: creatorId, access_token: token, device_info: info });
+      ? JSON.stringify({
+          creator_id: creatorId,
+          id_token: token,
+          device_info: info,
+          email: userProfileOverride?.email,
+          name: userProfileOverride?.name,
+          avatar_url: userProfileOverride?.avatar_url,
+          provider: 'google',
+        })
+      : JSON.stringify({
+          creator_id: creatorId,
+          access_token: token,
+          device_info: info,
+          email: userProfileOverride?.email,
+          name: userProfileOverride?.name,
+          avatar_url: userProfileOverride?.avatar_url,
+          provider: 'facebook',
+        });
 
   // Pass current guest token in Authorization header if upgrading an active Guest session
   const currentToken = getApiAccessToken();
@@ -547,7 +569,11 @@ export async function loginWithSocialToken(
       body,
     });
 
-    const activeUser = userProfileOverride || response.user;
+    const activeUser: UserProfile = {
+      ...(response.user || {}),
+      ...(userProfileOverride || {}),
+      provider, // Explicitly lock provider to 'facebook' or 'google'
+    };
     setSessionTokens(response.access_token, response.refresh_token, activeUser);
     return response;
   } catch (error) {

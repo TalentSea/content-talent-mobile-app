@@ -2,7 +2,7 @@ import { apiGet } from './client';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL, MOCK_HLS_STREAM_WITH_INBUILT_CAPTIONS, getCreatorId } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchUserSubscriptionStatus } from './subscriptionApi';
-import { isUserAdFree } from './authService';
+import { isUserAdFree, activateSubscription } from './authService';
 import { MOCK_VIDEOS_LIST, MOCK_VIDEO_DETAILS_MAP } from './mockVideoApi';
 import { getCleanViewCountForVideo, setBackendViewCount } from '../viewTracker';
 import { getCleanLikesCountForVideo, setBackendLikesCount } from '../userActivity';
@@ -205,6 +205,25 @@ export async function fetchVideoDetails(
 }
 
 export async function fetchVideoPlayInfo(videoId: number) {
+  // 1. Query live subscription status from backend FIRST before fetching video details & streaming info
+  let userIsAdFree = isUserAdFree();
+  try {
+    const liveSub = await fetchUserSubscriptionStatus();
+    if (liveSub.has_active_subscription && liveSub.subscription) {
+      const sub = liveSub.subscription;
+      const role = 'subscriber';
+      const planName = sub.plan_name || 'Standard with Ads';
+      const planIdStr = String(sub.plan_id ?? (sub.plan_name?.toLowerCase().includes('premium') ? '2' : '1'));
+      activateSubscription(role, planName, planIdStr);
+      userIsAdFree = sub.plan_type !== 'with_ads' && !sub.plan_name?.toLowerCase().includes('with ads');
+    } else {
+      userIsAdFree = isUserAdFree();
+    }
+  } catch (err) {
+    console.warn('[fetchVideoPlayInfo] Live subscription check before video details error:', err);
+  }
+
+  // 2. Fetch video details AFTER checking subscription status
   const video = await fetchVideoDetails(videoId);
   let playUrl = getDistinctStreamUrlForVideo(video);
 
@@ -309,13 +328,6 @@ export async function fetchVideoPlayInfo(videoId: number) {
     downloadUrls.find(d => d.resolution === '720p')?.url ||
     downloadUrls[0]?.url ||
     (streamUrl.includes('.m3u8') ? streamUrl.replace('playlist.m3u8', 'play_720p.mp4') : (streamUrl || undefined));
-
-  // Query live subscription status from backend on video select
-  const liveSub = await fetchUserSubscriptionStatus();
-  const userIsAdFree = isUserAdFree() || (
-    liveSub.has_active_subscription &&
-    liveSub.subscription?.plan_type !== 'with_ads'
-  );
 
   const resolvedAdTagUrl = userIsAdFree
     ? undefined

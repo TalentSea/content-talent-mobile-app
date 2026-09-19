@@ -21,7 +21,7 @@ import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X, Sparkles, Lock 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
-import { isUserSubscribed, getUserSubscriptionTier, subscribeAuthChange } from '../../services/api/authService';
+import { isUserSubscribed, getUserSubscriptionTier, isUserAdFree, subscribeAuthChange } from '../../services/api/authService';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL } from '../../constants/config';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
@@ -336,10 +336,16 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
 
             if (playingVideo && hasStreamUrl) {
               const subTier = getUserSubscriptionTier();
-              const isPremium = subTier === 'premium';
-              // Basic: Ads from backend API + 720p max; Premium: No ads + 1080p resolution unlocked
-              const activeAdTagUrl = isPremium ? undefined : (playingVideo.adTagUrl || DEFAULT_AD_TAG_URL);
-              const activePlanTier = isPremium ? 'premium' : 'basic';
+              const userSubscribed = isUserSubscribed();
+              const userAdFree = isUserAdFree();
+              const isPremium = userSubscribed && (subTier === 'premium' || userAdFree);
+              // Standard with Ads: Only use adTagUrl provided directly by backend API; Premium: No ads
+              const activeAdTagUrl = isPremium ? undefined : playingVideo.adTagUrl;
+              const activePlanTier: 'basic' | 'premium' | 'none' = !userSubscribed
+                ? 'none'
+                : isPremium
+                ? 'premium'
+                : 'basic';
 
               return (
                 <NativeVideoPlayer
@@ -576,58 +582,6 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                 <Share2 size={18} color={showShareModal ? '#6366F1' : '#FFFFFF'} />
                 <Text style={styles.actionText}>Share</Text>
               </Pressable>
-            </View>
-
-            {/* VIP Upgrade Subscription Banner when Video is Selected */}
-            <View style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.15)',
-              borderColor: '#6366F1',
-              borderWidth: 1.5,
-              borderRadius: 14,
-              padding: 10,
-              marginTop: 6,
-              marginBottom: 8,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
-                <View style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: '#6366F1',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Sparkles size={18} color="#FFFFFF" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                    Upgrade your plan
-                  </Text>
-                  <Text style={{ color: '#A5B4FC', fontSize: 11, marginTop: 1 }}>
-                    View plans to unlock unlimited 4K streaming
-                  </Text>
-                </View>
-              </View>
-
-              {onUpgradeSubscription ? (
-                <Pressable
-                  style={({ pressed }) => [{
-                    backgroundColor: '#6366F1',
-                    borderRadius: 10,
-                    paddingHorizontal: 14,
-                    paddingVertical: 8,
-                    opacity: pressed ? 0.8 : 1,
-                  }]}
-                  onPress={onUpgradeSubscription}
-                >
-                  <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>
-                    Upgrade
-                  </Text>
-                </Pressable>
-              ) : null}
             </View>
 
             {/* Render Comments Section ONLY when selected */}

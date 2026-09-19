@@ -125,26 +125,12 @@ export function HomeScreen({ navigation }: any) {
   ];
 
   // Deduplicate featured videos by ID or title
-  let featuredBannersList = combinedBanners.filter((item, index, self) =>
+  const featuredBannersList = combinedBanners.filter((item, index, self) =>
     index === self.findIndex(t => (
       (t.video_id && item.video_id && Number(t.video_id) === Number(item.video_id)) ||
       (t.title && item.title && t.title.trim().toLowerCase() === item.title.trim().toLowerCase())
     ))
   );
-
-  // If API banners list is empty, take the featured/primary uploaded videos as featured carousel items
-  if (featuredBannersList.length === 0 && videos.length > 0) {
-    const explicitlyFeatured = videos.filter(v => (v as any).is_featured || (v as any).featured || (v as any).is_banner);
-    const targetVideos = explicitlyFeatured.length > 0 ? explicitlyFeatured : videos.slice(0, 3);
-    featuredBannersList = targetVideos.map(v => ({
-      id: v.id,
-      video_id: v.id,
-      title: v.title,
-      description: v.description || '',
-      image_url: getThumbnailForVideo(v),
-      category: v.category || undefined,
-    }));
-  }
 
   // Build Hero Banner Carousel items strictly from live featured banners configured by admin
   const heroItems: HeroItem[] = featuredBannersList.map((b, idx) => {
