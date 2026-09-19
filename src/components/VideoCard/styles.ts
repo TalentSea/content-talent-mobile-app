@@ -3,8 +3,8 @@ import { colors } from '../../constants/colors';
 
 export const styles = StyleSheet.create({
   card: {
-    width: 155,
-    marginRight: 12,
+    width: 180,
+    marginRight: 14,
     marginBottom: 12,
   },
   cardFullWidth: {
@@ -14,13 +14,13 @@ export const styles = StyleSheet.create({
   },
   thumbnailWrap: {
     width: '100%',
-    height: 100,
-    borderRadius: 10,
+    height: 115,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: colors.surface,
   },
   thumbnailWrapFullWidth: {
-    height: 115,
+    height: 120,
   },
   thumbnail: {
     width: '100%',

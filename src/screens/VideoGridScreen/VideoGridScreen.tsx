@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  FlatList,
+  Image,
   Pressable,
   StatusBar,
   Text,
@@ -19,6 +21,7 @@ import { useUserActivity } from '../../hooks/useUserActivity';
 import { fetchUserCategoriesApi } from '../../services/api/userActivityApi';
 import type { DownloadedVideoItem } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
+import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import { styles } from './styles';
 
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
@@ -28,10 +31,11 @@ export function VideoGridScreen({ route, navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [categories, setCategories] = useState<string[]>(['All']);
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists'>('videos');
 
   const { videos, popularVideos, processingVideos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
-  const { savedVideos, likedVideos } = useUserActivity(videos);
+  const { savedVideos, likedVideos, savedPlaylists, likedPlaylists } = useUserActivity(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
@@ -43,6 +47,8 @@ export function VideoGridScreen({ route, navigation }: any) {
   const isDownloads = section === 'downloads';
   const isSaved = section === 'saved';
   const isLiked = section === 'liked';
+
+  const activePlaylistsList = isSaved ? savedPlaylists : isLiked ? likedPlaylists : [];
 
   const showSearchAndTabs = isPopular || isRecent || (!isDownloads && !isSaved && !isLiked);
 
@@ -78,9 +84,9 @@ export function VideoGridScreen({ route, navigation }: any) {
       : isDownloads
         ? 'Downloads'
         : isSaved
-          ? 'Saved Videos'
+          ? 'Saved Content'
           : isLiked
-            ? 'Liked Videos'
+            ? 'Liked Content'
             : 'Processing Videos';
 
   const numCols = 1;
@@ -114,6 +120,24 @@ export function VideoGridScreen({ route, navigation }: any) {
     return matchesSearch && matchesCategory;
   });
 
+  const [livePlaylists, setLivePlaylists] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isSaved || isLiked) {
+      async function loadLivePlaylistsForThumbnails() {
+        try {
+          const res = await fetchUserCategoriesApi();
+          if (res && res.length > 0) {
+            setLivePlaylists(res);
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+      loadLivePlaylistsForThumbnails();
+    }
+  }, [isSaved, isLiked]);
+
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
@@ -131,6 +155,39 @@ export function VideoGridScreen({ route, navigation }: any) {
         <Text style={styles.expandedTitle}>{title}</Text>
         <View style={styles.backButtonSpacer} />
       </View>
+
+      {/* Media Type Tabs (Videos / Playlists) for Saved Section */}
+      {isSaved && (
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14, gap: 10 }}>
+          <Pressable
+            style={{
+              paddingHorizontal: 20,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: activeMediaTab === 'videos' ? '#E50914' : '#1C1D27',
+              borderWidth: 1,
+              borderColor: activeMediaTab === 'videos' ? '#E50914' : 'rgba(255, 255, 255, 0.08)',
+            }}
+            onPress={() => setActiveMediaTab('videos')}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Videos ({baseVideos.length})</Text>
+          </Pressable>
+
+          <Pressable
+            style={{
+              paddingHorizontal: 20,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: activeMediaTab === 'playlists' ? '#E50914' : '#1C1D27',
+              borderWidth: 1,
+              borderColor: activeMediaTab === 'playlists' ? '#E50914' : 'rgba(255, 255, 255, 0.08)',
+            }}
+            onPress={() => setActiveMediaTab('playlists')}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Playlists ({activePlaylistsList.length})</Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Search Input Bar (Shown for Popular, Recently Added, etc.) */}
       {showSearchAndTabs && (
@@ -155,23 +212,74 @@ export function VideoGridScreen({ route, navigation }: any) {
         />
       )}
 
-      {/* Vertical List Component */}
-      <VerticalList
-        videos={filteredVideos}
-        numColumns={numCols}
-        refreshing={loading}
-        onRefresh={reload}
-        onPressVideo={playVideo}
-        emptyText={
-          isDownloads
-            ? 'No downloaded offline videos found.'
-            : isSaved
-              ? 'No saved videos found.'
-              : isLiked
-                ? 'No liked videos found.'
-                : 'No videos match your filter.'
-        }
-      />
+      {/* Main Content Area */}
+      {(isSaved || isLiked) && activeMediaTab === 'playlists' ? (
+        <FlatList
+          data={activePlaylistsList}
+          keyExtractor={(item, index) => `fav-pl-${item.id}-${index}`}
+          contentContainerStyle={{ paddingBottom: 30 }}
+          renderItem={({ item }) => {
+            const matchingVideo = videos.find(v => v.category?.toLowerCase() === item.name.toLowerCase());
+            const resolvedThumb = item.thumbnail_url || (matchingVideo ? getCleanViewCountForVideo(matchingVideo.id) && getThumbnailForVideo(matchingVideo) : null);
+
+            return (
+              <Pressable
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  gap: 14,
+                  borderBottomWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.05)',
+                }}
+                onPress={() => navigation.navigate('PlaylistDetail', { playlistId: item.id, category: item.name })}
+              >
+                {resolvedThumb ? (
+                  <Image
+                    source={{ uri: resolvedThumb }}
+                    style={{ width: 110, height: 64, borderRadius: 8, backgroundColor: '#1E1E2E' }}
+                  />
+                ) : (
+                  <View style={{ width: 110, height: 64, borderRadius: 8, backgroundColor: '#1E1E2E', justifyContent: 'center', alignItems: 'center' }}>
+                    <Search color="#6B7280" size={24} />
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 4 }} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF', fontSize: 12 }} numberOfLines={1}>
+                    Playlist
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+              {isSaved ? 'No saved playlists found.' : 'No liked playlists found.'}
+            </Text>
+          }
+        />
+      ) : (
+        <VerticalList
+          videos={filteredVideos}
+          numColumns={numCols}
+          refreshing={loading}
+          onRefresh={reload}
+          onPressVideo={playVideo}
+          emptyText={
+            isDownloads
+              ? 'No downloaded offline videos found.'
+              : isSaved
+                ? 'No saved videos found.'
+                : isLiked
+                  ? 'No liked videos found.'
+                  : 'No videos match your filter.'
+          }
+        />
+      )}
 
       {/* Video Player Modal */}
       <PlayerModal playingVideo={playingVideo} onClose={closePlayer} />

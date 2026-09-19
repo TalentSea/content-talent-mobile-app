@@ -160,9 +160,10 @@ export function PlaylistScreen({ navigation }: any) {
             <Pressable
               style={styles.card}
               onPress={() =>
-                navigation.navigate('CategoryDetail', {
+                navigation.navigate('PlaylistDetail', {
                   category: item.name,
                   playlistId: item.id,
+                  description: item.description,
                 })
               }
             >

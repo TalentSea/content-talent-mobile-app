@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
     marginBottom: 12,
   },
   title: {
@@ -21,18 +21,18 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   seeAllText: {
-    color: '#818CF8',
+    color: '#E50914',
     fontSize: 13,
     fontWeight: '600',
   },
   listContent: {
-    paddingHorizontal: 4,
-    gap: 12,
+    paddingHorizontal: 16,
+    gap: 14,
   },
   emptyText: {
     color: '#6B7280',
     fontSize: 13,
     fontStyle: 'italic',
-    paddingHorizontal: 4,
+    paddingHorizontal: 16,
   },
 });

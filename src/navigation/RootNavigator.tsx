@@ -10,6 +10,7 @@ import { PlaylistScreen } from '../screens/PlaylistScreen/PlaylistScreen';
 import { SearchScreen } from '../screens/SearchScreen/SearchScreen';
 import { CategoriesScreen } from '../screens/CategoriesScreen/CategoriesScreen';
 import { CategoryDetailScreen } from '../screens/CategoryDetailScreen/CategoryDetailScreen';
+import { PlaylistDetailScreen } from '../screens/PlaylistDetailScreen/PlaylistDetailScreen';
 import { ProfileScreen } from '../screens/ProfileScreen/ProfileScreen';
 import { VideoGridScreen } from '../screens/VideoGridScreen/VideoGridScreen';
 import { NotificationsScreen } from '../screens/NotificationsScreen/NotificationsScreen';
@@ -73,6 +74,7 @@ export function RootNavigator() {
                     <Stack.Screen name="Home" component={HomeScreen} />
                     <Stack.Screen name="CategoryVideos" component={CategoryVideosScreen} />
                     <Stack.Screen name="Playlist" component={PlaylistScreen} />
+                    <Stack.Screen name="PlaylistDetail" component={PlaylistDetailScreen} />
                     <Stack.Screen name="Search" component={SearchScreen} />
                     <Stack.Screen name="Categories" component={CategoriesScreen} />
                     <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />

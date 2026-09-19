@@ -43,13 +43,18 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 26,
     fontWeight: '800',
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  heroMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
+  heroSubtitle: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  dividerLine: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    marginHorizontal: 16,
+    marginVertical: 4,
   },
   categoryBadgeRed: {
     backgroundColor: 'rgba(239, 68, 68, 0.2)',

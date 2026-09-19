@@ -7,6 +7,11 @@ export type RootStackParamList = {
         category: string;
     };
     Playlist: undefined;
+    PlaylistDetail: {
+        playlistId?: number | string;
+        category?: string;
+        description?: string;
+    };
     Search: undefined;
     Categories: undefined;
     CategoryDetail: {
