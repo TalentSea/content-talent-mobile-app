@@ -17,9 +17,14 @@ export function registerCreatorIdListener(listener: (newId: number) => void): vo
   onCreatorIdChangeListener = listener;
 }
 
-export const API_BASE_URL = 'http://138.68.140.83:8000';
+export const API_BASE_URL =
+  typeof process !== 'undefined' && process.env && process.env.API_BASE_URL
+    ? process.env.API_BASE_URL
+    : 'https://mc-8b2il1t9co.bunny.run';
 export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
 export const RAZORPAY_KEY_ID = 'rzp_test_TZdrjdhyuxCuaR';
+export const FACEBOOK_APP_ID = '3169763853213963';
+export const FACEBOOK_APP_SECRET = 'bd826b0a4867d0c7033c8f40cc5737dc';
 
 export function getCreatorId(): number {
   return currentCreatorId;

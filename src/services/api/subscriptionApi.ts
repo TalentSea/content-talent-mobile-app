@@ -265,20 +265,54 @@ export type LiveSubscriptionStatusResponse = {
 };
 
 /**
- * Retrieves current user's live subscription status & active plan directly from backend.
+ * Retrieves current user's live subscription status & active plan directly from backend API.
+ * Returns plan_name 'Free Plan' when user has no active paid subscription.
  */
 export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionStatusResponse> {
   const cid = getCreatorId();
-  try {
-    const res = await apiGet<LiveSubscriptionStatusResponse>(`/api/v1/mobile/subscriptions/me?creator_id=${cid}`);
-    if (res) {
-      return res;
+  const endpoints = [
+    `/api/v1/mobile/subscriptions/me?creator_id=${cid}`,
+    `/api/v1/subscriptions/me?creator_id=${cid}`,
+    `/api/v1/mobile/users/me?creator_id=${cid}`,
+    `/api/v1/users/me?creator_id=${cid}`,
+  ];
+
+  for (const path of endpoints) {
+    try {
+      const res = await apiGet<any>(path);
+      if (res) {
+        if (res.has_active_subscription !== undefined) {
+          return {
+            has_active_subscription: Boolean(res.has_active_subscription),
+            subscription: res.subscription || (res.has_active_subscription ? { plan_name: res.plan_name || 'Standard Plan', status: 'Active' } : { plan_name: 'Free Plan', status: 'Free' }),
+          };
+        }
+        if (res.subscription || res.plan || res.chosen_plan || res.plan_name) {
+          const planName = res.subscription?.plan_name || res.plan?.name || res.chosen_plan || res.plan_name;
+          const isActive = Boolean(res.subscription?.status === 'Active' || res.is_active || res.has_active_subscription || res.plan_id);
+          return {
+            has_active_subscription: isActive,
+            subscription: {
+              plan_name: planName || (isActive ? 'Standard Plan' : 'Free Plan'),
+              plan_id: res.subscription?.plan_id || res.plan_id || res.plan?.id,
+              status: isActive ? 'Active' : 'Free',
+              days_remaining: res.subscription?.days_remaining || res.days_remaining,
+            },
+          };
+        }
+      }
+    } catch (e) {
+      console.warn(`[subscriptionApi] Notice fetching subscription status from ${path}:`, e);
     }
-  } catch (e) {
-    console.warn('[subscriptionApi] Notice fetching live subscription status from backend:', e);
   }
 
-  return { has_active_subscription: false, subscription: null };
+  return {
+    has_active_subscription: false,
+    subscription: {
+      plan_name: 'Free Plan',
+      status: 'Free',
+    },
+  };
 }
 
 export type DeviceAccessCheckResult = {

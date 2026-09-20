@@ -1,41 +1,107 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Pressable,
+  ScrollView,
   StatusBar,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search, X, Link } from 'lucide-react-native';
+import { Search, X, Link, Sparkles, TrendingUp, Clock, Tag } from 'lucide-react-native';
 
 import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { fetchVideoPlayInfo } from '../../services/api/video';
+import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { styles } from './styles';
 
 export function SearchScreen({ navigation }: any) {
   const [query, setQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const { videos, popularVideos, loading, reload } = useVideos();
+  const [recentSearches, setRecentSearches] = useState<string[]>([
+    'Action',
+    'Comedy',
+    'Trending',
+    'Trailers',
+    'Tutorial',
+  ]);
+  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const { videos, loading, reload } = useVideos();
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
   const [isOpeningUrl, setIsOpeningUrl] = useState(false);
 
-  // Filter search results by title, category, tags, OR video ID share code (#STREAMR-X or number)
-  const cleanQuery = query.trim();
-  const searchResults = cleanQuery
-    ? popularVideos.filter(v => {
-        const titleMatch = v.title.toLowerCase().includes(cleanQuery.toLowerCase());
-        const catMatch = v.category?.toLowerCase().includes(cleanQuery.toLowerCase());
-        const tagMatch = v.tags?.some(t => t.toLowerCase().includes(cleanQuery.toLowerCase()));
+  function addRecentSearch(searchTerm: string) {
+    const trimmed = searchTerm.trim();
+    if (!trimmed) return;
+    setRecentSearches(prev => Array.from(new Set([trimmed, ...prev])).slice(0, 8));
+  }
+
+  // Extract unique video categories dynamically
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(videos.map(v => v.category).filter(Boolean) as string[])
+    );
+  }, [videos]);
+
+  // Build list of filter tabs
+  const filterTabs = useMemo(() => {
+    const base = [
+      { id: 'all', label: 'All', icon: Sparkles },
+      { id: 'popular', label: 'Popular', icon: TrendingUp },
+      { id: 'newest', label: 'Newest', icon: Clock },
+    ];
+    const catTabs = categories.map(cat => ({
+      id: `cat:${cat.toLowerCase()}`,
+      label: cat,
+      icon: Tag,
+    }));
+    return [...base, ...catTabs];
+  }, [categories]);
+
+  // Filter and sort search results
+  const cleanQuery = query.trim().toLowerCase();
+  const searchResults = useMemo(() => {
+    let result = videos;
+
+    // 1. Text Search Filter
+    if (cleanQuery) {
+      result = result.filter(v => {
+        const titleMatch = v.title?.toLowerCase().includes(cleanQuery);
+        const catMatch = v.category?.toLowerCase().includes(cleanQuery);
+        const tagMatch = v.tags?.some(t => t.toLowerCase().includes(cleanQuery));
         const idMatch =
           cleanQuery.replace(/[^0-9]/g, '') === String(v.id) ||
-          cleanQuery.toLowerCase().includes(`streamr-${v.id}`);
+          cleanQuery.includes(`streamr-${v.id}`);
         return titleMatch || catMatch || tagMatch || idMatch;
-      })
-    : popularVideos;
+      });
+    }
+
+    // 2. Tab Filter / Sort
+    if (activeFilter === 'popular') {
+      return [...result].sort((a, b) => {
+        const viewsA = getCleanViewCountForVideo(a.id) || a.views || a.views_count || 0;
+        const viewsB = getCleanViewCountForVideo(b.id) || b.views || b.views_count || 0;
+        return viewsB - viewsA;
+      });
+    }
+
+    if (activeFilter === 'newest') {
+      return [...result].sort((a, b) => {
+        const timeA = new Date(a.published_at || a.created_at || 0).getTime();
+        const timeB = new Date(b.published_at || b.created_at || 0).getTime();
+        return timeB - timeA;
+      });
+    }
+
+    if (activeFilter.startsWith('cat:')) {
+      const targetCat = activeFilter.replace('cat:', '').toLowerCase();
+      return result.filter(v => v.category?.toLowerCase() === targetCat);
+    }
+
+    return result;
+  }, [videos, cleanQuery, activeFilter]);
 
   async function handleOpenLinkOrCode(inputStr: string) {
     const trimmed = inputStr.trim();
@@ -117,6 +183,67 @@ export function SearchScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Recent Search History Directly Under Search Bar */}
+      {recentSearches.length > 0 ? (
+        <View style={styles.recentWrap}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Clock size={14} color="#9CA3AF" />
+              <Text style={styles.recentTitle}>Recent Search History</Text>
+            </View>
+            <Pressable onPress={() => setRecentSearches([])}>
+              <Text style={{ color: '#6366F1', fontSize: 11, fontWeight: '700' }}>Clear</Text>
+            </Pressable>
+          </View>
+          <View style={styles.tagRow}>
+            {recentSearches.map(item => (
+              <Pressable
+                key={item}
+                style={styles.tag}
+                onPress={() => {
+                  setQuery(item);
+                  addRecentSearch(item);
+                  if (item.includes('STREAMR')) {
+                    handleOpenLinkOrCode(item);
+                  }
+                }}
+              >
+                <Text style={styles.tagText}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {/* Horizontal Filter Bar (All, Popular, Newest, Categories) */}
+      <View style={{ height: 48 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterBar}
+        >
+          {filterTabs.map(tab => {
+            const isActive = activeFilter === tab.id;
+            const IconComponent = tab.icon;
+            return (
+              <Pressable
+                key={tab.id}
+                style={[styles.filterPill, isActive && styles.filterPillActive]}
+                onPress={() => setActiveFilter(tab.id)}
+              >
+                <IconComponent
+                  size={14}
+                  color={isActive ? '#FFFFFF' : '#9CA3AF'}
+                />
+                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       {/* Quick Action: Open Link or Code */}
       {query.includes('http') || query.toUpperCase().includes('STREAMR') || /^[0-9]+$/.test(query.trim()) ? (
         <Pressable
@@ -142,29 +269,6 @@ export function SearchScreen({ navigation }: any) {
         </Pressable>
       ) : null}
 
-      {/* Recent Query Suggestion Pills */}
-      {!query && recentSearches.length > 0 ? (
-        <View style={styles.recentWrap}>
-          <Text style={styles.recentTitle}>Recent Searches</Text>
-          <View style={styles.tagRow}>
-            {recentSearches.map(item => (
-              <Pressable
-                key={item}
-                style={styles.tag}
-                onPress={() => {
-                  setQuery(item);
-                  if (item.includes('STREAMR')) {
-                    handleOpenLinkOrCode(item);
-                  }
-                }}
-              >
-                <Text style={styles.tagText}>{item}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-
       {/* Search Results Grid */}
       <VerticalList
         videos={searchResults}
@@ -175,6 +279,8 @@ export function SearchScreen({ navigation }: any) {
         emptyText={
           query
             ? `No search results for "${query}"`
+            : activeFilter !== 'all'
+            ? `No videos found for ${activeFilter.replace('cat:', '')} filter.`
             : 'Type a title or paste a share link / code to watch.'
         }
       />

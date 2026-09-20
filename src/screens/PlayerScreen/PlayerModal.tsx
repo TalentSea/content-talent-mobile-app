@@ -21,7 +21,7 @@ import { Heart, Bookmark, MessageSquare, Share2, Copy, Check, X, Sparkles, Lock 
 import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
 import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
-import { isUserSubscribed, getUserSubscriptionTier, isUserAdFree, subscribeAuthChange } from '../../services/api/authService';
+import { isUserSubscribed, isUserLoggedIn, getUserSubscriptionTier, isUserAdFree, subscribeAuthChange } from '../../services/api/authService';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL } from '../../constants/config';
 import { recordWatchHistory } from '../../services/watchHistory';
 import {
@@ -500,16 +500,16 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
 
                     <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
                       <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
-                        VIP SUBSCRIPTION REQUIRED
+                        {!isUserLoggedIn() ? 'LOG IN REQUIRED 🔒' : 'VIP SUBSCRIPTION REQUIRED'}
                       </Text>
                     </View>
 
                     <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
-                      Subscribe to Watch Full Video
+                      {!isUserLoggedIn() ? 'Log in required 🔒' : 'Subscribe to Watch Full Video'}
                     </Text>
 
                     <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 270, lineHeight: 16 }}>
-                      Protected video content. Upgrade your subscription to watch high-definition HLS streams and download offline MP4s.
+                      {!isUserLoggedIn() ? 'Log in to watch videos.' : 'Protected video content. Upgrade your subscription to watch high-definition streams.'}
                     </Text>
 
                     <Pressable
@@ -530,7 +530,7 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                       }}
                     >
                       <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                        Subscribe Now
+                        {!isUserLoggedIn() ? 'Log in now' : 'Subscribe Now'}
                       </Text>
                     </Pressable>
                   </View>

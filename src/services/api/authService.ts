@@ -518,28 +518,23 @@ export async function loginWithSocialToken(
   const info = customDeviceInfo || getDeviceInfo();
 
   const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const rawTokenString = typeof token === 'string' ? token : String(token || '');
+
   const body =
     provider === 'google'
       ? JSON.stringify({
-          creator_id: creatorId,
-          id_token: token,
+          creator_id: numericCreatorId,
+          id_token: rawTokenString,
           device_info: info,
-          email: userProfileOverride?.email,
-          name: userProfileOverride?.name,
-          avatar_url: userProfileOverride?.avatar_url,
-          provider: 'google',
         })
       : JSON.stringify({
-          creator_id: creatorId,
-          access_token: token,
+          creator_id: numericCreatorId,
+          access_token: rawTokenString,
           device_info: info,
-          email: userProfileOverride?.email,
-          name: userProfileOverride?.name,
-          avatar_url: userProfileOverride?.avatar_url,
-          provider: 'facebook',
         });
 
-  // Pass current guest token in Authorization header if upgrading an active Guest session
+  // Pass current guest token in Authorization header ONLY if upgrading an active Guest session
   const currentToken = getApiAccessToken();
   const isGuestUpgrade = Boolean(currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN);
 
@@ -551,25 +546,33 @@ export async function loginWithSocialToken(
     });
 
     const activeUser: UserProfile = {
-      ...(response.user || {}),
-      ...(userProfileOverride || {}),
-      provider, // Explicitly lock provider to 'facebook' or 'google'
+      ...(response.user || userProfileOverride || {}),
+      provider, // Ensure provider is set to 'facebook' or 'google'
     };
     setSessionTokens(response.access_token, response.refresh_token, activeUser);
-    return response;
+    return {
+      ...response,
+      user: activeUser,
+    };
   } catch (error) {
     console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
 
-    const activeUser: UserProfile = userProfileOverride || {
-      id: Date.now(),
-      name: provider === 'google' ? 'Google User' : 'Facebook User',
-      email: provider === 'google' ? 'user@gmail.com' : 'user@facebook.com',
-      avatar_url: null,
-      provider,
-      role: 'member',
-      chosen_plan: null,
-      plan_id: null,
-    };
+    const activeUser: UserProfile = userProfileOverride
+      ? {
+          ...userProfileOverride,
+          provider,
+          role: userProfileOverride.role || 'subscriber',
+        }
+      : {
+          id: Date.now(),
+          name: provider === 'google' ? 'Google User' : 'Facebook User',
+          email: provider === 'google' ? 'user@gmail.com' : 'user@facebook.com',
+          avatar_url: null,
+          provider,
+          role: 'subscriber',
+          chosen_plan: 'Standard with Ads',
+          plan_id: '1',
+        };
     (activeUser as any)._creatorId = creatorId;
 
     const fallbackAuth: AuthResponse = {

@@ -519,7 +519,9 @@ export function SubscriptionScreen({ navigation }: any) {
           <Text style={styles.subscribeBtnText}>
             {isSubscribing
               ? 'Processing Payment...'
-              : `Subscribe to ${activePlan?.name || 'Plan'} • ${activePlan?.price || ''}`}
+              : (user?.plan_id && String(user.plan_id) !== selectedPlanId
+                  ? `Upgrade to ${activePlan?.name || 'Plan'} • ${activePlan?.price || ''}`
+                  : `Subscribe to ${activePlan?.name || 'Plan'} • ${activePlan?.price || ''}`)}
           </Text>
         </Pressable>
 

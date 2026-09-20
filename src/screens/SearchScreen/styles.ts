@@ -72,4 +72,35 @@ export const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontSize: 12,
   },
+  filterBar: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 8,
+    maxHeight: 52,
+  },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#161622',
+    borderWidth: 1,
+    borderColor: '#2A2A3C',
+    marginRight: 8,
+  },
+  filterPillActive: {
+    backgroundColor: '#6366F1',
+    borderColor: '#818CF8',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  filterTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
 });

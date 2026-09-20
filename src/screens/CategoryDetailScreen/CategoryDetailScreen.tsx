@@ -187,12 +187,6 @@ export function CategoryDetailScreen({ route, navigation }: any) {
                 {displayTitle}
               </Text>
 
-              {heroDescription ? (
-                <Text style={styles.heroDescription} numberOfLines={2}>
-                  {heroDescription}
-                </Text>
-              ) : null}
-
               <View style={styles.heroMetaRow}>
                 <View style={styles.videoCountBadge}>
                   <Text style={styles.videoCountBadgeText}>
@@ -203,15 +197,6 @@ export function CategoryDetailScreen({ route, navigation }: any) {
             </View>
           </View>
         </View>
-
-        {/* Category Description Section */}
-        {heroDescription ? (
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.descriptionText}>
-              {heroDescription}
-            </Text>
-          </View>
-        ) : null}
 
         {/* Vertical Video List */}
         <View style={{ paddingTop: 12, paddingBottom: 30 }}>

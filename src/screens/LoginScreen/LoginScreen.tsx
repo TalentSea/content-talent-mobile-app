@@ -245,11 +245,80 @@ export function LoginScreen({ navigation }: any) {
                     }
                 }
             } else if (provider === 'facebook') {
-                setLoadingProvider(null);
-                setFbEmailOrPhone('');
-                setFbPassword('');
-                setShowFacebookModal(true);
-                return;
+                try {
+                    if (LoginManager) {
+                        try {
+                            LoginManager.logOut();
+                        } catch (e) {
+                            // ignore
+                        }
+                        const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+
+                        if (result?.isCancelled) {
+                            console.log('[FacebookSignin] User cancelled login');
+                            setLoadingProvider(null);
+                            return;
+                        }
+                    }
+
+                    if (AccessToken) {
+                        const data = await AccessToken.getCurrentAccessToken();
+                        if (data && data.accessToken) {
+                            realToken = typeof data.accessToken === 'string'
+                                ? data.accessToken
+                                : (data.accessToken as any).toString();
+                        }
+                    }
+
+                    if (Profile) {
+                        try {
+                            const currentProfile = await Profile.getCurrentProfile();
+                            if (currentProfile) {
+                                const fullName = currentProfile.name || `${currentProfile.firstName || ''} ${currentProfile.lastName || ''}`.trim() || 'Facebook User';
+                                realProfile = {
+                                    id: Date.now(),
+                                    name: fullName,
+                                    email: currentProfile.email || `${currentProfile.userID || 'user'}@facebook.com`,
+                                    avatar_url: currentProfile.imageURL || undefined,
+                                    provider: 'facebook',
+                                    role: 'subscriber',
+                                };
+                            }
+                        } catch (e) {
+                            // ignore profile fetch error
+                        }
+                    }
+
+                    if (!realProfile && realToken) {
+                        try {
+                            const graphRes = await fetch(`https://graph.facebook.com/v18.0/me?fields=id,name,first_name,last_name,email,picture.type(large)&access_token=${realToken}`);
+                            const userInfo = await graphRes.json();
+                            if (userInfo && userInfo.id) {
+                                const fbName = userInfo.name || (userInfo.first_name ? `${userInfo.first_name} ${userInfo.last_name || ''}`.trim() : '');
+                                realProfile = {
+                                    id: Date.now(),
+                                    name: fbName || 'Facebook User',
+                                    email: userInfo.email || `${userInfo.id}@facebook.com`,
+                                    avatar_url: userInfo.picture?.data?.url || undefined,
+                                    provider: 'facebook',
+                                    role: 'subscriber',
+                                };
+                            }
+                        } catch (e) {
+                            // ignore graph error
+                        }
+                    }
+                } catch (facebookErr: any) {
+                    console.warn('[FacebookSignin] Native Facebook redirect error:', facebookErr);
+                }
+
+                if (!realToken && !realProfile) {
+                    setLoadingProvider(null);
+                    setFbEmailOrPhone('');
+                    setFbPassword('');
+                    setShowFacebookModal(true);
+                    return;
+                }
             }
 
             if (!realToken && !realProfile) {

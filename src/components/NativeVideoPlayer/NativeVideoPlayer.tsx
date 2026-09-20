@@ -859,6 +859,13 @@ export default function NativeVideoPlayer({
                 <Pressable
                   style={[styles.actionButton, isFullscreen && styles.actionButtonFullscreen]}
                   onPress={() => {
+                    if (planTier !== 'premium') {
+                      Alert.alert(
+                        'Upgrade to Premium Plan 👑',
+                        'Offline video downloads are exclusively available on the Premium Plan. Upgrade your subscription plan to download videos.',
+                      );
+                      return;
+                    }
                     setShowDownloadMenu(prev => !prev);
                     setShowCaptionMenu(false);
                     setShowMoreMenu(false);

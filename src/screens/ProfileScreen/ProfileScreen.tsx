@@ -70,11 +70,18 @@ export function ProfileScreen({ navigation }: any) {
 
   useEffect(() => {
     async function loadBackendSubscription() {
-      const status = await fetchUserSubscriptionStatus();
-      if (status.subscription) {
-        setLiveSub(status.subscription);
+      try {
+        const status = await fetchUserSubscriptionStatus();
+        if (status && status.subscription) {
+          setLiveSub(status.subscription);
+        } else {
+          setLiveSub({ plan_name: 'Free Plan', status: 'Free' });
+        }
+      } catch (e) {
+        console.warn('[ProfileScreen] Error fetching subscription from API:', e);
+      } finally {
+        setUser(getCurrentUser());
       }
-      setUser(getCurrentUser());
     }
     loadBackendSubscription();
   }, []);
@@ -101,11 +108,11 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   const userIsLoggedIn = isUserLoggedIn();
-  const userIsSubscribed = isUserSubscribed() || Boolean(liveSub);
+  const userIsSubscribed = Boolean(liveSub?.plan_name && liveSub.plan_name !== 'Free Plan') || isUserSubscribed();
   const subTier = getUserSubscriptionTier();
   const userAdFree = isUserAdFree();
 
-  const activePlanName = liveSub?.plan_name || user?.chosen_plan || (subTier === 'premium' ? 'Premium Plan' : subTier === 'basic' ? 'Basic Plan' : 'Free Plan');
+  const activePlanName = liveSub?.plan_name || (userIsSubscribed ? (subTier === 'premium' ? 'Premium Plan' : 'Basic Plan') : 'Free Plan');
   const daysRemainingStr = liveSub?.days_remaining ? ` (${liveSub.days_remaining} days left)` : '';
 
   const currentUser = user

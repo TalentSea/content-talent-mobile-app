@@ -26,7 +26,7 @@ import {
   Tv,
 } from 'lucide-react-native';
 import { getCurrentUser } from '../../services/api/authService';
-import { getCreatorId, setCreatorId } from '../../constants/config';
+import { API_BASE_URL, getCreatorId, setCreatorId } from '../../constants/config';
 import { styles } from './styles';
 
 export function SettingsScreen({ navigation }: any) {
@@ -233,7 +233,7 @@ export function SettingsScreen({ navigation }: any) {
               <Globe size={18} color="#818CF8" />
               <Text style={styles.rowTitle}>API Server Endpoint</Text>
             </View>
-            <Text style={styles.rowValue}>138.68.140.83:8000</Text>
+            <Text style={styles.rowValue}>{API_BASE_URL.replace(/^https?:\/\//, '')}</Text>
           </View>
 
           <View style={styles.row}>

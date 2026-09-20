@@ -21,6 +21,26 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             return;
         }
 
+        // Check if user is logged in; if free/guest user, lock playback and prompt to log in
+        if (!isUserLoggedIn()) {
+            Alert.alert(
+                'Log in required 🔒',
+                'Log in to watch videos.',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Log in now',
+                        onPress: () => {
+                            if (navigation) {
+                                navigation.navigate('Login');
+                            }
+                        },
+                    },
+                ]
+            );
+            return;
+        }
+
         // Sync live backend subscription status if not currently marked subscribed in memory
         if (!isUserSubscribed()) {
             try {
@@ -36,11 +56,6 @@ export function useVideoPlayback(videoList: ApiVideo[] = []) {
             } catch (e) {
                 console.warn('[useVideoPlayback] Live subscription check notice:', e);
             }
-        }
-
-        // Auto-provision guest subscription if not subscribed so playback proceeds
-        if (!isUserSubscribed()) {
-            activateSubscription('subscriber', 'Basic Plan', 'basic');
         }
 
         try {
