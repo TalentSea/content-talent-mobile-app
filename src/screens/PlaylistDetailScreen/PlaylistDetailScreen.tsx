@@ -119,7 +119,8 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
   }
 
   function handleToggleSave() {
-    const nowSaved = toggleSavePlaylist(targetId, displayTitle, heroThumb);
+    const pId = playlistId || playlistDetails?.id || targetId;
+    const nowSaved = toggleSavePlaylist(pId, displayTitle, heroThumb);
     setIsSaved(nowSaved);
   }
 

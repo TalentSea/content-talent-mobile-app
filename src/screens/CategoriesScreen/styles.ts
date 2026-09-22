@@ -36,6 +36,46 @@ export const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 4,
   },
+  // Search bar
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#12121A',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#FFFFFF',
+    fontSize: 13,
+    padding: 0,
+  },
+  clearSearchText: {
+    color: '#9CA3AF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  resetSearchBtn: {
+    marginTop: 14,
+    backgroundColor: '#1E1E2E',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  resetSearchText: {
+    color: '#6366F1',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  // Grid list
   listContent: {
     paddingHorizontal: 14,
     paddingBottom: 90,
@@ -44,6 +84,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 14,
   },
+  // Category card
   card: {
     width: '48%',
     height: 175,
@@ -55,13 +96,13 @@ export const styles = StyleSheet.create({
     backgroundColor: '#0D1117',
   },
   cardBackgroundImage: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
   cardOverlay: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10, 15, 28, 0.65)',
     padding: 14,
     justifyContent: 'space-between',
@@ -113,4 +154,3 @@ export const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
 });
-

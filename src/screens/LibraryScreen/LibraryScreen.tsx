@@ -1,141 +1,271 @@
 import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, StatusBar, Text, View } from 'react-native';
+import {
+  FlatList,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bookmark, ChevronLeft, Download, Heart, History } from 'lucide-react-native';
+import { Bookmark, ChevronLeft, ChevronRight, Download, Film, Heart, History } from 'lucide-react-native';
 import { colors } from '../../constants/colors';
 import { styles } from './styles';
-import { useLibrary } from '../../contexts/LibraryContext';
+import { useVideos } from '../../hooks/useVideo';
+import { useUserActivity } from '../../hooks/useUserActivity';
+import { useDownloads } from '../../hooks/useDownloads';
+import { useWatchHistory } from '../../hooks/useWatchHistory';
+import { useVideoPlayback } from '../../hooks/useVideoPlayback';
+import { syncUserActivityWithBackend } from '../../services/userActivity';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
-import type { PlayInfo } from '../../../types/video';
-import { NativeVideoPlayer } from '../../components/NativeVideoPlayer';
-import { isUserSubscribed } from '../../services/api/authService';
+import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
+import type { ApiVideo } from '../../types/video';
 
 export function LibraryScreen({ route, navigation }: any) {
-  const { items } = useLibrary();
-  const [playingVideo, setPlayingVideo] = useState<PlayInfo | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<PlayInfo | null>(null);
-  const type = route.params?.type ?? 'history';
-  const content = {
+  const type = route.params?.type ?? 'saved';
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists'>('videos');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { videos, loading: videosLoading, reload } = useVideos();
+  const { savedVideos, likedVideos, savedPlaylists } = useUserActivity(videos);
+  const { downloadedVideos } = useDownloads(videos);
+  const { history } = useWatchHistory(videos);
+  const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
+
+  const downloadedVideoList: ApiVideo[] = downloadedVideos
+    .map((item: any) => item?.video || item)
+    .filter((v: ApiVideo) => v && v.id);
+
+  const historyVideoList: ApiVideo[] = history
+    .map(item => item.video)
+    .filter((v: ApiVideo) => v && v.id);
+
+  const config = {
     history: {
       Icon: History,
       title: 'Watch History',
       emptyTitle: 'No watch history yet',
       description: 'Videos you watch will appear here so you can pick up where you left off.',
+      items: historyVideoList,
     },
     downloads: {
       Icon: Download,
       title: 'Downloads',
       emptyTitle: 'No downloads yet',
       description: 'Videos you download for offline viewing will appear here.',
+      items: downloadedVideoList,
     },
     liked: {
       Icon: Heart,
       title: 'Liked Videos',
       emptyTitle: 'No liked videos yet',
       description: 'Videos you like will be saved here for easy access.',
+      items: likedVideos,
     },
     saved: {
       Icon: Bookmark,
-      title: 'Saved Videos',
+      title: 'Saved Content',
       emptyTitle: 'No saved videos yet',
-      description: 'Save a video to return to it later.',
+      description: 'Save videos and playlists to return to them later.',
+      items: savedVideos,
     },
   }[type as 'history' | 'downloads' | 'liked' | 'saved'];
-  const { Icon, title, emptyTitle, description } = content;
-  const videos = items[type as 'history' | 'downloads' | 'liked' | 'saved'];
-  const isCollection = type !== 'history';
-  const featuredVideo = selectedVideo || videos[0];
+
+  const { Icon, title, emptyTitle, description, items } = config;
+  const isSavedSection = type === 'saved';
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        reload(false),
+        syncUserActivityWithBackend(),
+      ]);
+    } catch {
+      // Ignore refresh errors
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  function handleOpenPlaylist(playlist: any) {
+    navigation.navigate('HomeTab' as any, {
+      screen: 'PlaylistDetail',
+      params: {
+        playlistId: playlist.id,
+        category: playlist.name,
+      },
+    } as any);
+  }
 
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" />
+
+      {/* Screen Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={10}>
-          <ChevronLeft color={colors.text} size={25} />
+          <ChevronLeft color={colors.text} size={24} />
         </Pressable>
         <Text style={styles.headerTitle}>{title}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {videos.length && isCollection ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.collectionContent}>
-          <View style={styles.playerArea}>
-            {isUserSubscribed() ? (
-              <NativeVideoPlayer
-                uri={featuredVideo.stream_url}
-                mp4Url={featuredVideo.mp4Url}
-                downloadUrls={featuredVideo.downloadUrls}
-                title={featuredVideo.title}
-                captions={featuredVideo.captions}
-                inbuiltCaptionTracks={featuredVideo.inbuiltCaptionTracks}
-                hasInbuiltCaptions={featuredVideo.hasInbuiltCaptions}
-                adTagUrl={featuredVideo.adTagUrl}
-                autoStart
-                controls
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={{ flex: 1, backgroundColor: '#101018', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 14, marginBottom: 4 }}>
-                  Subscription Required
-                </Text>
-                <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 12 }}>
-                  Subscribe to a plan to stream this collection.
-                </Text>
-                <Pressable
-                  style={{ backgroundColor: '#6366F1', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
-                  onPress={() => navigation.navigate('Subscription')}
-                >
-                  <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>Subscribe Now</Text>
-                </Pressable>
-              </View>
+      {/* Sub-Tabs for Saved Section (Videos / Playlists) */}
+      {isSavedSection && (
+        <View style={styles.tabsContainer}>
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeMediaTab === 'videos' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveMediaTab('videos')}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeMediaTab === 'videos' && styles.activeTabButtonText,
+              ]}
+            >
+              Videos ({savedVideos.length})
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[
+              styles.tabButton,
+              activeMediaTab === 'playlists' && styles.activeTabButton,
+            ]}
+            onPress={() => setActiveMediaTab('playlists')}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                activeMediaTab === 'playlists' && styles.activeTabButtonText,
+              ]}
+            >
+              Playlists ({savedPlaylists.length})
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Main Content Area */}
+      {isSavedSection && activeMediaTab === 'playlists' ? (
+        savedPlaylists.length > 0 ? (
+          <FlatList
+            data={savedPlaylists}
+            keyExtractor={item => `saved-pl-${item.id}`}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.playlistRow}
+                onPress={() => handleOpenPlaylist(item)}
+              >
+                {item.thumbnail_url ? (
+                  <Image source={{ uri: item.thumbnail_url }} style={styles.playlistThumbnail} />
+                ) : (
+                  <View style={[styles.playlistThumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <Film color="#6B7280" size={24} />
+                  </View>
+                )}
+                <View style={styles.playlistCopy}>
+                  <Text style={styles.playlistTitle} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.playlistMeta} numberOfLines={1}>
+                    {typeof item.video_count === 'number'
+                      ? `${item.video_count} ${item.video_count === 1 ? 'video' : 'videos'}`
+                      : 'Playlist'}
+                  </Text>
+                </View>
+                <Bookmark size={18} color="#6366F1" fill="#6366F1" />
+              </Pressable>
             )}
+          />
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.iconWrap}>
+              <Bookmark color={colors.primary} size={30} />
+            </View>
+            <Text style={styles.emptyTitle}>No saved playlists yet</Text>
+            <Text style={styles.emptyDescription}>
+              Bookmark any creator playlist to quickly return to it here.
+            </Text>
+            <Pressable
+              style={styles.exploreButton}
+              onPress={() => navigation.navigate('HomeTab' as any)}
+            >
+              <Text style={styles.exploreButtonText}>Explore Playlists</Text>
+            </Pressable>
           </View>
-          <Text style={styles.upNextTitle}>More in {title}</Text>
-          {videos.filter(video => video.stream_url !== featuredVideo.stream_url).map(video => (
-            <Pressable key={video.stream_url} style={styles.videoRow} onPress={() => setSelectedVideo(video)}>
-              {video.poster ? <Image source={{ uri: video.poster }} style={styles.thumbnail} /> : <View style={styles.thumbnailFallback} />}
-              <View style={styles.videoCopy}>
-                <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-                <Text style={styles.videoDescription} numberOfLines={1}>{video.description || 'Streamr video'}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-      ) : videos.length ? (
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          {videos.map(video => (
-            <Pressable key={video.stream_url} style={styles.videoRow} onPress={() => setPlayingVideo(video)}>
-              {video.poster ? <Image source={{ uri: video.poster }} style={styles.thumbnail} /> : <View style={styles.thumbnailFallback} />}
-              <View style={styles.videoCopy}>
-                <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-                <Text style={styles.videoDescription} numberOfLines={1}>{video.description || 'Streamr video'}</Text>
-              </View>
-            </Pressable>
-          ))}
+        )
+      ) : items.length > 0 ? (
+        <ScrollView
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
+          }
+        >
+          {items.map(video => {
+            const thumb = getThumbnailForVideo(video);
+            return (
+              <Pressable
+                key={`lib-v-${video.id}`}
+                style={styles.videoRow}
+                onPress={() => playVideo(video)}
+              >
+                {thumb ? (
+                  <Image source={{ uri: thumb }} style={styles.thumbnail} />
+                ) : (
+                  <View style={styles.thumbnailFallback} />
+                )}
+                <View style={styles.videoCopy}>
+                  <Text style={styles.videoTitle} numberOfLines={2}>
+                    {video.title}
+                  </Text>
+                  <Text style={styles.videoDescription} numberOfLines={1}>
+                    {video.category || video.duration || 'Streamr Video'}
+                  </Text>
+                </View>
+                <ChevronRight size={18} color="#475569" />
+              </Pressable>
+            );
+          })}
         </ScrollView>
       ) : (
-      <View style={styles.emptyState}>
-        <View style={styles.iconWrap}>
-          <Icon color={colors.primary} size={30} />
+        <View style={styles.emptyState}>
+          <View style={styles.iconWrap}>
+            <Icon color={colors.primary} size={30} />
+          </View>
+          <Text style={styles.emptyTitle}>{emptyTitle}</Text>
+          <Text style={styles.emptyDescription}>{description}</Text>
+          <Pressable
+            style={styles.exploreButton}
+            onPress={() => navigation.navigate('HomeTab' as any)}
+          >
+            <Text style={styles.exploreButtonText}>Explore Videos</Text>
+          </Pressable>
         </View>
-        <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-        <Text style={styles.emptyDescription}>{description}</Text>
-        <Pressable style={styles.exploreButton} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.exploreButtonText}>Explore videos</Text>
-        </Pressable>
-      </View>
       )}
-      {!isCollection ? (
-        <PlayerModal
-          playingVideo={playingVideo}
-          onUpgradeSubscription={() => {
-            setPlayingVideo(null);
-            navigation.navigate('Subscription');
-          }}
-          onClose={() => setPlayingVideo(null)}
-        />
-      ) : null}
+
+      {/* Video Player Modal */}
+      <PlayerModal
+        playingVideo={playingVideo}
+        onSelectVideo={playVideo}
+        onSelectPlaylist={(p) => handleOpenPlaylist(p)}
+        onUpgradeSubscription={() => {
+          closePlayer();
+          navigation.navigate('Subscription');
+        }}
+        onClose={closePlayer}
+      />
     </SafeAreaView>
   );
 }

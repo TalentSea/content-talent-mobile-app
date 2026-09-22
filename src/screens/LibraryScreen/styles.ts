@@ -63,4 +63,60 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   exploreButtonText: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  tabButton: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#181926',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  activeTabButton: {
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
+  },
+  tabButtonText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  activeTabButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  playlistRow: {
+    minHeight: 84,
+    padding: 12,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  playlistThumbnail: {
+    width: 100,
+    height: 64,
+    borderRadius: 10,
+    backgroundColor: '#1E1E2E',
+  },
+  playlistCopy: {
+    flex: 1,
+    marginLeft: 14,
+  },
+  playlistTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  playlistMeta: {
+    marginTop: 4,
+    color: colors.muted,
+    fontSize: 12,
+  },
 });

@@ -1,4 +1,4 @@
-import { apiGet } from './client';
+import { apiGet, apiRequest } from './client';
 import { getCreatorId } from '../../constants/config';
 import type { ApiVideo } from '../../types/video';
 
@@ -154,3 +154,70 @@ export async function fetchPlaylistVideos(
     return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
   }
 }
+
+/**
+ * POST /api/v1/mobile/playlists/{playlist_id}/save — Toggle Playlist Bookmark
+ * Toggles bookmark/save state (save / unsave) for an authenticated subscriber on a public creator playlist.
+ */
+export async function toggleSavePlaylistApi(playlistId: number): Promise<{ is_saved: boolean }> {
+  try {
+    const response = await apiRequest<{ is_saved: boolean }>(
+      `/api/v1/mobile/playlists/${playlistId}/save`,
+      {
+        method: 'POST',
+        authenticated: true,
+      },
+    );
+    return response;
+  } catch (error) {
+    console.warn(`[toggleSavePlaylistApi] Error toggling bookmark for playlist ${playlistId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * GET /api/v1/mobile/playlists/saved — List Subscriber Saved Playlists
+ * Retrieves a paginated list of creator playlists bookmarked/saved by the authenticated subscriber.
+ */
+export async function fetchSavedPlaylistsApi(
+  page: number = 1,
+  limit: number = 20,
+): Promise<PaginatedPlaylistsResponse> {
+  try {
+    const query = new URLSearchParams();
+    query.set('page', String(page));
+    query.set('limit', String(limit));
+
+    const response = await apiRequest<any>(
+      `/api/v1/mobile/playlists/saved?${query.toString()}`,
+      {
+        method: 'GET',
+        authenticated: true,
+      },
+    );
+
+    if (response) {
+      let items: PlaylistListItem[] = [];
+      if (Array.isArray(response.items)) {
+        items = response.items;
+      } else if (Array.isArray(response)) {
+        items = response;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      }
+      return {
+        total: response.total ?? items.length,
+        page: response.page ?? page,
+        limit: response.limit ?? limit,
+        total_pages: response.total_pages ?? 1,
+        items: items.map(normalizePlaylist),
+      };
+    }
+
+    return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
+  } catch (error) {
+    console.warn('[fetchSavedPlaylistsApi] Error listing saved playlists:', error);
+    return { total: 0, page: 1, limit: limit, total_pages: 1, items: [] };
+  }
+}
+

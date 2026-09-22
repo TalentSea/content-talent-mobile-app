@@ -41,20 +41,18 @@ export function useWatchHistory(availableVideos: ApiVideo[] = []) {
   const availableIdsKey = (availableVideos || []).map(v => v.id).join(',');
 
   const filteredHistory = useMemo(() => {
+    if (!availableVideos || availableVideos.length === 0) return [];
     const started = history.filter(item => (item.progressPercentage ?? 0) > 0);
-    if (!availableVideos || availableVideos.length === 0) return started;
     const availableIds = new Set(availableVideos.map(v => v.id));
     return started.filter(item => availableIds.has(item.video.id));
   }, [history, availableIdsKey]);
 
   const filteredContinueWatching = useMemo(() => {
-    const videoMap = new Map((availableVideos || []).map(v => [v.id, v]));
+    if (!availableVideos || availableVideos.length === 0) return [];
+    const videoMap = new Map(availableVideos.map(v => [v.id, v]));
     const incomplete = history.filter(
       item => (item.progressPercentage ?? 0) > 0 && (item.progressPercentage ?? 0) < 98,
     );
-    if (!availableVideos || availableVideos.length === 0) {
-      return incomplete.map(item => item.video);
-    }
     return incomplete
       .filter(item => videoMap.has(item.video.id))
       .map(item => {

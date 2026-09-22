@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
-  Pressable,
   Text,
   View,
 } from 'react-native';
@@ -168,30 +166,15 @@ export function RelatedContent({
             keyExtractor={(item, idx) => `rel-pl-${item.id}-${idx}`}
             contentContainerStyle={styles.horizontalListContainer}
             renderItem={({ item }) => (
-              <Pressable
-                style={styles.playlistCard}
+              <VideoCard
+                id={String(item.id)}
+                title={item.name || 'Playlist'}
+                thumbnailUrl={item.thumbnail_url || undefined}
+                category={item.description || 'Curated video series'}
+                badgeText={`${item.video_count ?? 0} Streams`}
+                hideTags
                 onPress={() => onSelectPlaylist && onSelectPlaylist(item)}
-              >
-                <View>
-                  {item.thumbnail_url ? (
-                    <Image
-                      source={{ uri: item.thumbnail_url }}
-                      style={styles.playlistThumbnail}
-                    />
-                  ) : (
-                    <View style={[styles.playlistThumbnail, { backgroundColor: '#1E1E2E' }]} />
-                  )}
-                  <View style={styles.playlistOverlay}>
-                    <Text style={styles.playlistOverlayText}>{item.video_count} Streams</Text>
-                  </View>
-                </View>
-                <Text style={styles.playlistTitle} numberOfLines={1}>
-                  {item.name || 'Playlist'}
-                </Text>
-                <Text style={styles.playlistSub} numberOfLines={1}>
-                  {item.description || 'Curated video series'}
-                </Text>
-              </Pressable>
+              />
             )}
           />
         </View>

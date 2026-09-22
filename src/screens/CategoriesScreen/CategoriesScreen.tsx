@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   FlatList,
   Image,
@@ -6,16 +6,23 @@ import {
   RefreshControl,
   StatusBar,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft } from 'lucide-react-native';
-import { BottomNavBar } from '../../components/BottomNavBar';
+import { ChevronLeft, Search } from 'lucide-react-native';
 import { fetchUserCategoriesApi, MobileCategoryItem } from '../../services/api/userActivityApi';
 import { styles } from './styles';
 import { CategoryGridSkeleton } from '../../components/SkeletonLoader/HotstarSkeleton';
+import { useAppTheme } from '../../contexts/ThemeContext';
 
-type RealCategoryItem = {
+// Rotating accent colors — applied by index so each category card has a distinct color
+const ACCENT_COLORS = [
+  '#818CF8', '#34D399', '#FBBF24', '#C084FC',
+  '#F472B6', '#FB7185', '#38BDF8', '#4ADE80',
+];
+
+type CategoryItem = {
   id: string;
   name: string;
   slug: string;
@@ -26,8 +33,10 @@ type RealCategoryItem = {
 };
 
 export function CategoriesScreen({ navigation }: any) {
-  const [categoriesList, setCategoriesList] = useState<RealCategoryItem[]>([]);
+  const { theme } = useAppTheme();
+  const [categoriesList, setCategoriesList] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadBackendCategories = async () => {
     try {
@@ -35,10 +44,10 @@ export function CategoriesScreen({ navigation }: any) {
       const apiCats = await fetchUserCategoriesApi();
 
       if (apiCats && apiCats.length > 0) {
-        const formattedList: RealCategoryItem[] = apiCats.map((item: MobileCategoryItem, idx: number) => {
+        const formattedList: CategoryItem[] = apiCats.map((item: MobileCategoryItem, idx: number) => {
           const thumb = item.thumbnailUrl || (item as any).thumbnail || (item as any).image || (item as any).image_url || '';
           const count = item.contentCount ?? item.video_count ?? 0;
-          const color = item.color || '#60A5FA';
+          const color = item.color || ACCENT_COLORS[idx % ACCENT_COLORS.length];
 
           return {
             id: String(item.id || idx + 1),
@@ -67,34 +76,69 @@ export function CategoriesScreen({ navigation }: any) {
     loadBackendCategories();
   }, []);
 
-  return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="light-content" />
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categoriesList;
+    const q = searchQuery.toLowerCase().trim();
+    return categoriesList.filter(
+      c =>
+        c.name.toLowerCase().includes(q) ||
+        (c.description && c.description.toLowerCase().includes(q)),
+    );
+  }, [categoriesList, searchQuery]);
 
-      {/* Screen Header matching design */}
+  return (
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.mainBackgroundColor} />
+
       <View style={styles.headerContainer}>
         <View style={styles.headerTopRow}>
           {navigation?.canGoBack && navigation.canGoBack() && (
-            <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-              <ChevronLeft color="#FFFFFF" size={22} />
+            <Pressable style={[styles.backButton, { backgroundColor: theme.cardBackgroundColor }]} onPress={() => navigation.goBack()}>
+              <ChevronLeft color={theme.primaryTextColor} size={22} />
             </Pressable>
           )}
-          <Text style={styles.headerTitle}>Browse Categories</Text>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }]}>Browse Categories</Text>
         </View>
-        <Text style={styles.headerSubtitle}>Explore content by topic</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.secondaryTextColor }]}>Explore content by topic</Text>
+      </View>
+
+      {/* Search Bar (Restored from incoming branch) */}
+      <View style={styles.searchContainer}>
+        <View style={[styles.searchBar, { backgroundColor: theme.cardBackgroundColor }]}>
+          <Search color={theme.mutedTextColor} size={16} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.primaryTextColor }]}
+            placeholder="Search categories..."
+            placeholderTextColor={theme.mutedTextColor}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')}>
+              <Text style={[styles.clearSearchText, { color: theme.primaryColor }]}>Clear</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {loading ? (
         <CategoryGridSkeleton />
-      ) : categoriesList.length === 0 ? (
+      ) : filteredCategories.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-          <Text style={{ color: '#9CA3AF', fontSize: 14, textAlign: 'center' }}>
-            No active categories available.
+          <Text style={{ color: theme.secondaryTextColor, fontSize: 14, textAlign: 'center' }}>
+            {searchQuery
+              ? `No categories found matching "${searchQuery}"`
+              : 'No active categories available.'}
           </Text>
+          {searchQuery.length > 0 && (
+            <Pressable style={styles.resetSearchBtn} onPress={() => setSearchQuery('')}>
+              <Text style={[styles.resetSearchText, { color: theme.primaryColor }]}>Show all categories</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <FlatList
-          data={categoriesList}
+          data={filteredCategories}
           keyExtractor={item => item.id}
           numColumns={2}
           columnWrapperStyle={styles.columnWrapper}
@@ -103,7 +147,7 @@ export function CategoriesScreen({ navigation }: any) {
             <RefreshControl
               refreshing={loading}
               onRefresh={loadBackendCategories}
-              tintColor="#FFFFFF"
+              tintColor={theme.primaryColor}
             />
           }
           renderItem={({ item }) => (
@@ -123,25 +167,19 @@ export function CategoriesScreen({ navigation }: any) {
                 <View style={[styles.cardBackgroundImage, { backgroundColor: item.accentColor + '33' }]} />
               )}
               
-              {/* Semi-transparent overlay with color tint */}
+              {/* Semi-transparent overlay with color tint (from teammate's branch) */}
               <View style={styles.cardOverlay}>
                 <View style={styles.cardHeaderContent}>
-                  {/* Category Name */}
                   <Text style={styles.cardTitle} numberOfLines={1}>
                     {item.name}
                   </Text>
-
-                  {/* Accent sub-meta line showing video count only */}
                   <Text style={[styles.cardMetaText, { color: item.accentColor }]} numberOfLines={1}>
                     {item.count} {item.count === 1 ? 'video' : 'videos'}
                   </Text>
-
-                  {/* Two subtle translucent placeholder lines matching Image 2 */}
                   <View style={styles.skeletonBarLong} />
                   <View style={styles.skeletonBarShort} />
                 </View>
 
-                {/* Glass preview rectangle boxes matching Image 2 */}
                 <View style={styles.previewBoxesRow}>
                   <View style={styles.previewBox} />
                   <View style={styles.previewBox} />
@@ -152,12 +190,6 @@ export function CategoriesScreen({ navigation }: any) {
           )}
         />
       )}
-
-      {/* Permanent Bottom Navigation Bar */}
-      <BottomNavBar activeTab="Categories" navigation={navigation} />
     </SafeAreaView>
   );
 }
-
-
-

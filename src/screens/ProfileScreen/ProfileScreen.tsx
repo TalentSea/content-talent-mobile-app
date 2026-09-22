@@ -35,7 +35,6 @@ import {
   User,
   X,
 } from 'lucide-react-native';
-import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
@@ -114,7 +113,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const { videos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
-  const { savedVideos, likedVideos } = useUserActivity(videos);
+  const { savedVideos, likedVideos, savedPlaylists } = useUserActivity(videos);
   const { history, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
@@ -372,7 +371,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => navigation.navigate('VideoGrid', { section: 'downloads' })}
+              onPress={() => navigation.navigate('Library', { type: 'downloads' })}
             >
               <View
                 style={{
@@ -398,7 +397,7 @@ export function ProfileScreen({ navigation }: any) {
               <ChevronRight size={18} color="#475569" />
             </Pressable>
 
-            {/* 4. Saved Videos */}
+            {/* 4. Saved Content */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -406,7 +405,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => navigation.navigate('VideoGrid', { section: 'saved' })}
+              onPress={() => navigation.navigate('Library', { type: 'saved' })}
             >
               <View
                 style={{
@@ -423,10 +422,10 @@ export function ProfileScreen({ navigation }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
-                  Saved Videos
+                  Saved Content
                 </Text>
                 <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
-                  {savedVideos.length} bookmarked videos
+                  {savedVideos.length + savedPlaylists.length} bookmarked items
                 </Text>
               </View>
               <ChevronRight size={18} color="#475569" />
@@ -440,7 +439,7 @@ export function ProfileScreen({ navigation }: any) {
                 paddingVertical: 12,
                 paddingHorizontal: 4,
               }}
-              onPress={() => navigation.navigate('VideoGrid', { section: 'liked' })}
+              onPress={() => navigation.navigate('Library', { type: 'liked' })}
             >
               <View
                 style={{
@@ -593,9 +592,6 @@ export function ProfileScreen({ navigation }: any) {
           )}
         </View>
       </ScrollView>
-
-      {/* Permanent Bottom Navigation Bar */}
-      <BottomNavBar activeTab="Profile" navigation={navigation} />
 
       {/* Video Player Modal */}
       <PlayerModal

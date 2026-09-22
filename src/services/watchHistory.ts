@@ -18,12 +18,25 @@ export type WatchHistoryItem = {
   lastPositionSeconds?: number;
 };
 
-function getHistoryFilePath(): string {
+function getLegacyHistoryFilePath(): string {
   const userKey = getUserStorageKey();
   return `${RNFS.DocumentDirectoryPath}/watch_history_${userKey}.json`;
 }
 
-// Clean memory-backed watch history store restored from disk and backend API
+// Clean any leftover legacy watch history file from local disk
+async function purgeLegacyDiskWatchHistory() {
+  try {
+    const filePath = getLegacyHistoryFilePath();
+    const exists = await RNFS.exists(filePath);
+    if (exists) {
+      await RNFS.unlink(filePath);
+    }
+  } catch {
+    // Ignore cleanup notice
+  }
+}
+
+// Strictly in-memory store — watch history is NEVER saved to local disk
 let watchHistoryStore: WatchHistoryItem[] = [];
 
 const listeners: Set<() => void> = new Set();
@@ -33,42 +46,9 @@ function notifyListeners() {
   listeners.forEach(fn => fn());
 }
 
-async function persistWatchHistoryToDisk() {
-  try {
-    const filePath = getHistoryFilePath();
-    const data = JSON.stringify(watchHistoryStore);
-    await RNFS.writeFile(filePath, data, 'utf8');
-  } catch (err) {
-    console.warn('[watchHistory] Disk save notice:', err);
-  }
-}
-
-async function restoreWatchHistoryFromDisk() {
-  try {
-    const filePath = getHistoryFilePath();
-    const exists = await RNFS.exists(filePath);
-    if (exists) {
-      const content = await RNFS.readFile(filePath, 'utf8');
-      const parsed = JSON.parse(content);
-      if (Array.isArray(parsed)) {
-        watchHistoryStore = parsed.filter(
-          item => (item.progressPercentage ?? 0) > 0,
-        );
-        notifyListeners();
-        return;
-      }
-    }
-    watchHistoryStore = [];
-    notifyListeners();
-  } catch (err) {
-    console.warn('[watchHistory] Disk restore notice:', err);
-    watchHistoryStore = [];
-    notifyListeners();
-  }
-}
-
 export async function syncWatchHistoryWithBackend() {
-  await restoreWatchHistoryFromDisk();
+  // Purge any legacy disk files so only downloads remain on device disk
+  await purgeLegacyDiskWatchHistory();
 
   try {
     const [historyRes, continueRes] = await Promise.allSettled([
@@ -106,7 +86,6 @@ export async function syncWatchHistoryWithBackend() {
         }
       }
       notifyListeners();
-      persistWatchHistoryToDisk();
     }
   } catch (err) {
     console.warn('[syncWatchHistoryWithBackend] Backend sync notice:', err);
@@ -142,22 +121,21 @@ export function recordWatchHistory(
 
   watchHistoryStore.unshift(historyItem);
   notifyListeners();
-  persistWatchHistoryToDisk();
 
-  // Throttle backend API calls: at most once every 5 seconds or on significant progress jumps (>= 3%) or completion (>= 98%)
+  // Throttle backend API calls: every 10 seconds during continuous playback, on seek jump (>= 3%), or completion (>= 95%)
   const now = Date.now();
   const lastSync = lastBackendProgressSyncMap.get(video.id);
   const shouldSyncBackend =
     !lastSync ||
-    now - lastSync.timestamp >= 5000 ||
+    now - lastSync.timestamp >= 10000 ||
     Math.abs(progressPercentage - lastSync.progress) >= 3 ||
-    progressPercentage >= 98;
+    progressPercentage >= 95;
 
   if (shouldSyncBackend) {
     lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
     recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds)
       .then(() => {
-        // Spec #10: When progress crosses 30% watch threshold, trigger view count registration
+        // Spec: When progress crosses 30% watch threshold, trigger view count registration
         if (progressPercentage >= 30 && !viewTriggeredSet.has(video.id)) {
           viewTriggeredSet.add(video.id);
           incrementVideoViewsApi(video.id).catch(err =>
@@ -167,6 +145,23 @@ export function recordWatchHistory(
       })
       .catch(err => console.warn('[recordWatchHistory] Backend progress sync notice:', err));
   }
+}
+
+/**
+ * Immediately flushes the latest watch progress to backend on lifecycle events
+ * (player pause, seek release, app backgrounding, screen exit)
+ */
+export function flushWatchProgressNow(
+  video: ApiVideo,
+  progressPercentage: number = 0,
+  lastPositionSeconds: number = 0,
+) {
+  if (!video || !video.id) return;
+  const now = Date.now();
+  lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
+  recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds).catch(err =>
+    console.warn('[flushWatchProgressNow] Backend progress notice:', err),
+  );
 }
 
 // History contains EVERY video the user started watching (> 0%), whether completed (100%) or stopped midway (< 98%)
@@ -201,14 +196,13 @@ export function cleanUnavailableWatchHistory(availableVideos: ApiVideo[]) {
   watchHistoryStore = watchHistoryStore.filter(item => availableIds.has(item.video.id));
   if (watchHistoryStore.length !== prevCount) {
     notifyListeners();
-    persistWatchHistoryToDisk();
   }
 }
 
 export function clearWatchHistory() {
   watchHistoryStore = [];
   notifyListeners();
-  persistWatchHistoryToDisk();
+  purgeLegacyDiskWatchHistory();
   clearUserWatchHistoryApi().catch(err =>
     console.warn('[clearWatchHistory] Backend clear history notice:', err),
   );
@@ -219,7 +213,6 @@ export function removeWatchHistoryItem(videoId: number) {
   if (index >= 0) {
     watchHistoryStore.splice(index, 1);
     notifyListeners();
-    persistWatchHistoryToDisk();
   }
   removeVideoWatchHistoryApi(videoId).catch(err =>
     console.warn(`[removeWatchHistoryItem] Backend delete item notice for video ${videoId}:`, err),

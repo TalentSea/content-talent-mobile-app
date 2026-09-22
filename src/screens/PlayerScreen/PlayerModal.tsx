@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
@@ -23,7 +24,7 @@ import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
 import { isUserSubscribed, isUserLoggedIn, getUserSubscriptionTier, isUserAdFree, subscribeAuthChange } from '../../services/api/authService';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL } from '../../constants/config';
-import { recordWatchHistory } from '../../services/watchHistory';
+import { recordWatchHistory, flushWatchProgressNow, getWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
   isVideoLiked,
@@ -94,6 +95,30 @@ export function PlayerModal({
   }, []);
 
   const currentVideoId = (playingVideo as any)?.id || 1;
+  const latestProgressRef = useRef({ currentTime: 0, progressPercentage: 0 });
+
+  const resumePosition =
+    (playingVideo as any)?.last_position_seconds ||
+    (playingVideo as any)?.progress_seconds ||
+    getWatchHistory().find(h => h.video.id === currentVideoId)?.lastPositionSeconds ||
+    0;
+
+  // AppState background sync for heartbeat lifecycle event
+  useEffect(() => {
+    if (!playingVideo) return;
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState.match(/inactive|background/)) {
+        flushWatchProgressNow(
+          currentVideoObj,
+          latestProgressRef.current.progressPercentage,
+          Math.floor(latestProgressRef.current.currentTime),
+        );
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [playingVideo, currentVideoId]);
 
   const currentVideoObj: ApiVideo = {
     id: currentVideoId,
@@ -200,7 +225,10 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
     const eventType = rawEventType?.toUpperCase();
     const defaultAdDuration = 15;
 
-    if (eventType === 'IMPRESSION' || eventType === 'STARTED') {
+    // Spec Trigger: Dispatched the exact moment Google IMA SDK fires AdEventType.IMPRESSION
+    // (automatically triggered at the 2-second mark of continuous viewable playback).
+    // Never trigger on STARTED (second 0) or early app exit (< 2s).
+    if (eventType === 'IMPRESSION') {
       if (!hasRecordedAdImpressionRef.current) {
         hasRecordedAdImpressionRef.current = true;
         recordAdImpressionApi(currentVideoId, 'impression', defaultAdDuration);
@@ -223,8 +251,8 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
     if (isAdPlaying) {
       const adDuration = (typeof duration === 'number' && duration > 0) ? Math.round(duration) : 15;
 
-      // 1. Impression event (when ad begins playing)
-      if (!hasRecordedAdImpressionRef.current) {
+      // 1. Impression event: Dispatched when continuous playback reaches the 2-second IAB viewability mark
+      if (!hasRecordedAdImpressionRef.current && currentTime >= 2) {
         hasRecordedAdImpressionRef.current = true;
         recordAdImpressionApi(currentVideoId, 'impression', adDuration);
       }
@@ -253,19 +281,20 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
       ? Math.round((currentTime / effectiveDuration) * 100)
       : 0;
 
-    // Record user-specific watch progress dynamically as the user watches main video
-    if (currentTime > 2) {
-      recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
-    }
+    latestProgressRef.current = { currentTime, progressPercentage };
 
-    if (!hasCountedViewRef.current) {
-      const requiredWatchTime = (effectiveDuration > 0 && effectiveDuration < 30)
-        ? (effectiveDuration * 0.5)
-        : 30;
+    // Milestone 1 & 2: Dispatched immediately upon video start/resume and every 10s during streaming
+    recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
 
-      if (currentTime >= requiredWatchTime) {
+    // Milestone 3: 30% Watch Threshold Trigger
+    // Dispatched the exact moment playback crosses 30% of video duration (0.30 * duration).
+    // Immediately after this sync completes, the mobile player calls POST /api/v1/mobile/videos/{video_id}/views
+    if (!hasCountedViewRef.current && effectiveDuration > 0) {
+      if (currentTime >= effectiveDuration * 0.30) {
         hasCountedViewRef.current = true;
+        flushWatchProgressNow(currentVideoObj, progressPercentage, Math.floor(currentTime));
         markVideoAsViewed(currentVideoId);
+        incrementVideoViewsApi(currentVideoId).catch(() => {});
         setViewsCount(getCleanViewCountForVideo(currentVideoId));
       }
     }
@@ -283,6 +312,12 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
   }
 
   function handleClose() {
+    // Milestone 4: Screen exit / dispose lifecycle event
+    flushWatchProgressNow(
+      currentVideoObj,
+      latestProgressRef.current.progressPercentage,
+      Math.floor(latestProgressRef.current.currentTime),
+    );
     try {
       Orientation.lockToPortrait();
     } catch (e) {

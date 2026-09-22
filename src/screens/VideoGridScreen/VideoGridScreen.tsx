@@ -250,7 +250,9 @@ export function VideoGridScreen({ route, navigation }: any) {
                     {item.name}
                   </Text>
                   <Text style={{ color: '#9CA3AF', fontSize: 12 }} numberOfLines={1}>
-                    Playlist
+                    {typeof item.video_count === 'number'
+                      ? `${item.video_count} ${item.video_count === 1 ? 'video' : 'videos'}`
+                      : 'Playlist'}
                   </Text>
                 </View>
               </Pressable>

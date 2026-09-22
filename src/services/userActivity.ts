@@ -6,6 +6,10 @@ import {
   toggleUserLikedVideoApi,
   toggleUserSavedVideoApi,
 } from './api/userActivityApi';
+import {
+  toggleSavePlaylistApi,
+  fetchSavedPlaylistsApi,
+} from './api/playlistApi';
 
 import { getUserStorageKey, subscribeAuthChange } from './api/authService';
 
@@ -26,6 +30,7 @@ export type PlaylistActivityItem = {
   id: number | string;
   name: string;
   thumbnail_url?: string;
+  video_count?: number;
 };
 
 let likedVideosStore: ApiVideo[] = [];
@@ -150,9 +155,10 @@ export async function syncUserActivityWithBackend() {
   await restoreUserActivityFromDisk();
 
   try {
-    const [likedRes, savedRes] = await Promise.allSettled([
+    const [likedRes, savedRes, savedPlaylistsRes] = await Promise.allSettled([
       fetchUserLikedVideosApi(),
       fetchUserSavedVideosApi(),
+      fetchSavedPlaylistsApi(1, 50),
     ]);
 
     if (likedRes.status === 'fulfilled' && likedRes.value) {
@@ -176,6 +182,15 @@ export async function syncUserActivityWithBackend() {
           savedVideosStore.push(video);
         }
       }
+    }
+
+    if (savedPlaylistsRes.status === 'fulfilled' && savedPlaylistsRes.value?.items) {
+      savedPlaylistsStore = savedPlaylistsRes.value.items.map(p => ({
+        id: p.id,
+        name: p.name,
+        thumbnail_url: p.thumbnail_url || undefined,
+        video_count: p.video_count,
+      }));
     }
 
     notifyActivityListeners();
@@ -356,6 +371,28 @@ export function toggleSavePlaylist(
 
   notifyActivityListeners();
   persistUserActivityToDisk();
+
+  const numId = Number(playlistId);
+  if (!isNaN(numId) && numId > 0) {
+    toggleSavePlaylistApi(numId)
+      .then(res => {
+        if (typeof res?.is_saved === 'boolean') {
+          const idx = savedPlaylistsStore.findIndex(p => String(p.id) === String(playlistId));
+          if (res.is_saved && idx < 0) {
+            savedPlaylistsStore.unshift({ id: playlistId, name: playlistName, thumbnail_url: thumbnailUrl });
+            notifyActivityListeners();
+            persistUserActivityToDisk();
+          } else if (!res.is_saved && idx >= 0) {
+            savedPlaylistsStore.splice(idx, 1);
+            notifyActivityListeners();
+            persistUserActivityToDisk();
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('[toggleSavePlaylist] Backend toggle notice for playlist', playlistId, err);
+      });
+  }
 
   return isNowSaved;
 }

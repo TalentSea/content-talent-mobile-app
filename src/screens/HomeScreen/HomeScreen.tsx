@@ -15,7 +15,6 @@ import { User, Search } from 'lucide-react-native';
 
 import { HeroBanner, HeroItem } from '../../components/HeroBanner';
 import { HorizontalList } from '../../components/HorizontalList';
-import { BottomNavBar } from '../../components/BottomNavBar';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
@@ -205,7 +204,7 @@ export function HomeScreen({ navigation }: any) {
             </Pressable>
 
             <Pressable
-              onPress={() => navigation.navigate('Profile')}
+              onPress={() => navigation.navigate('ProfileTab' as any)}
               style={styles.profileButton}
             >
               {user?.avatar_url ? (
@@ -321,7 +320,7 @@ export function HomeScreen({ navigation }: any) {
                   title={`${cat} Streams`}
                   videos={catVideos}
                   onPressVideo={playVideo}
-                  onSeeAll={() => navigation.navigate('CategoryDetail', { category: cat })}
+                  onSeeAll={() => navigation.navigate('CategoriesTab' as any, { screen: 'Categories' } as any)}
                 />
               );
             })}
@@ -329,8 +328,6 @@ export function HomeScreen({ navigation }: any) {
         )}
       </ScrollView>
 
-      {/* Permanent Bottom Navigation Bar (Hidden when Player is open) */}
-      {!playingVideo && <BottomNavBar activeTab="Home" navigation={navigation} />}
 
       {/* Embedded HLS Video Player Modal */}
       <PlayerModal
@@ -339,7 +336,7 @@ export function HomeScreen({ navigation }: any) {
         onSelectPlaylist={(p) => handleSelectPlaylist(p.id, p.name)}
         onUpgradeSubscription={() => {
           closePlayer();
-          navigation?.navigate('Subscription');
+          navigation?.navigate('ProfileTab' as any, { screen: 'Subscription' } as any);
         }}
         onClose={closePlayer}
       />
