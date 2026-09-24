@@ -8,6 +8,7 @@ import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { getCleanLikesCountForVideo, isVideoLiked } from '../../services/userActivity';
 import { getCleanViewCountForVideo, subscribeViewTracker } from '../../services/viewTracker';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
+import { useAppTheme } from '../../context/ThemeContext';
 import { styles } from './styles';
 
 export type VideoCardProps = {
@@ -48,6 +49,7 @@ export function VideoCard({
   onDelete,
 }: VideoCardProps) {
   const { history } = useWatchHistory();
+  const { theme } = useAppTheme();
   const currentVideoId = video?.id || (propId ? parseInt(String(propId), 10) : 1);
 
   // Find progress percentage from watch history
@@ -98,18 +100,18 @@ export function VideoCard({
 
           {watchProgress > 0 ? (
             <View style={styles.watchProgressWrap}>
-              <View style={[styles.watchProgressFill, { width: `${watchProgress}%` as any }]} />
+              <View style={[styles.watchProgressFill, { width: `${watchProgress}%` as any, backgroundColor: theme.primaryColor }]} />
             </View>
           ) : null}
         </View>
 
         <View style={styles.rowDetails}>
-          <Text numberOfLines={2} style={styles.rowTitle}>
+          <Text numberOfLines={2} style={[styles.rowTitle, { color: theme.primaryTextColor }]}>
             {cardTitle}
           </Text>
 
           <View style={styles.rowMetaLine}>
-            {cardCategory ? <Text style={styles.rowCategory}>{cardCategory}</Text> : null}
+            {cardCategory ? <Text style={[styles.rowCategory, { color: theme.primaryColor }]}>{cardCategory}</Text> : null}
             {cardCategory ? <Text style={styles.rowDot}>•</Text> : null}
             <Text style={styles.rowMeta}>{displayViews}</Text>
             <Text style={styles.rowDot}>•</Text>
@@ -169,7 +171,7 @@ export function VideoCard({
             <View
               style={[
                 styles.watchProgressFill,
-                { width: `${watchProgress}%` as any },
+                { width: `${watchProgress}%` as any, backgroundColor: theme.primaryColor },
               ]}
             />
           </View>
@@ -187,7 +189,7 @@ export function VideoCard({
         ) : null}
       </View>
 
-      <Text numberOfLines={1} style={styles.videoTitle}>
+      <Text numberOfLines={1} style={[styles.videoTitle, { color: theme.primaryTextColor }]}>
         {cardTitle}
       </Text>
 
@@ -202,7 +204,7 @@ export function VideoCard({
       <View style={styles.metaRow}>
         {cardCategory && cardCategory.toLowerCase() !== 'general' ? (
           <>
-            <Text numberOfLines={1} style={styles.category}>
+            <Text numberOfLines={1} style={[styles.category, { color: theme.primaryColor }]}>
               {cardCategory}
             </Text>
             <Text style={styles.dot}>•</Text>

@@ -14,6 +14,7 @@ import type { ApiVideo } from '../../types/video';
 import type { PlaylistListItem } from '../../services/api/playlistApi';
 import type { MobileBrandingResponse } from '../../services/api/brandingApi';
 import { API_BASE_URL } from '../../constants/config';
+import { useAppTheme } from '../../context/ThemeContext';
 import { styles } from './styles';
 
 const { width } = Dimensions.get('window');
@@ -71,6 +72,7 @@ function HeroBannerSlideItem({
   item: HeroItem;
   onPress: (item: HeroItem) => void;
 }) {
+  const { theme } = useAppTheme();
   const [imgUri, setImgUri] = useState<string>(() => resolveImageUrl(item.thumbnail_url, ''));
   const [avatarUri, setAvatarUri] = useState<string>(() => resolveImageUrl(item.creatorAvatar, ''));
 
@@ -80,7 +82,7 @@ function HeroBannerSlideItem({
   }, [item.thumbnail_url, item.creatorAvatar]);
 
   return (
-    <View style={styles.bannerSlide}>
+    <View style={[styles.bannerSlide, { backgroundColor: theme.cardBackgroundColor }]}>
       {imgUri ? (
         <Image
           source={{ uri: imgUri }}
@@ -93,8 +95,8 @@ function HeroBannerSlideItem({
         {item.category && item.type !== 'branding' ? (
           <View style={styles.brandingBadgeRow}>
             <View style={styles.categoryPillBadge}>
-              <Film size={11} color="#FFFFFF" />
-              <Text style={styles.categoryPillText}>{item.category}</Text>
+              <Film size={11} color={theme.primaryTextColor} />
+              <Text style={[styles.categoryPillText, { color: theme.primaryTextColor }]}>{item.category}</Text>
             </View>
           </View>
         ) : null}
@@ -105,16 +107,16 @@ function HeroBannerSlideItem({
             {avatarUri ? (
               <Image
                 source={{ uri: avatarUri }}
-                style={styles.brandingLogo}
+                style={[styles.brandingLogo, { backgroundColor: theme.cardBackgroundColor }]}
                 onError={() => setAvatarUri('')}
               />
             ) : null}
             <View style={{ flex: 1 }}>
-              <Text style={styles.brandingTitleText} numberOfLines={1}>
+              <Text style={[styles.brandingTitleText, { color: theme.primaryTextColor }]} numberOfLines={1}>
                 {item.creatorName || item.title || 'Creator Studio'}
               </Text>
               {item.tagline ? (
-                <Text style={styles.brandingTaglineText} numberOfLines={2}>
+                <Text style={[styles.brandingTaglineText, { color: theme.secondaryTextColor }]} numberOfLines={2}>
                   {item.tagline}
                 </Text>
               ) : null}
@@ -127,21 +129,21 @@ function HeroBannerSlideItem({
               {imgUri ? (
                 <Image
                   source={{ uri: imgUri }}
-                  style={styles.creatorAvatar}
+                  style={[styles.creatorAvatar, { backgroundColor: theme.cardBackgroundColor }]}
                 />
               ) : null}
               <View style={{ flex: 1 }}>
-                <Text style={styles.title} numberOfLines={1}>
+                <Text style={[styles.title, { color: theme.primaryTextColor }]} numberOfLines={1}>
                   {item.title}
                 </Text>
                 {item.duration ? (
-                  <Text style={styles.creatorBio}>Duration • {item.duration}</Text>
+                  <Text style={[styles.creatorBio, { color: theme.secondaryTextColor }]}>Duration • {item.duration}</Text>
                 ) : null}
               </View>
             </View>
 
             {item.description ? (
-              <Text style={styles.description} numberOfLines={2}>
+              <Text style={[styles.description, { color: theme.secondaryTextColor }]} numberOfLines={2}>
                 {item.description}
               </Text>
             ) : null}
@@ -151,9 +153,9 @@ function HeroBannerSlideItem({
         {/* Action Button: Watch Now (Only for Video/Featured slides, NOT for Slide 1 Creator Banner) */}
         {item.type !== 'branding' ? (
           <View style={styles.buttonRow}>
-            <Pressable style={styles.playButton} onPress={() => onPress(item)}>
-              <Play size={14} color="#000000" fill="#000000" />
-              <Text style={styles.playButtonText}>Watch Now</Text>
+            <Pressable style={[styles.playButton, { backgroundColor: theme.primaryColor }]} onPress={() => onPress(item)}>
+              <Play size={14} color={theme.buttonTextColor} fill={theme.buttonTextColor} />
+              <Text style={[styles.playButtonText, { color: theme.buttonTextColor }]}>Watch Now</Text>
             </Pressable>
           </View>
         ) : null}
@@ -169,24 +171,26 @@ export function HeroBanner({
   onPlayVideo,
   onSelectPlaylist,
 }: HeroBannerProps) {
+  const { theme, branding: contextBranding } = useAppTheme();
+  const activeBranding = branding ?? contextBranding;
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
   const items: HeroItem[] = [];
 
   // 1. Add Studio Branding slide ONLY if branding API returns real creator data
-  if (branding && (branding.studio_name || branding.creator_name || branding.banner_url || branding.logo_url)) {
-    const bannerUri = resolveImageUrl(branding.banner_url, '');
-    const logoUri = resolveImageUrl(branding.logo_url, '');
+  if (activeBranding && (activeBranding.studio_name || activeBranding.creator_name || activeBranding.banner_url || activeBranding.logo_url)) {
+    const bannerUri = resolveImageUrl(activeBranding.banner_url, '');
+    const logoUri = resolveImageUrl(activeBranding.logo_url, '');
     items.push({
       id: 'hero_branding_0',
       type: 'branding',
-      title: branding.studio_name || branding.creator_name || '',
-      tagline: branding.tagline || '',
-      description: branding.description || '',
+      title: activeBranding.studio_name || activeBranding.creator_name || '',
+      tagline: activeBranding.tagline || '',
+      description: activeBranding.description || '',
       thumbnail_url: bannerUri,
       creatorAvatar: logoUri,
-      creatorName: branding.studio_name || branding.creator_name || '',
+      creatorName: activeBranding.studio_name || activeBranding.creator_name || '',
       badgeLabel: 'STUDIO BRANDING',
       category: 'OFFICIAL',
     });
@@ -259,7 +263,7 @@ export function HeroBanner({
         {items.map((_, i) => (
           <View
             key={i}
-            style={[styles.dot, i === activeIndex ? styles.activeDot : null]}
+            style={[styles.dot, i === activeIndex ? [styles.activeDot, { backgroundColor: theme.activeStateColor }] : null]}
           />
         ))}
       </View>

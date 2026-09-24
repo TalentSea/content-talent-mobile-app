@@ -7,6 +7,8 @@ import { LoginScreen, RegisterScreen } from '../screens/LoginScreen/LoginScreen'
 import { MainTabNavigator } from './MainTabNavigator';
 import { LibraryProvider } from '../contexts/LibraryContext';
 import { restoreStoredSession, isUserLoggedIn } from '../services/api/authService';
+import { fetchMobileBrandingApi } from '../services/api/brandingApi';
+import { useAppTheme } from '../context/ThemeContext';
 import type { RootStackParamList } from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -14,13 +16,35 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export function RootNavigator() {
     const [isInitializing, setIsInitializing] = useState(true);
     const [initialRoute, setInitialRoute] = useState<'MainTabs' | 'Login'>('Login');
+    const { theme, setTheme, setBranding } = useAppTheme();
 
     useEffect(() => {
         let isMounted = true;
-        async function checkInitialAuth() {
+
+        async function runUnifiedBootstrap() {
             try {
-                const user = await restoreStoredSession();
+                // Unified single-trip bootstrap:
+                // 1. Restore auth session from disk
+                // 2. Fetch live studio branding + 9 dynamic theme color tokens
+                const [authResult, brandingResult] = await Promise.allSettled([
+                    restoreStoredSession(),
+                    fetchMobileBrandingApi(),
+                ]);
+
+                // Intercept branding payload & dynamic colors
+                if (brandingResult.status === 'fulfilled' && brandingResult.value) {
+                    const brandingData = brandingResult.value;
+                    if (isMounted) {
+                        setBranding(brandingData);
+                        if (brandingData.colors) {
+                            setTheme(brandingData.colors);
+                        }
+                    }
+                }
+
+                const user = authResult.status === 'fulfilled' ? authResult.value : null;
                 const loggedIn = isUserLoggedIn();
+
                 if (user && loggedIn && isMounted) {
                     console.log('[RootNavigator] Initial session restored for logged-in user:', user.name);
                     setInitialRoute('MainTabs');
@@ -28,13 +52,15 @@ export function RootNavigator() {
                     setInitialRoute('Login');
                 }
             } catch (err) {
-                console.warn('[RootNavigator] Initial auth restore notice:', err);
+                console.warn('[RootNavigator] Unified bootstrap notice:', err);
                 if (isMounted) setInitialRoute('Login');
             } finally {
                 if (isMounted) setIsInitializing(false);
             }
         }
-        checkInitialAuth();
+
+        runUnifiedBootstrap();
+
         return () => {
             isMounted = false;
         };
@@ -42,8 +68,8 @@ export function RootNavigator() {
 
     if (isInitializing) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#05050A', justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#6366F1" />
+            <View style={{ flex: 1, backgroundColor: theme.mainBackgroundColor, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={theme.primaryColor} />
             </View>
         );
     }
@@ -55,7 +81,7 @@ export function RootNavigator() {
                     initialRouteName={initialRoute}
                     screenOptions={{
                         headerShown: false,
-                        contentStyle: { backgroundColor: '#05050A' },
+                        contentStyle: { backgroundColor: theme.mainBackgroundColor },
                     }}
                 >
                     <Stack.Screen name="Login" component={LoginScreen} />

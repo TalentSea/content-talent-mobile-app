@@ -85,6 +85,15 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
     const [fbUsername, setFbUsername] = useState('');
     const [fbLoggingIn, setFbLoggingIn] = useState(false);
 
+    const navigateToHome = () => {
+        if (navigation) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+            });
+        }
+    };
+
     useEffect(() => {
         let timer: any = null;
         if (resendCooldown > 0) {
@@ -120,13 +129,8 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                 const restoredUser = await restoreStoredSession();
                 if (restoredUser && restoredUser.provider !== 'guest' && isMounted) {
                     console.log('[LoginScreen] Auto-login restored subscriber user:', restoredUser.name);
-                    if (navigation) {
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Home' }],
-                        });
-                        return;
-                    }
+                    navigateToHome();
+                    return;
                 }
             } catch (e) {
                 console.warn('[LoginScreen] Auto-login check notice:', e);
@@ -526,12 +530,7 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                 finalUser,
             );
 
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
-            }
+            navigateToHome();
         } catch (error) {
             console.warn(`[LoginScreen] ${provider} social login notice:`, error);
         } finally {
@@ -628,12 +627,7 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
             console.warn('[handleContinueAsGuest] notice:', e);
         } finally {
             setLoadingProvider(null);
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
-            }
+            navigateToHome();
         }
     };
 

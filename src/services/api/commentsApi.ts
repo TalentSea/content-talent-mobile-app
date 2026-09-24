@@ -380,8 +380,8 @@ export async function postCommentReply(
   const candidateEndpoints = [
     `/api/v1/mobile/comments/${commentId}/reply`,
     `/api/v1/mobile/comments/${commentId}/replies`,
-    `/api/v1/comments/${commentId}/reply`,
-    `/api/v1/comments/${commentId}/replies`,
+    `/api/v1/mobile/comments/${commentId}/reply`,
+    `/api/v1/mobile/comments/${commentId}/replies`,
   ];
 
   let replyObj: CommentReplyItem | null = null;

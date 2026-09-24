@@ -11,7 +11,7 @@ import {
   fetchSavedPlaylistsApi,
 } from './api/playlistApi';
 
-import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+import { getUserStorageKey, subscribeAuthChange, isUserLoggedIn } from './api/authService';
 
 function getActivityFilePath(): string {
   const userKey = getUserStorageKey();
@@ -151,6 +151,7 @@ async function saveGlobalLikesToDisk() {
 }
 
 export async function syncUserActivityWithBackend() {
+  if (!isUserLoggedIn()) return;
   await initGlobalLikesStore();
   await restoreUserActivityFromDisk();
 

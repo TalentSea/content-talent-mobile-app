@@ -13,7 +13,6 @@ import {
   useWindowDimensions,
   KeyboardAvoidingView,
   Platform,
-  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Orientation from 'react-native-orientation-locker';
@@ -24,7 +23,7 @@ import { CommentsSection } from '../../components/CommentsSection';
 import { RelatedContent } from '../../components/RelatedContent/RelatedContent';
 import { isUserSubscribed, isUserLoggedIn, getUserSubscriptionTier, isUserAdFree, subscribeAuthChange } from '../../services/api/authService';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL } from '../../constants/config';
-import { recordWatchHistory, flushWatchProgressNow, getWatchHistory } from '../../services/watchHistory';
+import { recordWatchHistory } from '../../services/watchHistory';
 import {
   getCleanLikesCountForVideo,
   isVideoLiked,
@@ -95,30 +94,6 @@ export function PlayerModal({
   }, []);
 
   const currentVideoId = (playingVideo as any)?.id || 1;
-  const latestProgressRef = useRef({ currentTime: 0, progressPercentage: 0 });
-
-  const resumePosition =
-    (playingVideo as any)?.last_position_seconds ||
-    (playingVideo as any)?.progress_seconds ||
-    getWatchHistory().find(h => h.video.id === currentVideoId)?.lastPositionSeconds ||
-    0;
-
-  // AppState background sync for heartbeat lifecycle event
-  useEffect(() => {
-    if (!playingVideo) return;
-    const subscription = AppState.addEventListener('change', nextState => {
-      if (nextState.match(/inactive|background/)) {
-        flushWatchProgressNow(
-          currentVideoObj,
-          latestProgressRef.current.progressPercentage,
-          Math.floor(latestProgressRef.current.currentTime),
-        );
-      }
-    });
-    return () => {
-      subscription.remove();
-    };
-  }, [playingVideo, currentVideoId]);
 
   const currentVideoObj: ApiVideo = {
     id: currentVideoId,
@@ -203,32 +178,29 @@ export function PlayerModal({
     };
   }, [playingVideo, currentVideoId]);
 
-function parseDurationInSeconds(durationVal?: string | number | null): number {
-  if (typeof durationVal === 'number' && !isNaN(durationVal) && durationVal > 0) {
-    return durationVal;
-  }
-  if (typeof durationVal === 'string' && durationVal.trim().length > 0) {
-    const parts = durationVal.trim().split(':').map(p => parseInt(p, 10));
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      return parts[0] * 60 + parts[1];
+  function parseDurationInSeconds(durationVal?: string | number | null): number {
+    if (typeof durationVal === 'number' && !isNaN(durationVal) && durationVal > 0) {
+      return durationVal;
     }
-    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (typeof durationVal === 'string' && durationVal.trim().length > 0) {
+      const parts = durationVal.trim().split(':').map(p => parseInt(p, 10));
+      if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        return parts[0] * 60 + parts[1];
+      }
+      if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      }
+      const parsedNum = parseFloat(durationVal);
+      if (!isNaN(parsedNum) && parsedNum > 0) return parsedNum;
     }
-    const parsedNum = parseFloat(durationVal);
-    if (!isNaN(parsedNum) && parsedNum > 0) return parsedNum;
+    return 0;
   }
-  return 0;
-}
 
   function handleAdEvent(rawEventType: string) {
     const eventType = rawEventType?.toUpperCase();
     const defaultAdDuration = 15;
 
-    // Spec Trigger: Dispatched the exact moment Google IMA SDK fires AdEventType.IMPRESSION
-    // (automatically triggered at the 2-second mark of continuous viewable playback).
-    // Never trigger on STARTED (second 0) or early app exit (< 2s).
-    if (eventType === 'IMPRESSION') {
+    if (eventType === 'IMPRESSION' || eventType === 'STARTED') {
       if (!hasRecordedAdImpressionRef.current) {
         hasRecordedAdImpressionRef.current = true;
         recordAdImpressionApi(currentVideoId, 'impression', defaultAdDuration);
@@ -251,8 +223,8 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
     if (isAdPlaying) {
       const adDuration = (typeof duration === 'number' && duration > 0) ? Math.round(duration) : 15;
 
-      // 1. Impression event: Dispatched when continuous playback reaches the 2-second IAB viewability mark
-      if (!hasRecordedAdImpressionRef.current && currentTime >= 2) {
+      // 1. Impression event (when ad begins playing)
+      if (!hasRecordedAdImpressionRef.current) {
         hasRecordedAdImpressionRef.current = true;
         recordAdImpressionApi(currentVideoId, 'impression', adDuration);
       }
@@ -281,20 +253,19 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
       ? Math.round((currentTime / effectiveDuration) * 100)
       : 0;
 
-    latestProgressRef.current = { currentTime, progressPercentage };
+    // Record user-specific watch progress dynamically as the user watches main video
+    if (currentTime > 2) {
+      recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
+    }
 
-    // Milestone 1 & 2: Dispatched immediately upon video start/resume and every 10s during streaming
-    recordWatchHistory(currentVideoObj, progressPercentage, Math.floor(currentTime));
+    if (!hasCountedViewRef.current) {
+      const requiredWatchTime = (effectiveDuration > 0 && effectiveDuration < 30)
+        ? (effectiveDuration * 0.5)
+        : 30;
 
-    // Milestone 3: 30% Watch Threshold Trigger
-    // Dispatched the exact moment playback crosses 30% of video duration (0.30 * duration).
-    // Immediately after this sync completes, the mobile player calls POST /api/v1/mobile/videos/{video_id}/views
-    if (!hasCountedViewRef.current && effectiveDuration > 0) {
-      if (currentTime >= effectiveDuration * 0.30) {
+      if (currentTime >= requiredWatchTime) {
         hasCountedViewRef.current = true;
-        flushWatchProgressNow(currentVideoObj, progressPercentage, Math.floor(currentTime));
         markVideoAsViewed(currentVideoId);
-        incrementVideoViewsApi(currentVideoId).catch(() => {});
         setViewsCount(getCleanViewCountForVideo(currentVideoId));
       }
     }
@@ -312,12 +283,6 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
   }
 
   function handleClose() {
-    // Milestone 4: Screen exit / dispose lifecycle event
-    flushWatchProgressNow(
-      currentVideoObj,
-      latestProgressRef.current.progressPercentage,
-      Math.floor(latestProgressRef.current.currentTime),
-    );
     try {
       Orientation.lockToPortrait();
     } catch (e) {
@@ -400,12 +365,12 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
           style={{ flex: 1 }}
         >
 
-        {/* Dynamic Player Frame Box */}
-        <View
-          style={
-            isFullscreen
-              ? styles.fullscreenContainer
-              : [
+          {/* Dynamic Player Frame Box */}
+          <View
+            style={
+              isFullscreen
+                ? styles.fullscreenContainer
+                : [
                   styles.playerVideoArea,
                   {
                     width: '100%',
@@ -413,325 +378,325 @@ function parseDurationInSeconds(durationVal?: string | number | null): number {
                     maxHeight: height > 0 ? Math.min(215, height * 0.28) : 215,
                   },
                 ]
-          }
-        >
-          {(() => {
-            const hasStreamUrl = Boolean(
-              playingVideo &&
-              (playingVideo.stream_url || playingVideo.playback_url) &&
-              (playingVideo.stream_url || playingVideo.playback_url)!.trim().length > 0 &&
-              (playingVideo.stream_url || playingVideo.playback_url) !== API_BASE_URL
-            );
-
-            if (playingVideo && hasStreamUrl) {
-              const subTier = getUserSubscriptionTier();
-              const userSubscribed = isUserSubscribed();
-              const userAdFree = isUserAdFree();
-              const isPremium = userSubscribed && (subTier === 'premium' || userAdFree);
-              // Standard with Ads: Only use adTagUrl provided directly by backend API; Premium: No ads
-              const activeAdTagUrl = isPremium ? undefined : playingVideo.adTagUrl;
-              const activePlanTier: 'basic' | 'premium' | 'none' = !userSubscribed
-                ? 'none'
-                : isPremium
-                ? 'premium'
-                : 'basic';
-
-              return (
-                <NativeVideoPlayer
-                  video={currentVideoObj}
-                  id={currentVideoId}
-                  category={categoryName}
-                  thumbnailUrl={playingVideo.poster}
-                  description={playingVideo.description}
-                  uri={playingVideo.stream_url || playingVideo.playback_url || ''}
-                  mp4Url={playingVideo.mp4Url}
-                  downloadUrls={playingVideo.downloadUrls}
-                  title={playingVideo.title}
-                  autoStart={true}
-                  controls={true}
-                  loop={false}
-                  muted={false}
-                  volume={1}
-                  playbackRate={1}
-                  resizeMode={playerResizeMode}
-                  captions={playingVideo.captions ?? []}
-                  inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
-                  hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
-                  adTagUrl={activeAdTagUrl}
-                  planTier={activePlanTier}
-                  style={styles.videoPlayer}
-                  isFullscreen={isFullscreen}
-                  onToggleFullscreen={toggleFullscreen}
-                  onLoadRatio={setVideoRatio}
-                  autoplay={autoplay}
-                  onToggleAutoplay={onToggleAutoplay}
-                  onClose={handleClose}
-                  onEnd={onVideoEnd}
-                  onProgress={handlePlayerProgress}
-                  onAdEvent={handleAdEvent}
-                />
-              );
             }
+          >
+            {(() => {
+              const hasStreamUrl = Boolean(
+                playingVideo &&
+                (playingVideo.stream_url || playingVideo.playback_url) &&
+                (playingVideo.stream_url || playingVideo.playback_url)!.trim().length > 0 &&
+                (playingVideo.stream_url || playingVideo.playback_url) !== API_BASE_URL
+              );
 
-            if (playingVideo) {
-              return (
-                <View style={{ flex: 1, backgroundColor: '#000000', position: 'relative' }}>
-                  {/* Display Video Thumbnail */}
-                  {playingVideo.poster || (playingVideo as any).main_thumbnail_url ? (
-                    <Image
-                      source={{ uri: playingVideo.poster || (playingVideo as any).main_thumbnail_url }}
-                      style={StyleSheet.absoluteFill}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#12121A' }]} />
-                  )}
+              if (playingVideo && hasStreamUrl) {
+                const subTier = getUserSubscriptionTier();
+                const userSubscribed = isUserSubscribed();
+                const userAdFree = isUserAdFree();
+                const isPremium = userSubscribed && (subTier === 'premium' || userAdFree);
+                // Standard with Ads: Only use adTagUrl provided directly by backend API; Premium: No ads
+                const activeAdTagUrl = isPremium ? undefined : playingVideo.adTagUrl;
+                const activePlanTier: 'basic' | 'premium' | 'none' = !userSubscribed
+                  ? 'none'
+                  : isPremium
+                    ? 'premium'
+                    : 'basic';
 
-                  {/* Close Button Top Left */}
-                  <Pressable
-                    style={{
-                      position: 'absolute',
-                      top: 12,
-                      left: 12,
-                      zIndex: 20,
-                      backgroundColor: 'rgba(0,0,0,0.6)',
-                      width: 32,
-                      height: 32,
-                      borderRadius: 16,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onPress={handleClose}
-                  >
-                    <X color="#FFFFFF" size={18} />
-                  </Pressable>
+                return (
+                  <NativeVideoPlayer
+                    video={currentVideoObj}
+                    id={currentVideoId}
+                    category={categoryName}
+                    thumbnailUrl={playingVideo.poster}
+                    description={playingVideo.description}
+                    uri={playingVideo.stream_url || playingVideo.playback_url || ''}
+                    mp4Url={playingVideo.mp4Url}
+                    downloadUrls={playingVideo.downloadUrls}
+                    title={playingVideo.title}
+                    autoStart={true}
+                    controls={true}
+                    loop={false}
+                    muted={false}
+                    volume={1}
+                    playbackRate={1}
+                    resizeMode={playerResizeMode}
+                    captions={playingVideo.captions ?? []}
+                    inbuiltCaptionTracks={playingVideo.inbuiltCaptionTracks ?? []}
+                    hasInbuiltCaptions={playingVideo.hasInbuiltCaptions ?? false}
+                    adTagUrl={activeAdTagUrl}
+                    planTier={activePlanTier}
+                    style={styles.videoPlayer}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={toggleFullscreen}
+                    onLoadRatio={setVideoRatio}
+                    autoplay={autoplay}
+                    onToggleAutoplay={onToggleAutoplay}
+                    onClose={handleClose}
+                    onEnd={onVideoEnd}
+                    onProgress={handlePlayerProgress}
+                    onAdEvent={handleAdEvent}
+                  />
+                );
+              }
 
-                  {/* Semi-transparent Backdrop Overlay */}
-                  <View
-                    style={{
-                      ...StyleSheet.absoluteFill,
-                      backgroundColor: 'rgba(10, 10, 16, 0.82)',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      padding: 20,
-                      zIndex: 10,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 26,
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        borderColor: '#6366F1',
-                        borderWidth: 1.5,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: 10,
-                      }}
-                    >
-                      <Lock size={26} color="#6366F1" />
-                    </View>
+              if (playingVideo) {
+                return (
+                  <View style={{ flex: 1, backgroundColor: '#000000', position: 'relative' }}>
+                    {/* Display Video Thumbnail */}
+                    {playingVideo.poster || (playingVideo as any).main_thumbnail_url ? (
+                      <Image
+                        source={{ uri: playingVideo.poster || (playingVideo as any).main_thumbnail_url }}
+                        style={StyleSheet.absoluteFill}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[StyleSheet.absoluteFill, { backgroundColor: '#12121A' }]} />
+                    )}
 
-                    <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
-                      <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
-                        {!isUserLoggedIn() ? 'LOG IN REQUIRED 🔒' : 'VIP SUBSCRIPTION REQUIRED'}
-                      </Text>
-                    </View>
-
-                    <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
-                      {!isUserLoggedIn() ? 'Log in required 🔒' : 'Subscribe to Watch Full Video'}
-                    </Text>
-
-                    <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 270, lineHeight: 16 }}>
-                      {!isUserLoggedIn() ? 'Log in to watch videos.' : 'Protected video content. Upgrade your subscription to watch high-definition streams.'}
-                    </Text>
-
+                    {/* Close Button Top Left */}
                     <Pressable
                       style={{
-                        backgroundColor: '#6366F1',
-                        paddingHorizontal: 22,
-                        paddingVertical: 10,
-                        borderRadius: 10,
-                        shadowColor: '#6366F1',
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 6,
-                        elevation: 5,
+                        position: 'absolute',
+                        top: 12,
+                        left: 12,
+                        zIndex: 20,
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
-                      onPress={() => {
-                        handleClose();
-                        if (onUpgradeSubscription) onUpgradeSubscription();
+                      onPress={handleClose}
+                    >
+                      <X color="#FFFFFF" size={18} />
+                    </Pressable>
+
+                    {/* Semi-transparent Backdrop Overlay */}
+                    <View
+                      style={{
+                        ...StyleSheet.absoluteFill,
+                        backgroundColor: 'rgba(10, 10, 16, 0.82)',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        padding: 20,
+                        zIndex: 10,
                       }}
                     >
-                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
-                        {!isUserLoggedIn() ? 'Log in now' : 'Subscribe Now'}
+                      <View
+                        style={{
+                          width: 52,
+                          height: 52,
+                          borderRadius: 26,
+                          backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                          borderColor: '#6366F1',
+                          borderWidth: 1.5,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: 10,
+                        }}
+                      >
+                        <Lock size={26} color="#6366F1" />
+                      </View>
+
+                      <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6, marginBottom: 8 }}>
+                        <Text style={{ color: '#818CF8', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 }}>
+                          {!isUserLoggedIn() ? 'LOG IN REQUIRED 🔒' : 'VIP SUBSCRIPTION REQUIRED'}
+                        </Text>
+                      </View>
+
+                      <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 15, textAlign: 'center', marginBottom: 4 }}>
+                        {!isUserLoggedIn() ? 'Log in required 🔒' : 'Subscribe to Watch Full Video'}
                       </Text>
-                    </Pressable>
+
+                      <Text style={{ color: '#9CA3AF', fontSize: 11, textAlign: 'center', marginBottom: 14, maxWidth: 270, lineHeight: 16 }}>
+                        {!isUserLoggedIn() ? 'Log in to watch videos.' : 'Protected video content. Upgrade your subscription to watch high-definition streams.'}
+                      </Text>
+
+                      <Pressable
+                        style={{
+                          backgroundColor: '#6366F1',
+                          paddingHorizontal: 22,
+                          paddingVertical: 10,
+                          borderRadius: 10,
+                          shadowColor: '#6366F1',
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 6,
+                          elevation: 5,
+                        }}
+                        onPress={() => {
+                          handleClose();
+                          if (onUpgradeSubscription) onUpgradeSubscription();
+                        }}
+                      >
+                        <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 13 }}>
+                          {!isUserLoggedIn() ? 'Log in now' : 'Subscribe Now'}
+                        </Text>
+                      </Pressable>
+                    </View>
                   </View>
-                </View>
-              );
-            }
+                );
+              }
 
-            return null;
-          })()}
-        </View>
+              return null;
+            })()}
+          </View>
 
-        {!isFullscreen && playingVideo ? (
-          <ScrollView
-            style={styles.playerInfoScroll}
-            contentContainerStyle={styles.playerInfoContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          >
-            {/* 1. Title */}
-            <Text style={styles.playerTitle} numberOfLines={2}>
-              {playingVideo.title}
-            </Text>
-
-            {/* 2. Below Title and Above Description: Category · Views · Time Uploaded Ago */}
-            <View style={styles.playerMetaRow}>
-              <View style={styles.playerCategoryBadge}>
-                <Text style={styles.playerCategoryBadgeText}>{categoryName}</Text>
-              </View>
-              <Text style={styles.playerMetaDot}>•</Text>
-              <Text style={styles.playerMetaText}>{viewsText}</Text>
-              <Text style={styles.playerMetaDot}>•</Text>
-              <Text style={styles.playerMetaText}>{timeAgoText}</Text>
-            </View>
-
-            {/* 3. Description with "Show More" / "Show Less" */}
-            {playingVideo.description &&
-            !playingVideo.description.trim().startsWith('pkill') &&
-            !playingVideo.description.includes('uvicorn') &&
-            !playingVideo.description.includes('nohup') ? (
-              <View>
-                <Text
-                  style={styles.playerDescription}
-                  numberOfLines={showFullDescription ? undefined : 2}
-                >
-                  {playingVideo.description}
-                </Text>
-                {playingVideo.description.length > 80 ? (
-                  <Pressable
-                    style={styles.showMoreBtn}
-                    onPress={() => setShowFullDescription(prev => !prev)}
-                  >
-                    <Text style={styles.showMoreText}>
-                      {showFullDescription ? 'Show Less' : '...Show More'}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
-            {/* Clean Video Action Buttons Bar: Like | Save | Comments | Share */}
-            <View style={styles.actionsBar}>
-              <Pressable
-                style={styles.actionBtn}
-                onPress={handleToggleLike}
-              >
-                <Heart
-                  size={18}
-                  color={liked ? '#EF4444' : '#FFFFFF'}
-                  fill={liked ? '#EF4444' : 'transparent'}
-                />
-                <Text style={[styles.actionText, liked ? { color: '#EF4444', fontWeight: '700' } : null]}>
-                  {likesText}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.actionBtn}
-                onPress={handleToggleSave}
-              >
-                <Bookmark
-                  size={18}
-                  color={saved ? '#818CF8' : '#FFFFFF'}
-                  fill={saved ? '#818CF8' : 'transparent'}
-                />
-                <Text style={styles.actionText}>{saved ? 'Saved' : 'Save'}</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.actionBtn}
-                onPress={() => setShowComments(prev => !prev)}
-              >
-                <MessageSquare
-                  size={18}
-                  color={showComments ? '#10B981' : '#FFFFFF'}
-                />
-                <Text style={styles.actionText}>Comments</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.actionBtn}
-                onPress={() => setShowShareModal(true)}
-              >
-                <Share2 size={18} color={showShareModal ? '#6366F1' : '#FFFFFF'} />
-                <Text style={styles.actionText}>Share</Text>
-              </Pressable>
-            </View>
-
-            {/* Render Comments Section ONLY when selected */}
-            {showComments ? <CommentsSection videoId={currentVideoId} /> : null}
-
-
-            {/* Related Videos & Playlists Section */}
-            <RelatedContent
-              currentVideoId={currentVideoId}
-              category={(playingVideo as any)?.category}
-              onSelectVideo={onSelectVideo}
-              onSelectPlaylist={onSelectPlaylist}
-            />
-          </ScrollView>
-        ) : null}
-
-        {/* 100% In-App Share Modal */}
-        <Modal
-          visible={showShareModal}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowShareModal(false)}
-        >
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
-            <View style={{ width: '100%', backgroundColor: '#1E1E2E', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>In-App Share</Text>
-                <Pressable onPress={() => setShowShareModal(false)} style={{ padding: 4 }}>
-                  <X color="#9CA3AF" size={20} />
-                </Pressable>
-              </View>
-
-              <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 12 }}>
-                Share "{playingVideo?.title}" with other Streamr users:
+          {!isFullscreen && playingVideo ? (
+            <ScrollView
+              style={styles.playerInfoScroll}
+              contentContainerStyle={styles.playerInfoContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+            >
+              {/* 1. Title */}
+              <Text style={styles.playerTitle} numberOfLines={2}>
+                {playingVideo.title}
               </Text>
 
-              {/* Share URL Box */}
-              <View style={{ backgroundColor: '#121218', borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 16 }}>
-                <Text numberOfLines={1} style={{ fontSize: 12, color: '#E2E8F0', flex: 1, marginRight: 10 }}>
-                  {`streamr://watch/${currentVideoId}`}
-                </Text>
-                <Pressable
-                  onPress={handleCopyShareLink}
-                  style={{ backgroundColor: copiedLink ? '#10B981' : '#6366F1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
-                >
-                  {copiedLink ? <Check color="#FFFFFF" size={14} /> : <Copy color="#FFFFFF" size={14} />}
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
-                    {copiedLink ? 'Copied!' : 'Copy'}
+              {/* 2. Below Title and Above Description: Category · Views · Time Uploaded Ago */}
+              <View style={styles.playerMetaRow}>
+                <View style={styles.playerCategoryBadge}>
+                  <Text style={styles.playerCategoryBadgeText}>{categoryName}</Text>
+                </View>
+                <Text style={styles.playerMetaDot}>•</Text>
+                <Text style={styles.playerMetaText}>{viewsText}</Text>
+                <Text style={styles.playerMetaDot}>•</Text>
+                <Text style={styles.playerMetaText}>{timeAgoText}</Text>
+              </View>
+
+              {/* 3. Description with "Show More" / "Show Less" */}
+              {playingVideo.description &&
+                !playingVideo.description.trim().startsWith('pkill') &&
+                !playingVideo.description.includes('uvicorn') &&
+                !playingVideo.description.includes('nohup') ? (
+                <View>
+                  <Text
+                    style={styles.playerDescription}
+                    numberOfLines={showFullDescription ? undefined : 2}
+                  >
+                    {playingVideo.description}
                   </Text>
+                  {playingVideo.description.length > 80 ? (
+                    <Pressable
+                      style={styles.showMoreBtn}
+                      onPress={() => setShowFullDescription(prev => !prev)}
+                    >
+                      <Text style={styles.showMoreText}>
+                        {showFullDescription ? 'Show Less' : '...Show More'}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {/* Clean Video Action Buttons Bar: Like | Save | Comments | Share */}
+              <View style={styles.actionsBar}>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={handleToggleLike}
+                >
+                  <Heart
+                    size={18}
+                    color={liked ? '#EF4444' : '#FFFFFF'}
+                    fill={liked ? '#EF4444' : 'transparent'}
+                  />
+                  <Text style={[styles.actionText, liked ? { color: '#EF4444', fontWeight: '700' } : null]}>
+                    {likesText}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={handleToggleSave}
+                >
+                  <Bookmark
+                    size={18}
+                    color={saved ? '#818CF8' : '#FFFFFF'}
+                    fill={saved ? '#818CF8' : 'transparent'}
+                  />
+                  <Text style={styles.actionText}>{saved ? 'Saved' : 'Save'}</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => setShowComments(prev => !prev)}
+                >
+                  <MessageSquare
+                    size={18}
+                    color={showComments ? '#10B981' : '#FFFFFF'}
+                  />
+                  <Text style={styles.actionText}>Comments</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => setShowShareModal(true)}
+                >
+                  <Share2 size={18} color={showShareModal ? '#6366F1' : '#FFFFFF'} />
+                  <Text style={styles.actionText}>Share</Text>
                 </Pressable>
               </View>
 
-              {/* In-App Deep Link Code */}
-              <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.12)', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 12, color: '#A5B4FC' }}>In-App Deep Link Code:</Text>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: '#6366F1' }}>#STREAMR-{currentVideoId}</Text>
+              {/* Render Comments Section ONLY when selected */}
+              {showComments ? <CommentsSection videoId={currentVideoId} /> : null}
+
+
+              {/* Related Videos & Playlists Section */}
+              <RelatedContent
+                currentVideoId={currentVideoId}
+                category={(playingVideo as any)?.category}
+                onSelectVideo={onSelectVideo}
+                onSelectPlaylist={onSelectPlaylist}
+              />
+            </ScrollView>
+          ) : null}
+
+          {/* 100% In-App Share Modal */}
+          <Modal
+            visible={showShareModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowShareModal(false)}
+          >
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+              <View style={{ width: '100%', backgroundColor: '#1E1E2E', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>In-App Share</Text>
+                  <Pressable onPress={() => setShowShareModal(false)} style={{ padding: 4 }}>
+                    <X color="#9CA3AF" size={20} />
+                  </Pressable>
+                </View>
+
+                <Text style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 12 }}>
+                  Share "{playingVideo?.title}" with other Streamr users:
+                </Text>
+
+                {/* Share URL Box */}
+                <View style={{ backgroundColor: '#121218', borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 16 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 12, color: '#E2E8F0', flex: 1, marginRight: 10 }}>
+                    {`streamr://watch/${currentVideoId}`}
+                  </Text>
+                  <Pressable
+                    onPress={handleCopyShareLink}
+                    style={{ backgroundColor: copiedLink ? '#10B981' : '#6366F1', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                  >
+                    {copiedLink ? <Check color="#FFFFFF" size={14} /> : <Copy color="#FFFFFF" size={14} />}
+                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>
+                      {copiedLink ? 'Copied!' : 'Copy'}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {/* In-App Deep Link Code */}
+                <View style={{ backgroundColor: 'rgba(99, 102, 241, 0.12)', borderRadius: 10, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: '#A5B4FC' }}>In-App Deep Link Code:</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700', color: '#6366F1' }}>#STREAMR-{currentVideoId}</Text>
+                </View>
               </View>
             </View>
-          </View>
-        </Modal>
+          </Modal>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </Modal>

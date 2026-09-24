@@ -18,7 +18,7 @@ import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useDownloads } from '../../hooks/useDownloads';
 import { useUserActivity } from '../../hooks/useUserActivity';
-import { fetchUserCategoriesApi } from '../../services/api/userActivityApi';
+import { fetchCategoriesApi } from '../../services/api/categoriesApi';
 import type { DownloadedVideoItem } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
@@ -57,7 +57,7 @@ export function VideoGridScreen({ route, navigation }: any) {
 
     async function loadDynamicCategories() {
       try {
-        const fetchedCats = await fetchUserCategoriesApi();
+        const fetchedCats = await fetchCategoriesApi();
         const catNames = fetchedCats && fetchedCats.length > 0
           ? fetchedCats.map((c: any) => c.name)
           : [];
@@ -126,7 +126,7 @@ export function VideoGridScreen({ route, navigation }: any) {
     if (isSaved || isLiked) {
       async function loadLivePlaylistsForThumbnails() {
         try {
-          const res = await fetchUserCategoriesApi();
+          const res = await fetchCategoriesApi();
           if (res && res.length > 0) {
             setLivePlaylists(res);
           }

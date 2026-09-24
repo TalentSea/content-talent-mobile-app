@@ -8,10 +8,13 @@ import { HomeStack } from './HomeStack';
 import { CategoriesStack } from './CategoriesStack';
 import { ProfileStack } from './ProfileStack';
 
+import { useAppTheme } from '../context/ThemeContext';
+
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 // ─── Custom Tab Bar ─────────────────────────────────────────────────────────
 function CustomTabBar({ state, navigation }: any) {
+  const { theme } = useAppTheme();
   const tabs = [
     { name: 'HomeTab', label: 'Home', Icon: Home },
     { name: 'CategoriesTab', label: 'Categories', Icon: Grid },
@@ -21,10 +24,10 @@ function CustomTabBar({ state, navigation }: any) {
   const activeRouteName = state.routes[state.index].name;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.cardBackgroundColor, borderTopColor: theme.mainBackgroundColor }]}>
       {tabs.map(({ name, label, Icon }) => {
         const isActive = activeRouteName === name;
-        const color = isActive ? '#6366F1' : '#6B7280';
+        const color = isActive ? theme.activeStateColor : theme.mutedTextColor;
 
         return (
           <Pressable
@@ -33,7 +36,7 @@ function CustomTabBar({ state, navigation }: any) {
             onPress={() => navigation.navigate(name)}
           >
             <Icon size={20} color={color} />
-            <Text style={[styles.tabText, isActive && styles.activeTabText]}>
+            <Text style={[styles.tabText, { color: isActive ? theme.activeStateColor : theme.mutedTextColor, fontWeight: isActive ? '700' : '600' }]}>
               {label}
             </Text>
           </Pressable>

@@ -9,7 +9,7 @@ import {
   incrementVideoViewsApi,
 } from './api/userActivityApi';
 
-import { getUserStorageKey, subscribeAuthChange } from './api/authService';
+import { getUserStorageKey, subscribeAuthChange, isUserLoggedIn } from './api/authService';
 
 export type WatchHistoryItem = {
   video: ApiVideo;
@@ -47,6 +47,8 @@ function notifyListeners() {
 }
 
 export async function syncWatchHistoryWithBackend() {
+  if (!isUserLoggedIn()) return;
+
   // Purge any legacy disk files so only downloads remain on device disk
   await purgeLegacyDiskWatchHistory();
 
@@ -122,20 +124,27 @@ export function recordWatchHistory(
   watchHistoryStore.unshift(historyItem);
   notifyListeners();
 
-  // Throttle backend API calls: every 10 seconds during continuous playback, on seek jump (>= 3%), or completion (>= 95%)
+  // Throttle backend API calls: 
+  // 1. Send the first ping immediately (!lastSync)
+  // 2. Always send the completion ping exactly once (>= 98%)
+  // 3. Otherwise, send if 15s passed OR 30% jumped, BUT strictly enforce a minimum 5-second wait between pings to protect against short videos.
   const now = Date.now();
   const lastSync = lastBackendProgressSyncMap.get(video.id);
+  
+  const timeSinceLastSync = lastSync ? now - lastSync.timestamp : 0;
+  const hasCompletedNow = progressPercentage >= 98 && (!lastSync || lastSync.progress < 98);
+  const meetsNormalSync = timeSinceLastSync >= 15000 || (lastSync && Math.abs(progressPercentage - lastSync.progress) >= 30);
+  
   const shouldSyncBackend =
     !lastSync ||
-    now - lastSync.timestamp >= 10000 ||
-    Math.abs(progressPercentage - lastSync.progress) >= 3 ||
-    progressPercentage >= 95;
+    hasCompletedNow ||
+    (meetsNormalSync && timeSinceLastSync >= 5000);
 
   if (shouldSyncBackend) {
     lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
     recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds)
       .then(() => {
-        // Spec: When progress crosses 30% watch threshold, trigger view count registration
+        // Spec #10: When progress crosses 30% watch threshold, trigger view count registration
         if (progressPercentage >= 30 && !viewTriggeredSet.has(video.id)) {
           viewTriggeredSet.add(video.id);
           incrementVideoViewsApi(video.id).catch(err =>
@@ -145,23 +154,6 @@ export function recordWatchHistory(
       })
       .catch(err => console.warn('[recordWatchHistory] Backend progress sync notice:', err));
   }
-}
-
-/**
- * Immediately flushes the latest watch progress to backend on lifecycle events
- * (player pause, seek release, app backgrounding, screen exit)
- */
-export function flushWatchProgressNow(
-  video: ApiVideo,
-  progressPercentage: number = 0,
-  lastPositionSeconds: number = 0,
-) {
-  if (!video || !video.id) return;
-  const now = Date.now();
-  lastBackendProgressSyncMap.set(video.id, { timestamp: now, progress: progressPercentage });
-  recordUserWatchHistoryApi(video.id, progressPercentage, lastPositionSeconds).catch(err =>
-    console.warn('[flushWatchProgressNow] Backend progress notice:', err),
-  );
 }
 
 // History contains EVERY video the user started watching (> 0%), whether completed (100%) or stopped midway (< 98%)

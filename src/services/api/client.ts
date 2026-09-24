@@ -108,7 +108,22 @@ export async function apiRequest<T>(
     requestHeaders.set('Authorization', `Bearer ${targetToken}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const cleanBaseUrl = API_BASE_URL.replace(/\/$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const fullUrl = `${cleanBaseUrl}${cleanPath}`;
+
+  if (__DEV__) {
+    console.log(`\n🔵 [API REQ] ${requestOptions.method || 'GET'} ${cleanPath}`);
+    if (requestOptions.body && typeof requestOptions.body === 'string') {
+      try {
+        console.log('Payload:', JSON.parse(requestOptions.body));
+      } catch {
+        console.log('Payload:', requestOptions.body);
+      }
+    }
+  }
+
+  const response = await fetch(fullUrl, {
     ...requestOptions,
     headers: requestHeaders,
   });
@@ -142,6 +157,10 @@ export async function apiRequest<T>(
     responseBody = responseText ? JSON.parse(responseText) : undefined;
   } catch {
     responseBody = responseText;
+  }
+
+  if (__DEV__) {
+    console.log(`🟢 [API RES] ${response.status} ${cleanPath}`);
   }
 
   if (!response.ok) {

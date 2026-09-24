@@ -19,15 +19,6 @@ export type MobileCategoryItem = {
   contentCount?: number;
   video_count?: number;
 };
-
-export type MobileCategoriesResponse = {
-  data: MobileCategoryItem[];
-};
-
-export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosResponse> {
-  try {
-    // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/history
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/history');
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -44,7 +35,7 @@ export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosRespons
 export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/continue-watching
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/continue-watching');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/continue-watching`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -84,7 +75,7 @@ export type ActionStatusResponse = {
 export async function clearUserWatchHistoryApi(): Promise<ActionStatusResponse> {
   try {
     // Exclusive Mobile Endpoint: DELETE /api/v1/mobile/videos/history
-    const res = await apiRequest<ActionStatusResponse>('/api/v1/mobile/videos/history', { method: 'DELETE' });
+    const res = await apiRequest<ActionStatusResponse>(`/api/v1/mobile/videos/history`, { method: 'DELETE' });
     return { status: res?.status || 'success' };
   } catch (error) {
     console.warn('[clearUserWatchHistoryApi] Mobile API notice:', error);
@@ -106,7 +97,7 @@ export async function removeVideoWatchHistoryApi(videoId: number): Promise<Actio
 export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/liked
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/liked');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/liked`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -132,7 +123,7 @@ export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean 
 export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/saved
-    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/saved');
+    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/saved`);
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -183,11 +174,12 @@ export async function recordAdImpressionApi(
   }
 }
 
+<<<<<<< HEAD
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   // Consumer app category list is available at GET /api/v1/categories. It delivers active, published categories sorted by display order.
   const endpoints = [
-    '/api/v1/categories',
-    '/api/v1/mobile/categories',
+    `/api/v1/mobile/categories`,
+    `/api/v1/mobile/categories`,
   ];
 
   for (const path of endpoints) {
@@ -218,3 +210,5 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   return [];
 }
 
+=======
+>>>>>>> 22e82306 (feat: unify app bootstrap, implement dynamic theming, and optimize network sync)

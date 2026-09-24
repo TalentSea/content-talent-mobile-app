@@ -123,7 +123,6 @@ type VideoPlayerProps = {
   onEnd?: () => void;
   onProgress?: (currentTime: number, duration: number, isAdPlaying?: boolean) => void;
   onAdEvent?: (eventType: string) => void;
-  initialPosition?: number;
 };
 
 export default function NativeVideoPlayer({
@@ -158,11 +157,9 @@ export default function NativeVideoPlayer({
   onEnd,
   onProgress,
   onAdEvent,
-  initialPosition = 0,
 }: VideoPlayerProps) {
   const playerRef = useRef<any>(null);
   const hasSentLoadEventRef = useRef(false);
-  const hasAutoResumedRef = useRef(false);
 
   const [paused, setPaused] = useState(!autoStart);
   const [currentTime, setCurrentTime] = useState(0);
@@ -355,13 +352,13 @@ export default function NativeVideoPlayer({
     downloadUrls.length > 0
       ? downloadUrls
       : uri.includes('.m3u8')
-      ? [
+        ? [
           { resolution: '1080p', label: '1080p HD', url: uri.replace(/playlist\.m3u8.*$/, 'play_1080p.mp4') },
           { resolution: '720p', label: '720p HD', url: uri.replace(/playlist\.m3u8.*$/, 'play_720p.mp4') },
           { resolution: '480p', label: '480p SD', url: uri.replace(/playlist\.m3u8.*$/, 'play_480p.mp4') },
           { resolution: '240p', label: '240p SD', url: uri.replace(/playlist\.m3u8.*$/, 'play_240p.mp4') },
         ]
-      : [{ resolution: '720p', label: 'Standard MP4', url: mp4Url || uri }];
+        : [{ resolution: '720p', label: 'Standard MP4', url: mp4Url || uri }];
 
   const availableDownloadUrls: DownloadItem[] = rawDownloadUrls;
 
@@ -476,13 +473,6 @@ export default function NativeVideoPlayer({
     }
     setIsBuffering(false);
     setError(null);
-
-    // Automatic Resume Playback: inspect last_position_seconds and seek automatically
-    if (initialPosition && initialPosition > 0 && !hasAutoResumedRef.current) {
-      hasAutoResumedRef.current = true;
-      seekTo(initialPosition);
-      setCurrentTime(initialPosition);
-    }
   };
 
   const handleProgress = (e: any) => {

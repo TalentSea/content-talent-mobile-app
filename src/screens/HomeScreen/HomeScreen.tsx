@@ -20,22 +20,23 @@ import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
 import { useWatchHistory } from '../../hooks/useWatchHistory';
 import { fetchPlaylists, PlaylistListItem } from '../../services/api/playlistApi';
-import { fetchUserCategoriesApi, MobileCategoryItem } from '../../services/api/userActivityApi';
-import { fetchMobileBrandingApi, fetchMobileBannersApi, MobileBrandingResponse, MobileBannerItem } from '../../services/api/brandingApi';
+import { fetchCategoriesApi, MobileCategoryItem } from '../../services/api/categoriesApi';
+import { fetchFeaturedVideosApi, FeaturedVideo } from '../../services/api/featuredVideosApi';
 import { getCurrentUser } from '../../services/api/authService';
 import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import type { ApiVideo } from '../../types/video';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { HeroSkeleton, HorizontalRowSkeleton } from '../../components/SkeletonLoader/HotstarSkeleton';
+import { useAppTheme } from '../../context/ThemeContext';
 import { styles } from './styles';
 
 export function HomeScreen({ navigation }: any) {
   const user = getCurrentUser();
+  const { theme, branding } = useAppTheme();
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [playlistsLoading, setPlaylistsLoading] = useState(true);
   const [apiCategories, setApiCategories] = useState<string[]>([]);
-  const [branding, setBranding] = useState<MobileBrandingResponse | null>(null);
-  const [apiBanners, setApiBanners] = useState<MobileBannerItem[]>([]);
+  const [apiBanners, setApiBanners] = useState<FeaturedVideo[]>([]);
 
   const {
     videos,
@@ -54,11 +55,12 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => {
     async function loadLiveMobileData() {
       try {
-        const [playlistsRes, categoriesRes, brandingRes, bannersRes] = await Promise.allSettled([
+        // Branding and theme are already pre-fetched during bootstrap.
+        // Fetch playlists, categories, and banners here:
+        const [playlistsRes, categoriesRes, bannersRes] = await Promise.allSettled([
           fetchPlaylists(undefined, 1, 10),
-          fetchUserCategoriesApi(),
-          fetchMobileBrandingApi(),
-          fetchMobileBannersApi(),
+          fetchCategoriesApi(),
+          fetchFeaturedVideosApi(),
         ]);
 
         if (playlistsRes.status === 'fulfilled' && playlistsRes.value?.items && playlistsRes.value.items.length > 0) {
@@ -78,10 +80,6 @@ export function HomeScreen({ navigation }: any) {
             };
           });
           setPlaylists(derivedPlaylists);
-        }
-
-        if (brandingRes.status === 'fulfilled' && brandingRes.value) {
-          setBranding(brandingRes.value);
         }
 
         if (bannersRes.status === 'fulfilled' && bannersRes.value && bannersRes.value.length > 0) {
@@ -121,44 +119,20 @@ export function HomeScreen({ navigation }: any) {
   // 3. Continue Watching: up to 10 started videos
   const continueWatchingList = continueWatching.slice(0, 10);
 
-  // Extract custom featured banners configured in studio branding
-  const combinedBanners: MobileBannerItem[] = [
-    ...(branding?.featured_videos || []),
-    ...apiBanners,
-  ];
-
-  // Deduplicate featured videos by ID or title
-  const featuredBannersList = combinedBanners.filter((item, index, self) =>
-    index === self.findIndex(t => (
-      (t.video_id && item.video_id && Number(t.video_id) === Number(item.video_id)) ||
-      (t.title && item.title && t.title.trim().toLowerCase() === item.title.trim().toLowerCase())
-    ))
-  );
-
-  // Build Hero Banner Carousel items strictly from live featured banners configured by admin
-  const heroItems: HeroItem[] = featuredBannersList.map((b, idx) => {
-    const matchingVideo = videos.find(v => (
-      (b.video_id && v.id === Number(b.video_id)) ||
-      (b.title && b.title.trim() !== '' && v.title && v.title.trim().toLowerCase() === b.title.trim().toLowerCase())
-    ));
-    const thumb = (b.image_url && b.image_url.trim() !== '')
-      ? b.image_url
-      : (matchingVideo ? getThumbnailForVideo(matchingVideo) : '');
-
-    const finalTitle = (b.title && b.title.trim() !== '' && b.title !== 'Featured Video')
-      ? b.title
-      : (matchingVideo?.title || 'Featured Stream');
-
+  // Build Hero Banner Carousel items directly from the backend featured videos response
+  const heroItems: HeroItem[] = apiBanners.map((b, idx) => {
+    const matchingVideo = videos.find(v => v.id === b.id);
+    
     return {
-      id: `hero_banner_${b.id || b.video_id || idx}`,
+      id: `hero_banner_${b.id}_${idx}`,
       type: 'video',
-      title: finalTitle,
+      title: b.title,
       description: b.description || matchingVideo?.description || '',
-      thumbnail_url: thumb,
+      thumbnail_url: b.main_thumbnail_url || (matchingVideo ? getThumbnailForVideo(matchingVideo) : ''),
       category: b.category || matchingVideo?.category || 'Entertainment',
       badgeLabel: idx === 0 ? 'FEATURED' : 'SPOTLIGHT',
-      creatorName: branding?.creator_name || undefined,
-      creatorAvatar: branding?.logo_url || thumb,
+      creatorName: branding?.studio_name || branding?.creator_name || undefined,
+      creatorAvatar: branding?.logo_url || b.main_thumbnail_url || undefined,
       rawVideo: matchingVideo,
     };
   });
@@ -171,7 +145,7 @@ export function HomeScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView
@@ -180,7 +154,7 @@ export function HomeScreen({ navigation }: any) {
           <RefreshControl
             refreshing={loading}
             onRefresh={reload}
-            tintColor="#FFFFFF"
+            tintColor={theme.primaryColor}
           />
         }
       >
@@ -190,7 +164,7 @@ export function HomeScreen({ navigation }: any) {
             {branding?.logo_url ? (
               <Image source={{ uri: branding.logo_url }} style={{ width: 28, height: 28, borderRadius: 6 }} resizeMode="contain" />
             ) : null}
-            <Text style={styles.appTitle} numberOfLines={1}>
+            <Text style={[styles.appTitle, { color: theme.primaryTextColor }]} numberOfLines={1}>
               {branding?.studio_name || branding?.creator_name || 'Streamr'}
             </Text>
           </View>
@@ -200,17 +174,17 @@ export function HomeScreen({ navigation }: any) {
               onPress={() => navigation.navigate('Search')}
               style={styles.headerButton}
             >
-              <Search color="#FFFFFF" size={20} />
+              <Search color={theme.primaryTextColor} size={20} />
             </Pressable>
 
             <Pressable
               onPress={() => navigation.navigate('ProfileTab' as any)}
-              style={styles.profileButton}
+              style={[styles.profileButton, { backgroundColor: theme.cardBackgroundColor }]}
             >
               {user?.avatar_url ? (
                 <Image source={{ uri: user.avatar_url }} style={styles.avatarMini} />
               ) : (
-                <User color="#FFFFFF" size={18} />
+                <User color={theme.primaryTextColor} size={18} />
               )}
             </Pressable>
           </View>
@@ -260,14 +234,14 @@ export function HomeScreen({ navigation }: any) {
             {/* 3. Playlists Section */}
             <View style={{ marginBottom: 20 }}>
               <View style={{ paddingHorizontal: 16, marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: '#FFFFFF' }}>Playlists</Text>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: theme.primaryTextColor }}>Playlists</Text>
                 <Pressable onPress={() => navigation.navigate('Playlist')}>
-                  <Text style={{ fontSize: 12, color: '#E50914', fontWeight: '600' }}>See all</Text>
+                  <Text style={{ fontSize: 12, color: theme.primaryColor, fontWeight: '600' }}>See all</Text>
                 </Pressable>
               </View>
 
               {playlistsLoading ? (
-                <ActivityIndicator color="#E50914" style={{ marginVertical: 20 }} />
+                <ActivityIndicator color={theme.primaryColor} style={{ marginVertical: 20 }} />
               ) : playlists.length > 0 ? (
                 <FlatList
                   horizontal
@@ -281,13 +255,13 @@ export function HomeScreen({ navigation }: any) {
                     >
                       <Image
                         source={{ uri: item.thumbnail_url || '' }}
-                        style={styles.playlistCardImage}
+                        style={[styles.playlistCardImage, { backgroundColor: theme.cardBackgroundColor }]}
                       />
-                      <Text style={styles.playlistCardTitle} numberOfLines={1}>
+                      <Text style={[styles.playlistCardTitle, { color: theme.primaryTextColor }]} numberOfLines={1}>
                         {item.name || item.description || `Playlist`}
                       </Text>
                       {item.description ? (
-                        <Text style={styles.playlistCardMeta} numberOfLines={1}>
+                        <Text style={[styles.playlistCardMeta, { color: theme.secondaryTextColor }]} numberOfLines={1}>
                           {item.description}
                         </Text>
                       ) : null}
@@ -296,7 +270,7 @@ export function HomeScreen({ navigation }: any) {
                   contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
                 />
               ) : (
-                <Text style={{ color: '#9CA3AF', fontSize: 13, paddingHorizontal: 16 }}>No playlists available</Text>
+                <Text style={{ color: theme.mutedTextColor, fontSize: 13, paddingHorizontal: 16 }}>No playlists available</Text>
               )}
             </View>
 

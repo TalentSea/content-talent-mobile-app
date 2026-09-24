@@ -8,7 +8,7 @@ import { CategoryTabs } from '../../components/CategoryTabs/CategoryTabs';
 import { PlayerModal } from '../PlayerScreen/PlayerModal';
 import { useVideos } from '../../hooks/useVideo';
 import { useVideoPlayback } from '../../hooks/useVideoPlayback';
-import { fetchUserCategoriesApi, MobileCategoryItem } from '../../services/api/userActivityApi';
+import { fetchCategoriesApi, MobileCategoryItem } from '../../services/api/categoriesApi';
 import { styles } from './styles';
 import { colors } from '../../constants/colors';
 
@@ -24,7 +24,7 @@ export function CategoryVideosScreen({ route, navigation }: any) {
   useEffect(() => {
     async function loadBackendCategories() {
       try {
-        const fetchedCats = await fetchUserCategoriesApi();
+        const fetchedCats = await fetchCategoriesApi();
         if (fetchedCats && fetchedCats.length > 0) {
           const names = fetchedCats.map((item: MobileCategoryItem) => item.name);
           const catList = Array.from(new Set(['All', ...names]));

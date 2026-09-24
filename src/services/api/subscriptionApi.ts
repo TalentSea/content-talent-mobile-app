@@ -65,8 +65,8 @@ const REAL_CREATOR_PLANS_FALLBACK: SubscriptionPlan[] = [
  */
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const endpoints = [
-    '/api/v1/mobile/plans',
-    '/api/v1/mobile/subscription-plans',
+    `/api/v1/mobile/plans`,
+    `/api/v1/mobile/subscription-plans`,
   ];
 
   for (const path of endpoints) {
@@ -142,10 +142,10 @@ export async function createRazorpayOrder(planId: string | number, planPricePais
     : (parseInt(planId, 10) || (planId === 'basic' ? 1 : planId === 'premium' ? 2 : 3));
 
   const endpoints = [
-    '/api/v1/mobile/payments/create-order',
-    '/api/v1/mobile/subscriptions/create-order',
-    '/api/v1/subscriptions/create-order',
-    '/api/v1/payments/create-order',
+    `/api/v1/mobile/payments/create-order`,
+    `/api/v1/mobile/subscriptions/create-order`,
+    `/api/v1/mobile/subscriptions/create-order`,
+    `/api/v1/mobile/payments/create-order`,
   ];
 
   for (const path of endpoints) {
@@ -195,10 +195,10 @@ export async function verifyRazorpayPayment(payload: {
   });
 
   const endpoints = [
-    '/api/v1/mobile/payments/verify',
-    '/api/v1/mobile/subscriptions/verify-payment',
-    '/api/v1/subscriptions/verify-payment',
-    '/api/v1/payments/verify-payment',
+    `/api/v1/mobile/payments/verify`,
+    `/api/v1/mobile/subscriptions/verify-payment`,
+    `/api/v1/mobile/subscriptions/verify-payment`,
+    `/api/v1/mobile/payments/verify-payment`,
   ];
 
   for (const path of endpoints) {
@@ -225,9 +225,9 @@ export async function createSubscription(planId: string | number): Promise<Subsc
     : (parseInt(planId, 10) || (planId === 'premium' ? 2 : 1));
 
   const endpoints = [
-    '/api/v1/mobile/subscriptions/subscribe',
-    '/api/v1/subscriptions/subscribe',
-    '/api/v1/subscriptions',
+    `/api/v1/mobile/subscriptions/subscribe`,
+    `/api/v1/mobile/subscriptions/subscribe`,
+    `/api/v1/mobile/subscriptions`,
   ];
 
   for (const path of endpoints) {
@@ -269,10 +269,10 @@ export type LiveSubscriptionStatusResponse = {
  */
 export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionStatusResponse> {
   const endpoints = [
-    '/api/v1/mobile/subscriptions/me',
-    '/api/v1/subscriptions/me',
-    '/api/v1/mobile/users/me',
-    '/api/v1/users/me',
+    `/api/v1/mobile/subscriptions/me`,
+    `/api/v1/mobile/subscriptions/me`,
+    `/api/v1/mobile/users/me`,
+    `/api/v1/mobile/users/me`,
   ];
 
   for (const path of endpoints) {
@@ -327,19 +327,17 @@ export type DeviceAccessCheckResult = {
  * - Premium Plan: Up to 3 concurrent devices allowed
  */
 export async function registerDevicePlaybackSession(videoId: number): Promise<DeviceAccessCheckResult> {
-  const cid = getCreatorId();
   try {
     const { getOrCreateDeviceId, getDeviceInfo } = require('../../utils/deviceIdHelper');
     const deviceId = await getOrCreateDeviceId();
     const deviceInfo = getDeviceInfo();
 
-    const res = await apiRequest<any>('/api/v1/mobile/streams/start', {
+    const res = await apiRequest<any>(`/api/v1/mobile/streams/start`, {
       method: 'POST',
       body: JSON.stringify({
         device_id: deviceId,
         device_info: deviceInfo,
         video_id: videoId,
-        creator_id: cid,
       }),
     });
 

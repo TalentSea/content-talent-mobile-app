@@ -3,6 +3,7 @@ import { FlatList, Text, Pressable, View } from 'react-native';
 import { VideoCard } from '../VideoCard/VideoCard';
 import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
+import { useAppTheme } from '../../context/ThemeContext';
 
 type HorizontalListProps = {
   title: string;
@@ -23,20 +24,21 @@ export function HorizontalList({
 }: HorizontalListProps) {
   const isContinueWatchingList =
     isContinueWatching ?? title.toLowerCase().includes('continue watching');
+  const { theme } = useAppTheme();
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, { color: theme.primaryTextColor }]}>{title}</Text>
         {onSeeAll ? (
           <Pressable style={styles.seeAllButton} onPress={onSeeAll}>
-            <Text style={styles.seeAllText}>See all</Text>
+            <Text style={[styles.seeAllText, { color: theme.primaryColor }]}>See all</Text>
           </Pressable>
         ) : null}
       </View>
 
       {videos.length === 0 ? (
-        <Text style={styles.emptyText}>{emptyText}</Text>
+        <Text style={[styles.emptyText, { color: theme.mutedTextColor }]}>{emptyText}</Text>
       ) : (
         <FlatList
           data={videos}

@@ -127,6 +127,12 @@ export async function fetchVideos(
   try {
     const query = new URLSearchParams();
 
+<<<<<<< HEAD
+=======
+    const cid = getCreatorId();
+    // Creator ID is passed in the auth token
+
+>>>>>>> 22e82306 (feat: unify app bootstrap, implement dynamic theming, and optimize network sync)
     if (params.search !== undefined) {
       query.set('search', params.search);
     }
