@@ -1,5 +1,5 @@
 import { apiGet, apiRequest } from './client';
-import { RAZORPAY_KEY_ID, getCreatorId } from '../../constants/config';
+import { RAZORPAY_KEY_ID, getCreatorId , API_BASE_PATH } from '../../constants/config';
 
 export type SubscriptionPlan = {
   id: string;
@@ -65,8 +65,8 @@ const REAL_CREATOR_PLANS_FALLBACK: SubscriptionPlan[] = [
  */
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   const endpoints = [
-    `/api/v1/mobile/plans`,
-    `/api/v1/mobile/subscription-plans`,
+    `${API_BASE_PATH}/plans`,
+    `${API_BASE_PATH}/subscription-plans`,
   ];
 
   for (const path of endpoints) {
@@ -142,10 +142,10 @@ export async function createRazorpayOrder(planId: string | number, planPricePais
     : (parseInt(planId, 10) || (planId === 'basic' ? 1 : planId === 'premium' ? 2 : 3));
 
   const endpoints = [
-    `/api/v1/mobile/payments/create-order`,
-    `/api/v1/mobile/subscriptions/create-order`,
-    `/api/v1/mobile/subscriptions/create-order`,
-    `/api/v1/mobile/payments/create-order`,
+    `${API_BASE_PATH}/payments/create-order`,
+    `${API_BASE_PATH}/subscriptions/create-order`,
+    `${API_BASE_PATH}/subscriptions/create-order`,
+    `${API_BASE_PATH}/payments/create-order`,
   ];
 
   for (const path of endpoints) {
@@ -195,10 +195,10 @@ export async function verifyRazorpayPayment(payload: {
   });
 
   const endpoints = [
-    `/api/v1/mobile/payments/verify`,
-    `/api/v1/mobile/subscriptions/verify-payment`,
-    `/api/v1/mobile/subscriptions/verify-payment`,
-    `/api/v1/mobile/payments/verify-payment`,
+    `${API_BASE_PATH}/payments/verify`,
+    `${API_BASE_PATH}/subscriptions/verify-payment`,
+    `${API_BASE_PATH}/subscriptions/verify-payment`,
+    `${API_BASE_PATH}/payments/verify-payment`,
   ];
 
   for (const path of endpoints) {
@@ -225,9 +225,9 @@ export async function createSubscription(planId: string | number): Promise<Subsc
     : (parseInt(planId, 10) || (planId === 'premium' ? 2 : 1));
 
   const endpoints = [
-    `/api/v1/mobile/subscriptions/subscribe`,
-    `/api/v1/mobile/subscriptions/subscribe`,
-    `/api/v1/mobile/subscriptions`,
+    `${API_BASE_PATH}/subscriptions/subscribe`,
+    `${API_BASE_PATH}/subscriptions/subscribe`,
+    `${API_BASE_PATH}/subscriptions`,
   ];
 
   for (const path of endpoints) {
@@ -269,10 +269,10 @@ export type LiveSubscriptionStatusResponse = {
  */
 export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionStatusResponse> {
   const endpoints = [
-    `/api/v1/mobile/subscriptions/me`,
-    `/api/v1/mobile/subscriptions/me`,
-    `/api/v1/mobile/users/me`,
-    `/api/v1/mobile/users/me`,
+    `${API_BASE_PATH}/subscriptions/me`,
+    `${API_BASE_PATH}/subscriptions/me`,
+    `${API_BASE_PATH}/users/me`,
+    `${API_BASE_PATH}/users/me`,
   ];
 
   for (const path of endpoints) {
@@ -332,7 +332,7 @@ export async function registerDevicePlaybackSession(videoId: number): Promise<De
     const deviceId = await getOrCreateDeviceId();
     const deviceInfo = getDeviceInfo();
 
-    const res = await apiRequest<any>(`/api/v1/mobile/streams/start`, {
+    const res = await apiRequest<any>(`${API_BASE_PATH}/streams/start`, {
       method: 'POST',
       body: JSON.stringify({
         device_id: deviceId,

@@ -52,8 +52,8 @@ export async function fetchShortsApi(
   }
 
   const endpoints = [
-    `/api/v1/mobile/videos/shorts?page=${page}&limit=${limit}&sort=${sort}`,
-    `/api/v1/mobile/shorts?page=${page}&limit=${limit}&sort=${sort}`,
+    `${API_BASE_PATH}/videos/shorts?page=${page}&limit=${limit}&sort=${sort}`,
+    `${API_BASE_PATH}/shorts?page=${page}&limit=${limit}&sort=${sort}`,
   ];
 
   for (const endpoint of endpoints) {
@@ -111,8 +111,8 @@ export async function toggleShortLikeApi(
   }
 
   const endpoints = [
-    `/api/v1/mobile/videos/${shortId}/like`,
-    `/api/v1/mobile/shorts/${shortId}/like`,
+    `${API_BASE_PATH}/videos/${shortId}/like`,
+    `${API_BASE_PATH}/shorts/${shortId}/like`,
   ];
 
   for (const ep of endpoints) {
@@ -148,7 +148,7 @@ export async function toggleShortSaveApi(
 
   try {
     const res = await apiRequest<{ is_saved?: boolean }>(
-      `/api/v1/mobile/videos/${shortId}/save`,
+      `${API_BASE_PATH}/videos/${shortId}/save`,
       { method: 'POST' }
     );
     return { is_saved: Boolean(res?.is_saved) };
@@ -173,8 +173,8 @@ export async function recordShortShareApi(
   }
 
   const endpoints = [
-    `/api/v1/mobile/videos/${shortId}/share`,
-    `/api/v1/mobile/shorts/${shortId}/share`,
+    `${API_BASE_PATH}/videos/${shortId}/share`,
+    `${API_BASE_PATH}/shorts/${shortId}/share`,
   ];
 
   for (const ep of endpoints) {
@@ -202,7 +202,7 @@ export async function recordShortProgressApi(
   progressSeconds: number
 ): Promise<void> {
   try {
-    await apiRequest(`/api/v1/mobile/videos/${shortId}/progress`, {
+    await apiRequest(`${API_BASE_PATH}/videos/${shortId}/progress`, {
       method: 'POST',
       body: JSON.stringify({ progress_seconds: Math.floor(progressSeconds) }),
     });
@@ -219,7 +219,7 @@ export async function recordShortViewApi(
 ): Promise<{ views_count?: number } | null> {
   try {
     const res = await apiRequest<{ status?: string; views_count?: number }>(
-      `/api/v1/mobile/videos/${shortId}/views`,
+      `${API_BASE_PATH}/videos/${shortId}/views`,
       { method: 'POST' }
     );
     return res;

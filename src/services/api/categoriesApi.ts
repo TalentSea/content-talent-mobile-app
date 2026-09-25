@@ -1,3 +1,4 @@
+import { API_BASE_PATH } from '../../constants/config';
 import { apiGet } from './client';
 
 export type MobileCategoryItem = {
@@ -16,7 +17,7 @@ export type MobileCategoriesResponse = {
 
 export async function fetchCategoriesApi(): Promise<MobileCategoryItem[]> {
   const endpoints = [
-    `/api/v1/mobile/categories`,
+    `${API_BASE_PATH}/categories`,
   ];
 
   for (const path of endpoints) {

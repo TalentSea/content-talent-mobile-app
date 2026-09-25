@@ -1,6 +1,9 @@
 import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
 import { normalizeVideoItem } from './video';
+=======
+import { getCreatorId , API_BASE_PATH } from '../../constants/config';
+>>>>>>> f8b26fa1 (refactor mobile API paths)
 
 export type UserHistoryResponseItem = {
   video_id: number;
@@ -8,6 +11,7 @@ export type UserHistoryResponseItem = {
   last_position_seconds: number;
 };
 
+<<<<<<< HEAD
 export type MobileCategoryItem = {
   id: number;
   name: string;
@@ -38,7 +42,7 @@ export type MobileCategoryItem = {
 export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/continue-watching
-    const response = await apiGet<any>(`/api/v1/mobile/videos/continue-watching`);
+    const response = await apiGet<any>(`${API_BASE_PATH}/videos/continue-watching`);
     let items: any[] = [];
     if (response) {
       if (Array.isArray(response.items)) items = response.items;
@@ -72,7 +76,7 @@ export async function recordUserWatchHistoryApi(
   try {
     // Mobile Video API Spec #9: POST /api/v1/mobile/videos/{video_id}/progress
     // Body: { "progress_seconds": <number> } -> Response: 204 No Content
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/progress`, {
+    await apiRequest(`${API_BASE_PATH}/videos/${videoId}/progress`, {
       method: 'POST',
       body: JSON.stringify({ progress_seconds: roundSeconds }),
     });
@@ -88,7 +92,7 @@ export type ActionStatusResponse = {
 export async function clearUserWatchHistoryApi(): Promise<ActionStatusResponse> {
   try {
     // Exclusive Mobile Endpoint: DELETE /api/v1/mobile/videos/history
-    const res = await apiRequest<ActionStatusResponse>(`/api/v1/mobile/videos/history`, { method: 'DELETE' });
+    const res = await apiRequest<ActionStatusResponse>(`${API_BASE_PATH}/videos/history`, { method: 'DELETE' });
     return { status: res?.status || 'success' };
   } catch (error) {
     console.warn('[clearUserWatchHistoryApi] Mobile API notice:', error);
@@ -99,7 +103,7 @@ export async function clearUserWatchHistoryApi(): Promise<ActionStatusResponse> 
 export async function removeVideoWatchHistoryApi(videoId: number): Promise<ActionStatusResponse> {
   try {
     // Exclusive Mobile Endpoint: DELETE /api/v1/mobile/videos/history/{video_id}
-    const res = await apiRequest<ActionStatusResponse>(`/api/v1/mobile/videos/history/${videoId}`, { method: 'DELETE' });
+    const res = await apiRequest<ActionStatusResponse>(`${API_BASE_PATH}/videos/history/${videoId}`, { method: 'DELETE' });
     return { status: res?.status || 'success' };
   } catch (error) {
     console.warn(`[removeVideoWatchHistoryApi] Mobile API notice for video ${videoId}:`, error);
@@ -110,7 +114,7 @@ export async function removeVideoWatchHistoryApi(videoId: number): Promise<Actio
 export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/liked
-    const response = await apiGet<any>(`/api/v1/mobile/videos/liked`);
+    const response = await apiGet<any>(`${API_BASE_PATH}/videos/liked`);
     let items: any[] = [];
     if (response) {
       if (Array.isArray(response.items)) items = response.items;
@@ -137,7 +141,7 @@ export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse
 export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean = true) {
   try {
     // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/like
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/like`, { method: 'POST' });
+    await apiRequest(`${API_BASE_PATH}/videos/${videoId}/like`, { method: 'POST' });
   } catch (error) {
     console.warn(`[toggleUserLikedVideoApi] Mobile API notice for video ${videoId}:`, error);
   }
@@ -146,7 +150,7 @@ export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean 
 export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/saved
-    const response = await apiGet<any>(`/api/v1/mobile/videos/saved`);
+    const response = await apiGet<any>(`${API_BASE_PATH}/videos/saved`);
     let items: any[] = [];
     if (response) {
       if (Array.isArray(response.items)) items = response.items;
@@ -173,7 +177,7 @@ export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse
 export async function toggleUserSavedVideoApi(videoId: number) {
   try {
     // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/save
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/save`, { method: 'POST' });
+    await apiRequest(`${API_BASE_PATH}/videos/${videoId}/save`, { method: 'POST' });
   } catch (error) {
     console.warn(`[toggleUserSavedVideoApi] Mobile API notice for video ${videoId}:`, error);
   }
@@ -182,7 +186,7 @@ export async function toggleUserSavedVideoApi(videoId: number) {
 export async function incrementVideoViewsApi(videoId: number) {
   try {
     // Exclusive Mobile Endpoint: POST /api/v1/mobile/videos/{video_id}/views
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/views`, { method: 'POST' });
+    await apiRequest(`${API_BASE_PATH}/videos/${videoId}/views`, { method: 'POST' });
   } catch (error) {
     console.warn(`[incrementVideoViewsApi] Mobile API notice for video ${videoId}:`, error);
   }
@@ -195,7 +199,7 @@ export async function recordAdImpressionApi(
 ) {
   try {
     // Mobile Video API Spec #13: POST /api/v1/mobile/videos/{video_id}/ad-impression
-    await apiRequest(`/api/v1/mobile/videos/${videoId}/ad-impression`, {
+    await apiRequest(`${API_BASE_PATH}/videos/${videoId}/ad-impression`, {
       method: 'POST',
       body: JSON.stringify({
         event_type: eventType,
@@ -211,8 +215,8 @@ export async function recordAdImpressionApi(
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   // Consumer app category list is available at GET /api/v1/categories. It delivers active, published categories sorted by display order.
   const endpoints = [
-    `/api/v1/mobile/categories`,
-    `/api/v1/mobile/categories`,
+    `${API_BASE_PATH}/categories`,
+    `${API_BASE_PATH}/categories`,
   ];
 
   for (const path of endpoints) {

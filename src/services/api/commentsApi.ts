@@ -1,3 +1,4 @@
+import { API_BASE_PATH } from '../../constants/config';
 import RNFS from 'react-native-fs';
 import { apiGet, apiRequest } from './client';
 import { getCurrentUser } from './authService';
@@ -225,7 +226,7 @@ export async function fetchVideoComments(
     let response: any = null;
     try {
       response = await apiGet<any>(
-        `/api/v1/mobile/videos/${videoId}/comments?${query.toString()}`,
+        `${API_BASE_PATH}/videos/${videoId}/comments?${query.toString()}`,
       );
     } catch (e) {
       // Mobile comments notice
@@ -283,8 +284,8 @@ export async function fetchCommentReplies(
   commentId: number,
 ): Promise<PaginatedRepliesResponse> {
   const candidatePaths = [
-    `/api/v1/mobile/comments/${commentId}/replies`,
-    `/api/v1/mobile/comments/${commentId}/reply`,
+    `${API_BASE_PATH}/comments/${commentId}/replies`,
+    `${API_BASE_PATH}/comments/${commentId}/reply`,
   ];
 
   let localReplies: CommentReplyItem[] = [];
@@ -333,7 +334,7 @@ export async function createTopLevelComment(
 
   try {
     // Backend Endpoint: POST /api/v1/mobile/videos/{video_id}/comments
-    const rawRes = await apiRequest<any>(`/api/v1/mobile/videos/${videoId}/comments`, {
+    const rawRes = await apiRequest<any>(`${API_BASE_PATH}/videos/${videoId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ text }),
     });
@@ -378,10 +379,10 @@ export async function postCommentReply(
   const user = getCurrentUser();
 
   const candidateEndpoints = [
-    `/api/v1/mobile/comments/${commentId}/reply`,
-    `/api/v1/mobile/comments/${commentId}/replies`,
-    `/api/v1/mobile/comments/${commentId}/reply`,
-    `/api/v1/mobile/comments/${commentId}/replies`,
+    `${API_BASE_PATH}/comments/${commentId}/reply`,
+    `${API_BASE_PATH}/comments/${commentId}/replies`,
+    `${API_BASE_PATH}/comments/${commentId}/reply`,
+    `${API_BASE_PATH}/comments/${commentId}/replies`,
   ];
 
   let replyObj: CommentReplyItem | null = null;
@@ -470,7 +471,7 @@ export async function toggleCommentLike(
   try {
     // Backend Endpoint: POST /api/v1/mobile/comments/{id}/like
     const res = await apiRequest<{ is_liked: boolean; likes: number; status?: string }>(
-      `/api/v1/mobile/comments/${commentId}/like`,
+      `${API_BASE_PATH}/comments/${commentId}/like`,
       { method: 'POST' },
     );
     const isLiked = !!res.is_liked;
@@ -508,7 +509,7 @@ export async function toggleReplyLike(
 ): Promise<{ is_liked: boolean; likes: number }> {
   try {
     const res = await apiRequest<{ is_liked: boolean; likes: number; status?: string }>(
-      `/api/v1/mobile/comments/${replyId}/like`,
+      `${API_BASE_PATH}/comments/${replyId}/like`,
       { method: 'POST' },
     );
     const isLiked = !!res.is_liked;
@@ -558,7 +559,7 @@ export async function deleteComment(commentId: number): Promise<boolean> {
 
   try {
     // Backend Endpoint: DELETE /api/v1/mobile/comments/{id} (enforces author ownership)
-    await apiRequest(`/api/v1/mobile/comments/${commentId}`, { method: 'DELETE' });
+    await apiRequest(`${API_BASE_PATH}/comments/${commentId}`, { method: 'DELETE' });
     return true;
   } catch (e) {
     console.warn(`[deleteComment] Backend API notice for comment ${commentId}:`, e);
@@ -585,7 +586,7 @@ export async function deleteCommentReply(
 
   try {
     // Backend Endpoint: DELETE /api/v1/mobile/comments/{replyId}
-    await apiRequest(`/api/v1/mobile/comments/${replyId}`, { method: 'DELETE' });
+    await apiRequest(`${API_BASE_PATH}/comments/${replyId}`, { method: 'DELETE' });
     return true;
   } catch (e) {
     console.warn(`[deleteCommentReply] Backend API notice for reply ${replyId}:`, e);

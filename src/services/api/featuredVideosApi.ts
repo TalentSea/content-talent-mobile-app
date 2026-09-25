@@ -1,3 +1,4 @@
+import { API_BASE_PATH } from '../../constants/config';
 import { apiGet } from './client';
 
 export type FeaturedVideo = {
@@ -17,7 +18,7 @@ export type FeaturedVideo = {
 
 export async function fetchFeaturedVideosApi(): Promise<FeaturedVideo[]> {
   try {
-    const rawRes = await apiGet<FeaturedVideo[]>(`/api/v1/mobile/featured-videos`);
+    const rawRes = await apiGet<FeaturedVideo[]>(`${API_BASE_PATH}/featured-videos`);
     
     if (rawRes) {
       if (Array.isArray(rawRes)) return rawRes;

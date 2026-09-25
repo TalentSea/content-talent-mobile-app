@@ -1,5 +1,5 @@
 import { apiGet, apiRequest } from './client';
-import { getCreatorId } from '../../constants/config';
+import { getCreatorId, API_BASE_PATH } from '../../constants/config';
 import type { ApiVideo } from '../../types/video';
 
 export type PlaylistListItem = {
@@ -68,7 +68,7 @@ export async function fetchPlaylists(
 
     // GET /api/v1/mobile/playlists — List Public Playlists Feed
     const response = await apiGet<any>(
-      `/api/v1/mobile/playlists?${query.toString()}`,
+      `${API_BASE_PATH}/playlists?${query.toString()}`,
     );
     if (response) {
       let items: PlaylistListItem[] = [];
@@ -100,7 +100,7 @@ export async function fetchPlaylistDetails(
 ): Promise<PlaylistDetails> {
   try {
     // GET /api/v1/mobile/playlists/{playlist_id} — Get Playlist Details & Video Feed
-    const response = await apiGet<any>(`/api/v1/mobile/playlists/${playlistId}`);
+    const response = await apiGet<any>(`${API_BASE_PATH}/playlists/${playlistId}`);
     if (response) {
       const details = response.data || response;
       return {
@@ -128,7 +128,7 @@ export async function fetchPlaylistVideos(
 
     // GET /api/v1/mobile/playlists/{playlist_id}/videos
     const response = await apiGet<any>(
-      `/api/v1/mobile/playlists/${playlistId}/videos?${query.toString()}`,
+      `${API_BASE_PATH}/playlists/${playlistId}/videos?${query.toString()}`,
     );
 
     if (response) {
@@ -167,7 +167,7 @@ export async function fetchPlaylistVideos(
 export async function toggleSavePlaylistApi(playlistId: number): Promise<{ is_saved: boolean }> {
   try {
     const response = await apiRequest<{ is_saved: boolean }>(
-      `/api/v1/mobile/playlists/${playlistId}/save`,
+      `${API_BASE_PATH}/playlists/${playlistId}/save`,
       {
         method: 'POST',
         authenticated: true,
@@ -194,7 +194,7 @@ export async function fetchSavedPlaylistsApi(
     query.set('limit', String(limit));
 
     const response = await apiRequest<any>(
-      `/api/v1/mobile/playlists/saved?${query.toString()}`,
+      `${API_BASE_PATH}/playlists/saved?${query.toString()}`,
       {
         method: 'GET',
         authenticated: true,

@@ -1,5 +1,5 @@
 import { apiGet } from './client';
-import { getCreatorId } from '../../constants/config';
+import { getCreatorId , API_BASE_PATH } from '../../constants/config';
 import type { ThemeColors } from '../../context/ThemeContext';
 
 
@@ -19,7 +19,7 @@ export type MobileBrandingResponse = {
 
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
   try {
-    const rawRes = await apiGet<any>(`/api/v1/mobile/branding`);
+    const rawRes = await apiGet<any>(`${API_BASE_PATH}/branding`);
     
     if (rawRes) {
       const themeColors = rawRes.theme;

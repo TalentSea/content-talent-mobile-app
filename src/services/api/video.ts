@@ -159,7 +159,7 @@ export async function fetchVideos(
 
     // Mobile Videos Endpoint (/api/v1/mobile/videos)
     const response = await apiGet<any>(
-      `/api/v1/mobile/videos?${query.toString()}`,
+      `${API_BASE_PATH}/videos?${query.toString()}`,
     );
     if (response) {
       let items: any[] = [];
@@ -204,7 +204,7 @@ export async function fetchVideoDetails(
 ): Promise<VideoDetails> {
   try {
     // Mobile Video Details (/api/v1/mobile/videos/{id})
-    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
+    const mobileRes = await apiGet<VideoDetails>(`${API_BASE_PATH}/videos/${videoId}`);
     if (mobileRes) {
       return normalizeVideoItem(mobileRes) as VideoDetails;
     }

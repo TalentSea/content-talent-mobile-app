@@ -123,10 +123,19 @@ export async function apiRequest<T>(
     }
   }
 
-  const response = await fetch(fullUrl, {
-    ...requestOptions,
-    headers: requestHeaders,
-  });
+  let response: Response;
+  try {
+    response = await fetch(fullUrl, {
+      ...requestOptions,
+      headers: requestHeaders,
+    });
+  } catch (error: any) {
+    if (error.message === 'Network request failed' || error.message?.includes('timeout')) {
+      Alert.alert('Network Error', 'No internet connection detected. Please check your network and try again.');
+      throw new ApiError(0, 'Network Error', error);
+    }
+    throw error;
+  }
 
   // Handle 401 Unauthorized -> Refresh access token or fall back to guest session
   if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/auth/')) {
@@ -170,6 +179,19 @@ export async function apiRequest<T>(
         'detail' in responseBody
         ? String(responseBody.detail)
         : `Request failed with status ${response.status}`;
+
+    // Handle basic exceptions globally
+    if (response.status >= 500) {
+      Alert.alert('Server Error', 'Oops! Something went wrong on our end. We are working on fixing it.');
+    } else if (response.status === 404) {
+      Alert.alert('Not Found', 'The data or video you are trying to load no longer exists.');
+    } else if (response.status === 401 && (isRetry || path.includes(`${API_BASE_PATH}/auth/`))) {
+      // Show alert if the refresh failed (isRetry) or if an auth endpoint explicitly returns 401 (e.g. invalid credentials)
+      // Note: Invalid credentials might be expected, so we only alert if it's a true session expiration, but for basic flow this is fine.
+      if (!path.includes('guest')) {
+          Alert.alert('Authentication Error', 'Invalid session or credentials. Please try logging in again.');
+      }
+    }
 
     throw new ApiError(response.status, detail, responseBody);
   }

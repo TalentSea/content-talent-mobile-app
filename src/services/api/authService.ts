@@ -1,6 +1,6 @@
 import RNFS from 'react-native-fs';
 import { apiRequest, setApiAccessToken, getApiAccessToken, decodeJwtCreatorId } from './client';
-import { DEFAULT_AUTH_TOKEN, getCreatorId, registerCreatorIdListener } from '../../constants/config';
+import { DEFAULT_AUTH_TOKEN, getCreatorId, registerCreatorIdListener , API_BASE_PATH } from '../../constants/config';
 import { getOrCreateDeviceId, getDeviceInfo } from '../../utils/deviceIdHelper';
 
 // Automatically purge session when setCreatorId is called at runtime
@@ -477,7 +477,7 @@ export async function loginAsGuest(
     role: 'guest',
   };
 
-  const guestEndpoints = [`/api/v1/mobile/auth/guest`];
+  const guestEndpoints = [`${API_BASE_PATH}/auth/guest`];
   for (const ep of guestEndpoints) {
     try {
       const response = await apiRequest<AuthResponse>(ep, {
@@ -529,8 +529,8 @@ export async function loginWithSocialToken(
 
   const endpoints =
     provider === 'google'
-      ? [`/api/v1/mobile/auth/google`]
-      : [`/api/v1/mobile/auth/facebook`];
+      ? [`${API_BASE_PATH}/auth/google`]
+      : [`${API_BASE_PATH}/auth/facebook`];
 
   const numericCreatorId = Number(creatorId) || getCreatorId();
   const rawTokenString = typeof token === 'string' ? token : String(token || '');
@@ -623,7 +623,7 @@ export async function loginWithEmail(
   const cleanInput = emailOrUsername.trim();
   const isEmail = cleanInput.includes('@');
 
-  const endpoints = [`/api/v1/mobile/auth/login`, `/api/v1/mobile/auth/login`];
+  const endpoints = [`${API_BASE_PATH}/auth/login`, `${API_BASE_PATH}/auth/login`];
   let lastError: any = null;
 
   for (const ep of endpoints) {
@@ -705,7 +705,7 @@ export async function registerWithEmail(
   const cleanEmail = email.trim().toLowerCase();
   const cleanName = name.trim();
 
-  const endpoints = [`/api/v1/mobile/auth/register`, `/api/v1/mobile/auth/register`];
+  const endpoints = [`${API_BASE_PATH}/auth/register`, `${API_BASE_PATH}/auth/register`];
   let lastError: any = null;
 
   for (const ep of endpoints) {
@@ -798,7 +798,7 @@ export async function verifyRegistrationOtp(
   const cleanEmail = email.trim().toLowerCase();
   const cleanCode = code.trim();
 
-  const response = await apiRequest<AuthResponse>(`/api/v1/mobile/auth/verify-registration`, {
+  const response = await apiRequest<AuthResponse>(`${API_BASE_PATH}/auth/verify-registration`, {
     method: 'POST',
     authenticated: false,
     body: JSON.stringify({
@@ -837,7 +837,7 @@ export async function requestForgotPassword(
   const cleanEmail = email.trim().toLowerCase();
 
   const response = await apiRequest<{ status: string; message?: string }>(
-    `/api/v1/mobile/auth/forgot-password`,
+    `${API_BASE_PATH}/auth/forgot-password`,
     {
       method: 'POST',
       authenticated: false,
@@ -868,7 +868,7 @@ export async function verifyResetCode(
   const cleanCode = code.trim();
 
   const response = await apiRequest<{ status: string; reset_token: string }>(
-    `/api/v1/mobile/auth/verify-reset-code`,
+    `${API_BASE_PATH}/auth/verify-reset-code`,
     {
       method: 'POST',
       authenticated: false,
@@ -895,7 +895,7 @@ export async function resetPasswordWithToken(
   const numericCreatorId = Number(creatorId) || getCreatorId();
 
   const response = await apiRequest<AuthResponse>(
-    `/api/v1/mobile/auth/reset-password`,
+    `${API_BASE_PATH}/auth/reset-password`,
     {
       method: 'POST',
       authenticated: false,
@@ -928,7 +928,7 @@ export async function updateSubscriberProfile(
 ): Promise<UserProfile> {
   const cleanName = name.trim();
   try {
-    const response = await apiRequest<UserProfile>(`/api/v1/mobile/auth/profile`, {
+    const response = await apiRequest<UserProfile>(`${API_BASE_PATH}/auth/profile`, {
       method: 'PATCH',
       body: JSON.stringify({ name: cleanName }),
     });
@@ -1007,7 +1007,7 @@ export async function uploadSubscriberProfilePhoto(
   } as any);
 
   try {
-    const response = await apiRequest<UserProfile>(`/api/v1/mobile/auth/profile/photo`, {
+    const response = await apiRequest<UserProfile>(`${API_BASE_PATH}/auth/profile/photo`, {
       method: 'POST',
       body: formData,
     });
@@ -1072,7 +1072,7 @@ export async function uploadSubscriberProfilePhoto(
  */
 export async function clearSessionTokens() {
   if (storedRefreshToken && !storedRefreshToken.startsWith('guest_')) {
-    const endpoints = [`/api/v1/mobile/auth/logout`];
+    const endpoints = [`${API_BASE_PATH}/auth/logout`];
     for (const ep of endpoints) {
       try {
         await apiRequest<{ status?: string; success?: boolean; message?: string }>(ep, {
@@ -1115,7 +1115,7 @@ export async function clearSessionTokens() {
  */
 export async function fetchUserProfileApi(): Promise<UserProfile | null> {
   const endpoints = [
-    `/api/v1/mobile/auth/me`,
+    `${API_BASE_PATH}/auth/me`,
   ];
 
   for (const ep of endpoints) {
