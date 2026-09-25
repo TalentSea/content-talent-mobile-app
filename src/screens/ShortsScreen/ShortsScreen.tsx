@@ -10,17 +10,19 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { ChevronLeft } from 'lucide-react-native';
-import { BottomNavBar } from '../../components/BottomNavBar';
+
 import { fetchShortsApi, ShortItem } from '../../services/api/shortsApi';
 import { ShortCard } from './ShortCard';
 import { ShortsCommentsModal } from './ShortsCommentsModal';
 import { styles } from './styles';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 
 const FlashListAny = FlashList as any;
 
 export function ShortsScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
   const [shortsList, setShortsList] = useState<ShortItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,28 +90,28 @@ export function ShortsScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Top Header Bar */}
       <View style={styles.topHeaderBar}>
         {navigation?.canGoBack && navigation.canGoBack() && (
           <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-            <ChevronLeft color="#FFFFFF" size={24} />
+            <ChevronLeft color={theme.primaryTextColor} size={24} />
           </Pressable>
         )}
-        <Text style={styles.headerTitle}>Shorts</Text>
+        <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Shorts</Text>
         <View style={{ width: 40 }} />
       </View>
 
       {loading ? (
         <View style={styles.emptyContainer}>
           <ActivityIndicator size="large" color="#6366F1" />
-          <Text style={styles.emptyText}>Loading Shorts...</Text>
+          <Text style={[styles.emptyText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Loading Shorts...</Text>
         </View>
       ) : shortsList.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No Shorts available right now.</Text>
+          <Text style={[styles.emptyText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>No Shorts available right now.</Text>
         </View>
       ) : (
         <FlashListAny
@@ -135,7 +137,7 @@ export function ShortsScreen({ navigation }: any) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#FFFFFF"
+              tintColor={theme.primaryTextColor}
             />
           }
         />
@@ -149,8 +151,6 @@ export function ShortsScreen({ navigation }: any) {
         onCommentCountUpdate={handleCommentCountUpdate}
       />
 
-      {/* Permanent Bottom Navigation Bar */}
-      <BottomNavBar activeTab="Shorts" navigation={navigation} />
     </View>
   );
 }

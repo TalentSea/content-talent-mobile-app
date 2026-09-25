@@ -45,10 +45,11 @@ import {
 import { DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
 import { fetchMobileBrandingApi } from '../../services/api/brandingApi';
 import { useAppTheme } from '../../context/ThemeContext';
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 export function LoginScreen({ route, navigation, initialMode }: any) {
-    const { setTheme, setBranding } = useAppTheme();
+    const { theme, setTheme, setBranding } = useAppTheme();
+    const styles = createStyles(theme);
     const defaultMode = initialMode || route?.params?.mode || 'login';
     const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
 

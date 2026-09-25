@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -39,6 +40,8 @@ import { formatViews, getRelativeTimeString, formatDurationString, formatExactDa
 import { styles } from './styles';
 
 export function CategoryDetailScreen({ route, navigation }: any) {
+  const { theme } = useAppTheme();
+
   const { category: initialCategory = 'All', playlistId, description: routeDescription } = route.params || {};
 
   const { popularVideos, reload } = useVideos();
@@ -150,7 +153,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
   const playlistAge = getRelativeTimeString(rawPlaylistDate);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <ScrollView
@@ -163,7 +166,7 @@ export function CategoryDetailScreen({ route, navigation }: any) {
               await reload();
               setRefreshing(false);
             }}
-            tintColor="#FFFFFF"
+            tintColor={theme.primaryTextColor}
           />
         }
       >
@@ -179,17 +182,17 @@ export function CategoryDetailScreen({ route, navigation }: any) {
               style={styles.backButtonFloating}
               onPress={() => navigation.goBack()}
             >
-              <ChevronLeft color="#FFFFFF" size={22} />
+              <ChevronLeft color={theme.primaryTextColor} size={22} />
             </Pressable>
 
             <View style={styles.heroContent}>
-              <Text style={styles.heroTitle} numberOfLines={2}>
+              <Text style={[styles.heroTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={2}>
                 {displayTitle}
               </Text>
 
               <View style={styles.heroMetaRow}>
                 <View style={styles.videoCountBadge}>
-                  <Text style={styles.videoCountBadgeText}>
+                  <Text style={[styles.videoCountBadgeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
                     {finalVideos.length} {finalVideos.length === 1 ? 'video' : 'videos'}
                   </Text>
                 </View>
@@ -201,11 +204,11 @@ export function CategoryDetailScreen({ route, navigation }: any) {
         {/* Vertical Video List */}
         <View style={{ paddingTop: 12, paddingBottom: 30 }}>
           {loading ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               Loading videos...
             </Text>
           ) : finalVideos.length === 0 ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               No videos in this category yet.
             </Text>
           ) : (
@@ -223,24 +226,24 @@ export function CategoryDetailScreen({ route, navigation }: any) {
                     <Image source={{ uri: itemThumb }} style={styles.itemThumb} />
                     {formattedDuration ? (
                       <View style={styles.durationBadge}>
-                        <Text style={styles.durationBadgeText}>{formattedDuration}</Text>
+                        <Text style={[styles.durationBadgeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{formattedDuration}</Text>
                       </View>
                     ) : null}
                   </View>
                   <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle} numberOfLines={2}>
+                    <Text style={[styles.itemTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={2}>
                       {item.title}
                     </Text>
                     <View style={styles.itemMetaRow}>
                       {itemCat && itemCat !== 'All' && itemCat !== 'Playlist' ? (
                         <>
-                          <Text style={styles.categoryTagRed}>{itemCat}</Text>
-                          <Text style={styles.dotMeta}>•</Text>
+                          <Text style={[styles.categoryTagRed, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{itemCat}</Text>
+                          <Text style={[styles.dotMeta, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>•</Text>
                         </>
                       ) : null}
-                      <Text style={styles.itemMetaText}>{formatViews(item.views)}</Text>
-                      <Text style={styles.dotMeta}>•</Text>
-                      <Text style={styles.itemMetaText}>
+                      <Text style={[styles.itemMetaText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{formatViews(item.views)}</Text>
+                      <Text style={[styles.dotMeta, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>•</Text>
+                      <Text style={[styles.itemMetaText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
                         {getRelativeTimeString(item.published_at || item.created_at)}
                       </Text>
                     </View>

@@ -8,14 +8,17 @@ import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
 import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen/SubscriptionScreen';
 
+import { useAppTheme } from '../context/ThemeContext';
+
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export function ProfileStack() {
+  const { theme } = useAppTheme();
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#05050A' },
+        contentStyle: { backgroundColor: theme.mainBackgroundColor },
       }}
     >
       <Stack.Screen name="Profile" component={ProfileScreen} />

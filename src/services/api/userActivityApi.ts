@@ -1,9 +1,7 @@
 import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
 import { normalizeVideoItem } from './video';
-=======
-import { getCreatorId , API_BASE_PATH } from '../../constants/config';
->>>>>>> f8b26fa1 (refactor mobile API paths)
+import { getCreatorId, API_BASE_PATH } from '../../constants/config';
 
 export type UserHistoryResponseItem = {
   video_id: number;
@@ -11,7 +9,6 @@ export type UserHistoryResponseItem = {
   last_position_seconds: number;
 };
 
-<<<<<<< HEAD
 export type MobileCategoryItem = {
   id: number;
   name: string;
@@ -23,7 +20,18 @@ export type MobileCategoryItem = {
   contentCount?: number;
   video_count?: number;
 };
-    if (!response || !response.items) {
+
+export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosResponse> {
+  try {
+    const response = await apiGet<any>(`${API_BASE_PATH}/videos/history`);
+    let items: any[] = [];
+    if (response) {
+      if (Array.isArray(response.items)) items = response.items;
+      else if (Array.isArray(response.data)) items = response.data;
+      else if (Array.isArray(response)) items = response;
+    }
+    
+    if (items.length === 0) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
     return {
@@ -216,7 +224,7 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   // Consumer app category list is available at GET /api/v1/categories. It delivers active, published categories sorted by display order.
   const endpoints = [
     `${API_BASE_PATH}/categories`,
-    `${API_BASE_PATH}/categories`,
+    `/api/v1/categories`,
   ];
 
   for (const path of endpoints) {

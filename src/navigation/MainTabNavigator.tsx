@@ -1,12 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
-import { Home, Grid, User } from 'lucide-react-native';
+import { Home, Grid, User, Film } from 'lucide-react-native';
 
 import type { MainTabParamList } from './types';
 import { HomeStack } from './HomeStack';
 import { CategoriesStack } from './CategoriesStack';
 import { ProfileStack } from './ProfileStack';
+import { ShortsScreen } from '../screens/ShortsScreen/ShortsScreen';
 
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -17,6 +18,7 @@ function CustomTabBar({ state, navigation }: any) {
   const { theme } = useAppTheme();
   const tabs = [
     { name: 'HomeTab', label: 'Home', Icon: Home },
+    { name: 'ShortsTab', label: 'Shorts', Icon: Film },
     { name: 'CategoriesTab', label: 'Categories', Icon: Grid },
     { name: 'ProfileTab', label: 'Profile', Icon: User },
   ] as const;
@@ -27,7 +29,10 @@ function CustomTabBar({ state, navigation }: any) {
     <View style={[styles.container, { backgroundColor: theme.cardBackgroundColor, borderTopColor: theme.mainBackgroundColor }]}>
       {tabs.map(({ name, label, Icon }) => {
         const isActive = activeRouteName === name;
-        const color = isActive ? theme.activeStateColor : theme.mutedTextColor;
+        let color = theme.mutedTextColor;
+        if (isActive) {
+          color = name === 'ShortsTab' ? '#EF4444' : theme.activeStateColor;
+        }
 
         return (
           <Pressable
@@ -36,7 +41,7 @@ function CustomTabBar({ state, navigation }: any) {
             onPress={() => navigation.navigate(name)}
           >
             <Icon size={20} color={color} />
-            <Text style={[styles.tabText, { color: isActive ? theme.activeStateColor : theme.mutedTextColor, fontWeight: isActive ? '700' : '600' }]}>
+            <Text style={[styles.tabText, { color: color, fontWeight: isActive ? '700' : '600' }]}>
               {label}
             </Text>
           </Pressable>
@@ -54,6 +59,7 @@ export function MainTabNavigator() {
       screenOptions={{ headerShown: false }}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} />
+      <Tab.Screen name="ShortsTab" component={ShortsScreen} />
       <Tab.Screen name="CategoriesTab" component={CategoriesStack} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} />
     </Tab.Navigator>

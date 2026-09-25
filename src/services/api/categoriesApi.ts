@@ -6,6 +6,7 @@ export type MobileCategoryItem = {
   name: string;
   slug: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
   icon?: string;
   color?: string;
   video_count?: number;
@@ -18,6 +19,7 @@ export type MobileCategoriesResponse = {
 export async function fetchCategoriesApi(): Promise<MobileCategoryItem[]> {
   const endpoints = [
     `${API_BASE_PATH}/categories`,
+    `/api/v1/categories`,
   ];
 
   for (const path of endpoints) {
@@ -33,6 +35,7 @@ export async function fetchCategoriesApi(): Promise<MobileCategoryItem[]> {
           name: item.name || item.title || item.category_name || 'Category',
           slug: item.slug || (item.name ? item.name.toLowerCase().replace(/\s+/g, '-') : `cat_${idx}`),
           description: item.description || item.subtitle || item.desc || null,
+          thumbnailUrl: item.thumbnailUrl || item.thumbnail_url || item.thumbnail || item.image_url || item.image || item.poster_url || item.poster || null,
           color: item.color,
           icon: item.icon,
           video_count: item.video_count ?? item.videos_count ?? item.count ?? item.total_videos ?? undefined,

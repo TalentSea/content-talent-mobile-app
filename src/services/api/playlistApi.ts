@@ -58,10 +58,7 @@ export async function fetchPlaylists(
 ): Promise<PaginatedPlaylistsResponse> {
   try {
     const query = new URLSearchParams();
-=======
-    const cid = getCreatorId();
-    // Creator ID in token
->>>>>>> 22e82306 (feat: unify app bootstrap, implement dynamic theming, and optimize network sync)
+
     if (search) query.set('search', search);
     query.set('page', String(page));
     query.set('limit', String(limit));

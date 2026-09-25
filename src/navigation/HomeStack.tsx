@@ -8,14 +8,17 @@ import { VideoGridScreen } from '../screens/VideoGridScreen/VideoGridScreen';
 import { PlaylistScreen } from '../screens/PlaylistScreen/PlaylistScreen';
 import { PlaylistDetailScreen } from '../screens/PlaylistDetailScreen/PlaylistDetailScreen';
 
+import { useAppTheme } from '../context/ThemeContext';
+
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export function HomeStack() {
+  const { theme } = useAppTheme();
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#05050A' },
+        contentStyle: { backgroundColor: theme.mainBackgroundColor },
       }}
     >
       <Stack.Screen name="Home" component={HomeScreen} />

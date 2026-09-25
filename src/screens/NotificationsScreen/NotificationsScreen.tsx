@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -21,6 +22,8 @@ type NotificationItem = {
 };
 
 export function NotificationsScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   function handleMarkAllRead() {
@@ -34,20 +37,20 @@ export function NotificationsScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTitleRow}>
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <ArrowLeft color="#FFFFFF" size={20} />
+            <ArrowLeft color={theme.primaryTextColor} size={20} />
           </Pressable>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Notifications</Text>
         </View>
 
         <Pressable onPress={handleMarkAllRead}>
-          <Text style={styles.markReadText}>Mark all read</Text>
+          <Text style={[styles.markReadText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Mark all read</Text>
         </Pressable>
       </View>
 
@@ -60,16 +63,16 @@ export function NotificationsScreen({ navigation }: any) {
           <RefreshControl
             refreshing={false}
             onRefresh={() => {}}
-            tintColor="#FFFFFF"
+            tintColor={theme.primaryTextColor}
           />
         }
         ListEmptyComponent={
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingTop: 60, paddingHorizontal: 20 }}>
-            <Bell size={44} color="#475569" style={{ marginBottom: 12 }} />
-            <Text style={{ color: '#F1F5F9', fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
+            <Bell size={44} color={theme.mutedTextColor} style={{ marginBottom: 12 }} />
+            <Text style={{ color: theme.primaryTextColor, fontSize: 16, fontWeight: '700', marginBottom: 4 }}>
               No Notifications
             </Text>
-            <Text style={{ color: '#64748B', fontSize: 13, textAlign: 'center' }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center' }}>
               You're all caught up! Check back later for updates.
             </Text>
           </View>
@@ -90,9 +93,9 @@ export function NotificationsScreen({ navigation }: any) {
             </View>
 
             <View style={styles.itemContent}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-              <Text style={styles.itemBody}>{item.body}</Text>
-              <Text style={styles.itemTime}>{item.time}</Text>
+              <Text style={[styles.itemTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{item.title}</Text>
+              <Text style={[styles.itemBody, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{item.body}</Text>
+              <Text style={[styles.itemTime, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{item.time}</Text>
             </View>
 
             {!item.read ? <View style={styles.unreadDot} /> : null}

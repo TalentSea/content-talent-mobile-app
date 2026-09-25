@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -38,6 +39,8 @@ import { formatViews, getRelativeTimeString, formatDurationString } from '../../
 import { styles } from './styles';
 
 export function PlaylistDetailScreen({ route, navigation }: any) {
+  const { theme } = useAppTheme();
+
   const { playlistId, category: initialCategory = 'Playlist', description: routeDescription } = route.params || {};
 
   const [playlistDetails, setPlaylistDetails] = useState<PlaylistDetails | null>(null);
@@ -139,7 +142,7 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       <ScrollView
@@ -174,7 +177,7 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
                 }
               }
             }}
-            tintColor="#FFFFFF"
+            tintColor={theme.primaryTextColor}
           />
         }
       >
@@ -190,15 +193,15 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
               style={styles.backButtonFloating}
               onPress={() => navigation.goBack()}
             >
-              <ChevronLeft color="#FFFFFF" size={22} />
+              <ChevronLeft color={theme.primaryTextColor} size={22} />
             </Pressable>
 
             <View style={styles.heroContent}>
-              <Text style={styles.heroTitle} numberOfLines={1}>
+              <Text style={[styles.heroTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                 {displayTitle}
               </Text>
               {playlistDescription ? (
-                <Text style={styles.heroSubtitle} numberOfLines={2}>
+                <Text style={[styles.heroSubtitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={2}>
                   {playlistDescription}
                 </Text>
               ) : null}
@@ -209,17 +212,17 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
         {/* Action Controls Bar matching screenshot */}
         <View style={styles.actionBarRow}>
           <Pressable style={styles.playAllButton} onPress={() => handlePlayAll(false)}>
-            <Play color="#FFFFFF" size={16} fill="#FFFFFF" />
-            <Text style={styles.playAllText}>Play All</Text>
+            <Play color={theme.primaryTextColor} size={16} fill={theme.primaryTextColor} />
+            <Text style={[styles.playAllText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Play All</Text>
           </Pressable>
 
           <Pressable style={styles.actionIconButton} onPress={handleToggleSave}>
-            <Bookmark color={isSaved ? '#3B82F6' : '#FFFFFF'} size={16} fill={isSaved ? '#3B82F6' : 'transparent'} />
-            <Text style={[styles.actionIconLabel, isSaved && { color: '#3B82F6' }]}>{isSaved ? 'Saved' : 'Save'}</Text>
+            <Bookmark color={isSaved ? '#3B82F6' : theme.primaryTextColor} size={16} fill={isSaved ? '#3B82F6' : 'transparent'} />
+            <Text style={[styles.actionIconLabel, isSaved && { color: '#3B82F6' }, { color: theme.primaryTextColor }]}>{isSaved ? 'Saved' : 'Save'}</Text>
           </Pressable>
 
           <Pressable style={styles.iconOnlyButton} onPress={handleShare}>
-            <Share2 color="#FFFFFF" size={16} />
+            <Share2 color={theme.primaryTextColor} size={16} />
           </Pressable>
         </View>
 
@@ -227,18 +230,18 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
         <View style={styles.dividerLine} />
 
         {/* Section Header: Videos in this Playlist */}
-        <Text style={styles.sectionTitleHeader}>
+        <Text style={[styles.sectionTitleHeader, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
           Videos in this Playlist
         </Text>
 
         {/* Vertical Video List */}
         <View style={{ paddingBottom: 30 }}>
           {loading ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               Loading playlist videos...
             </Text>
           ) : finalVideos.length === 0 ? (
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               No videos in this playlist yet.
             </Text>
           ) : (
@@ -264,16 +267,16 @@ export function PlaylistDetailScreen({ route, navigation }: any) {
                     )}
                     {formattedDuration ? (
                       <View style={styles.durationBadge}>
-                        <Text style={styles.durationBadgeText}>{formattedDuration}</Text>
+                        <Text style={[styles.durationBadgeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{formattedDuration}</Text>
                       </View>
                     ) : null}
                   </View>
                   <View style={styles.itemDetails}>
-                    <Text style={styles.itemTitle} numberOfLines={2}>
+                    <Text style={[styles.itemTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={2}>
                       {item.title}
                     </Text>
                     <View style={styles.itemMetaRow}>
-                      <Text style={styles.itemMetaText}>
+                      <Text style={[styles.itemMetaText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
                         {metaParts.join(' • ')}
                       </Text>
                     </View>

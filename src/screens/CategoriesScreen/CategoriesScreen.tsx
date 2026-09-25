@@ -88,7 +88,7 @@ export function CategoriesScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.mainBackgroundColor} />
+      <StatusBar barStyle={theme.mainBackgroundColor === '#FFFFFF' ? 'dark-content' : 'light-content'} backgroundColor={theme.mainBackgroundColor} />
 
       <View style={styles.headerContainer}>
         <View style={styles.headerTopRow}>
@@ -97,9 +97,9 @@ export function CategoriesScreen({ navigation }: any) {
               <ChevronLeft color={theme.primaryTextColor} size={22} />
             </Pressable>
           )}
-          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }]}>Browse Categories</Text>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Browse Categories</Text>
         </View>
-        <Text style={[styles.headerSubtitle, { color: theme.secondaryTextColor }]}>Explore content by topic</Text>
+        <Text style={[styles.headerSubtitle, { color: theme.secondaryTextColor }, { color: theme.primaryTextColor }]}>Explore content by topic</Text>
       </View>
 
       {/* Search Bar (Restored from incoming branch) */}
@@ -107,7 +107,7 @@ export function CategoriesScreen({ navigation }: any) {
         <View style={[styles.searchBar, { backgroundColor: theme.cardBackgroundColor }]}>
           <Search color={theme.mutedTextColor} size={16} />
           <TextInput
-            style={[styles.searchInput, { color: theme.primaryTextColor }]}
+            style={[styles.searchInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
             placeholder="Search categories..."
             placeholderTextColor={theme.mutedTextColor}
             value={searchQuery}
@@ -115,7 +115,7 @@ export function CategoriesScreen({ navigation }: any) {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')}>
-              <Text style={[styles.clearSearchText, { color: theme.primaryColor }]}>Clear</Text>
+              <Text style={[styles.clearSearchText, { color: theme.primaryColor }, { color: theme.primaryTextColor }]}>Clear</Text>
             </Pressable>
           )}
         </View>
@@ -132,7 +132,7 @@ export function CategoriesScreen({ navigation }: any) {
           </Text>
           {searchQuery.length > 0 && (
             <Pressable style={styles.resetSearchBtn} onPress={() => setSearchQuery('')}>
-              <Text style={[styles.resetSearchText, { color: theme.primaryColor }]}>Show all categories</Text>
+              <Text style={[styles.resetSearchText, { color: theme.primaryColor }, { color: theme.primaryTextColor }]}>Show all categories</Text>
             </Pressable>
           )}
         </View>
@@ -170,10 +170,10 @@ export function CategoriesScreen({ navigation }: any) {
               {/* Semi-transparent overlay with color tint (from teammate's branch) */}
               <View style={styles.cardOverlay}>
                 <View style={styles.cardHeaderContent}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
+                  <Text style={[styles.cardTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.cardMetaText, { color: item.accentColor }]} numberOfLines={1}>
+                  <Text style={[styles.cardMetaText, { color: item.accentColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {item.count} {item.count === 1 ? 'video' : 'videos'}
                   </Text>
                   <View style={styles.skeletonBarLong} />

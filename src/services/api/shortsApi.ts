@@ -1,3 +1,4 @@
+import { API_BASE_PATH } from '../../constants/config';
 import { apiGet, apiRequest, getApiAccessToken } from './client';
 import { loginAsGuest } from './authService';
 

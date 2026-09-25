@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useMemo, useState } from 'react';
 import {
   Pressable,
@@ -19,6 +20,8 @@ import { getCleanViewCountForVideo } from '../../services/viewTracker';
 import { styles } from './styles';
 
 export function SearchScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
+
   const [query, setQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([
     'Action',
@@ -150,19 +153,19 @@ export function SearchScreen({ navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Top Search Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={[styles.backIcon, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>‹</Text>
         </Pressable>
 
         <View style={styles.searchBar}>
-          <Search size={16} color="#9CA3AF" />
+          <Search size={16} color={theme.mutedTextColor} />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
             placeholder="Search title, paste stream link or #STREAMR-code..."
             placeholderTextColor="#6B7280"
             value={query}
@@ -177,7 +180,7 @@ export function SearchScreen({ navigation }: any) {
           />
           {query ? (
             <Pressable onPress={() => setQuery('')}>
-              <X size={16} color="#9CA3AF" />
+              <X size={16} color={theme.mutedTextColor} />
             </Pressable>
           ) : null}
         </View>
@@ -188,8 +191,8 @@ export function SearchScreen({ navigation }: any) {
         <View style={styles.recentWrap}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Clock size={14} color="#9CA3AF" />
-              <Text style={styles.recentTitle}>Recent Search History</Text>
+              <Clock size={14} color={theme.mutedTextColor} />
+              <Text style={[styles.recentTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Recent Search History</Text>
             </View>
             <Pressable onPress={() => setRecentSearches([])}>
               <Text style={{ color: '#6366F1', fontSize: 11, fontWeight: '700' }}>Clear</Text>
@@ -208,7 +211,7 @@ export function SearchScreen({ navigation }: any) {
                   }
                 }}
               >
-                <Text style={styles.tagText}>{item}</Text>
+                <Text style={[styles.tagText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{item}</Text>
               </Pressable>
             ))}
           </View>
@@ -233,9 +236,9 @@ export function SearchScreen({ navigation }: any) {
               >
                 <IconComponent
                   size={14}
-                  color={isActive ? '#FFFFFF' : '#9CA3AF'}
+                  color={isActive ? theme.primaryTextColor : theme.mutedTextColor}
                 />
-                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+                <Text style={[styles.filterText, isActive && styles.filterTextActive, { color: theme.primaryTextColor }]}>
                   {tab.label}
                 </Text>
               </Pressable>
@@ -262,8 +265,8 @@ export function SearchScreen({ navigation }: any) {
           }}
           onPress={() => handleOpenLinkOrCode(query)}
         >
-          <Link color="#FFFFFF" size={16} />
-          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+          <Link color={theme.primaryTextColor} size={16} />
+          <Text style={{ color: theme.primaryTextColor, fontWeight: '700', fontSize: 13 }}>
             Open Shared Link or Code: "{query.trim()}"
           </Text>
         </Pressable>

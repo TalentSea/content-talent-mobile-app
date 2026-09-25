@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -39,6 +40,8 @@ import RazorpayCheckout from 'react-native-razorpay';
 import { styles } from './styles';
 
 export function SubscriptionScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
+
   const user = getCurrentUser();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
@@ -224,17 +227,17 @@ export function SubscriptionScreen({ navigation }: any) {
   const activePlan = plans.find(p => p.id === selectedPlanId) || plans[0];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <ArrowLeft color="#FFFFFF" size={20} />
+          <ArrowLeft color={theme.primaryTextColor} size={20} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Subscription Plans</Text>
-          <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }}>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Subscription Plans</Text>
+          <Text style={{ color: theme.mutedTextColor, fontSize: 11, marginTop: 2 }}>
             Choose a plan to unlock premium streaming
           </Text>
         </View>
@@ -244,10 +247,10 @@ export function SubscriptionScreen({ navigation }: any) {
         {/* Hero Banner */}
         <View style={styles.heroBanner}>
           <View style={styles.crownIconBadge}>
-            <Crown size={28} color="#FFFFFF" />
+            <Crown size={28} color={theme.primaryTextColor} />
           </View>
-          <Text style={styles.heroTitle}>Unlock Premium Creator Tiers</Text>
-          <Text style={styles.heroSubtitle}>
+          <Text style={[styles.heroTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Unlock Premium Creator Tiers</Text>
+          <Text style={[styles.heroSubtitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
             Choose a tier to access exclusive content, 4K streaming, downloads, and direct Q&A.
           </Text>
         </View>
@@ -255,8 +258,8 @@ export function SubscriptionScreen({ navigation }: any) {
         {isSuccess ? (
           <View style={styles.successCard}>
             <CheckCircle2 size={36} color="#10B981" />
-            <Text style={styles.successTitle}>Active VIP Subscriber</Text>
-            <Text style={styles.successSub}>
+            <Text style={[styles.successTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Active VIP Subscriber</Text>
+            <Text style={[styles.successSub, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
               Your account ({user?.email || 'User'}) is active with Unlimited 4K Ultra HD access.
             </Text>
 
@@ -275,8 +278,8 @@ export function SubscriptionScreen({ navigation }: any) {
                 </Text>
 
                 <View style={{ marginBottom: 2 }}>
-                  <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '700' }}>PAYMENT ID:</Text>
-                  <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700', marginTop: 2 }}>{latestPayload.razorpay_payment_id}</Text>
+                  <Text style={{ color: theme.mutedTextColor, fontSize: 10, fontWeight: '700' }}>PAYMENT ID:</Text>
+                  <Text style={{ color: theme.primaryTextColor, fontSize: 13, fontWeight: '700', marginTop: 2 }}>{latestPayload.razorpay_payment_id}</Text>
                 </View>
               </View>
             ) : null}
@@ -284,12 +287,12 @@ export function SubscriptionScreen({ navigation }: any) {
         ) : null}
 
         {/* Plan Selection */}
-        <Text style={styles.sectionTitle}>Select Your Membership Plan</Text>
+        <Text style={[styles.sectionTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Select Your Membership Plan</Text>
 
         {loadingPlans ? (
           <View style={{ paddingVertical: 24, alignItems: 'center' }}>
             <ActivityIndicator size="small" color="#6366F1" />
-            <Text style={{ color: '#9CA3AF', fontSize: 12, marginTop: 8 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 8 }}>
               Loading creator subscription plans...
             </Text>
           </View>
@@ -307,7 +310,7 @@ export function SubscriptionScreen({ navigation }: any) {
                 {/* Header Badge */}
                 {badgeLabel && (
                   <View style={styles.popularBadge}>
-                    <Text style={styles.popularBadgeText}>{badgeLabel}</Text>
+                    <Text style={[styles.popularBadgeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{badgeLabel}</Text>
                   </View>
                 )}
 
@@ -324,7 +327,7 @@ export function SubscriptionScreen({ navigation }: any) {
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <Text style={styles.planName}>{plan.name}</Text>
+                        <Text style={[styles.planName, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{plan.name}</Text>
                         <View style={{
                           backgroundColor: 'rgba(16, 185, 129, 0.15)',
                           paddingHorizontal: 6,
@@ -339,7 +342,7 @@ export function SubscriptionScreen({ navigation }: any) {
                         </View>
                       </View>
                       {plan.description ? (
-                        <Text style={{ color: '#9CA3AF', fontSize: 11, marginTop: 2 }} numberOfLines={2}>
+                        <Text style={{ color: theme.mutedTextColor, fontSize: 11, marginTop: 2 }} numberOfLines={2}>
                           {plan.description}
                         </Text>
                       ) : null}
@@ -359,8 +362,8 @@ export function SubscriptionScreen({ navigation }: any) {
                           {plan.originalPrice}
                         </Text>
                       ) : null}
-                      <Text style={styles.planPrice}>{plan.price}</Text>
-                      <Text style={styles.planPeriod}>{plan.period}</Text>
+                      <Text style={[styles.planPrice, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{plan.price}</Text>
+                      <Text style={[styles.planPeriod, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{plan.period}</Text>
                     </View>
 
                     {plan.savings ? (
@@ -399,20 +402,19 @@ export function SubscriptionScreen({ navigation }: any) {
         )}
 
         {/* Dynamic Plan Comparison Feature Matrix */}
-        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Plan Comparison</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 16 }, { color: theme.primaryTextColor }]}>Plan Comparison</Text>
 
         <View style={styles.matrixCard}>
           {/* Header Row */}
           <View style={styles.matrixHeaderRow}>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.8 }]}>Feature</Text>
+            <Text style={[styles.matrixHeaderCell, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Feature</Text>
             {plans.map(p => (
               <Text
                 key={p.id}
-                style={[
-                  styles.matrixHeaderCell,
+                style={[styles.matrixHeaderCell,
                   { flex: 1, textAlign: 'center' },
                   p.id === selectedPlanId && { color: '#6366F1', fontWeight: '800' },
-                ]}
+                , { color: theme.primaryTextColor }]}
                 numberOfLines={2}
               >
                 {p.name}
@@ -422,7 +424,7 @@ export function SubscriptionScreen({ navigation }: any) {
 
           {/* Row 1: Catalog Access */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Catalog Access</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Catalog Access</Text>
             {plans.map(p => (
               <View key={p.id} style={{ flex: 1, alignItems: 'center' }}>
                 <Check size={16} color="#10B981" />
@@ -432,18 +434,17 @@ export function SubscriptionScreen({ navigation }: any) {
 
           {/* Row 2: Ad Experience */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Ad Experience</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Ad Experience</Text>
             {plans.map(p => {
               const nameLower = (p.name || '').toLowerCase();
               const isAdFree = !nameLower.includes('with_ads') && !nameLower.includes('ad-supported') && !nameLower.includes('standard');
               return (
                 <Text
                   key={p.id}
-                  style={[
-                    styles.matrixCellText,
+                  style={[styles.matrixCellText,
                     { flex: 1, textAlign: 'center' },
                     isAdFree && styles.matrixCellTextHighlight,
-                  ]}
+                  , { color: theme.primaryTextColor }]}
                 >
                   {isAdFree ? '100% Ad-Free' : 'Ad-Supported'}
                 </Text>
@@ -453,7 +454,7 @@ export function SubscriptionScreen({ navigation }: any) {
 
           {/* Row 3: Video Resolution */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Resolution</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Resolution</Text>
             {plans.map(p => {
               const nameLower = (p.name || '').toLowerCase();
               const feats = (p.features || []).join(' ').toLowerCase();
@@ -461,11 +462,10 @@ export function SubscriptionScreen({ navigation }: any) {
               return (
                 <Text
                   key={p.id}
-                  style={[
-                    styles.matrixCellText,
+                  style={[styles.matrixCellText,
                     { flex: 1, textAlign: 'center' },
                     is1080p && styles.matrixCellTextHighlight,
-                  ]}
+                  , { color: theme.primaryTextColor }]}
                 >
                   {is1080p ? '1080p Full HD' : '720p HD'}
                 </Text>
@@ -475,18 +475,17 @@ export function SubscriptionScreen({ navigation }: any) {
 
           {/* Row 4: Concurrent Devices */}
           <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Concurrent Devices</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Concurrent Devices</Text>
             {plans.map(p => {
               const feats = (p.features || []).join(' ').toLowerCase();
               const isMulti = feats.includes('3') || feats.includes('multiple') || p.name.toLowerCase().includes('premium');
               return (
                 <Text
                   key={p.id}
-                  style={[
-                    styles.matrixCellText,
+                  style={[styles.matrixCellText,
                     { flex: 1, textAlign: 'center' },
                     isMulti && styles.matrixCellTextHighlight,
-                  ]}
+                  , { color: theme.primaryTextColor }]}
                 >
                   {isMulti ? 'Up to 3 Devices' : '1 Device'}
                 </Text>
@@ -496,7 +495,7 @@ export function SubscriptionScreen({ navigation }: any) {
 
           {/* Row 5: Offline Downloads */}
           <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }]}>Offline Downloads</Text>
+            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Offline Downloads</Text>
             {plans.map(p => {
               const feats = (p.features || []).join(' ').toLowerCase();
               const hasOffline = feats.includes('download') || p.name.toLowerCase().includes('premium');
@@ -515,8 +514,8 @@ export function SubscriptionScreen({ navigation }: any) {
           onPress={handleSubscribe}
           disabled={isSubscribing || loadingPlans}
         >
-          <Crown size={20} color="#FFFFFF" />
-          <Text style={styles.subscribeBtnText}>
+          <Crown size={20} color={theme.primaryTextColor} />
+          <Text style={[styles.subscribeBtnText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
             {isSubscribing
               ? 'Processing Payment...'
               : (user?.plan_id && String(user.plan_id) !== selectedPlanId
@@ -525,7 +524,7 @@ export function SubscriptionScreen({ navigation }: any) {
           </Text>
         </Pressable>
 
-        <Text style={styles.guaranteeText}>
+        <Text style={[styles.guaranteeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
           256-Bit Encrypted Secure Checkout. Cancel anytime in App Settings.
         </Text>
       </ScrollView>

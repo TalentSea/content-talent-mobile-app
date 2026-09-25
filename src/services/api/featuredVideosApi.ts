@@ -18,12 +18,12 @@ export type FeaturedVideo = {
 
 export async function fetchFeaturedVideosApi(): Promise<FeaturedVideo[]> {
   try {
-    const rawRes = await apiGet<FeaturedVideo[]>(`${API_BASE_PATH}/featured-videos`);
+    const rawRes = await apiGet<any>(`${API_BASE_PATH}/featured-videos`);
     
     if (rawRes) {
-      if (Array.isArray(rawRes)) return rawRes;
-      if (Array.isArray(rawRes.items)) return rawRes.items;
-      if (Array.isArray(rawRes.data)) return rawRes.data;
+      if (Array.isArray(rawRes)) return rawRes as FeaturedVideo[];
+      if (Array.isArray(rawRes.items)) return rawRes.items as FeaturedVideo[];
+      if (Array.isArray(rawRes.data)) return rawRes.data as FeaturedVideo[];
     }
   } catch (e) {
     console.warn('[fetchFeaturedVideosApi] Error fetching /api/v1/mobile/featured-videos:', e);

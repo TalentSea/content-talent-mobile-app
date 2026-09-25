@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -24,6 +25,8 @@ import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import type { ApiVideo } from '../../types/video';
 
 export function LibraryScreen({ route, navigation }: any) {
+  const { theme } = useAppTheme();
+
   const type = route.params?.type ?? 'saved';
   const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists'>('videos');
   const [refreshing, setRefreshing] = useState(false);
@@ -101,15 +104,15 @@ export function LibraryScreen({ route, navigation }: any) {
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Screen Header */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()} hitSlop={10}>
-          <ChevronLeft color={colors.text} size={24} />
+          <ChevronLeft color={theme.primaryTextColor} size={24} />
         </Pressable>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{title}</Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -119,14 +122,15 @@ export function LibraryScreen({ route, navigation }: any) {
           <Pressable
             style={[
               styles.tabButton,
-              activeMediaTab === 'videos' && styles.activeTabButton,
+              { backgroundColor: theme.cardBackgroundColor },
+              activeMediaTab === 'videos' && { backgroundColor: theme.primaryColor, borderColor: theme.primaryColor },
             ]}
             onPress={() => setActiveMediaTab('videos')}
           >
             <Text
               style={[
                 styles.tabButtonText,
-                activeMediaTab === 'videos' && styles.activeTabButtonText,
+                { color: activeMediaTab === 'videos' ? theme.buttonTextColor : theme.mutedTextColor },
               ]}
             >
               Videos ({savedVideos.length})
@@ -136,14 +140,15 @@ export function LibraryScreen({ route, navigation }: any) {
           <Pressable
             style={[
               styles.tabButton,
-              activeMediaTab === 'playlists' && styles.activeTabButton,
+              { backgroundColor: theme.cardBackgroundColor },
+              activeMediaTab === 'playlists' && { backgroundColor: theme.primaryColor, borderColor: theme.primaryColor },
             ]}
             onPress={() => setActiveMediaTab('playlists')}
           >
             <Text
               style={[
                 styles.tabButtonText,
-                activeMediaTab === 'playlists' && styles.activeTabButtonText,
+                { color: activeMediaTab === 'playlists' ? theme.buttonTextColor : theme.mutedTextColor },
               ]}
             >
               Playlists ({savedPlaylists.length})
@@ -160,7 +165,7 @@ export function LibraryScreen({ route, navigation }: any) {
             keyExtractor={item => `saved-pl-${item.id}`}
             contentContainerStyle={styles.list}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primaryTextColor} />
             }
             renderItem={({ item }) => (
               <Pressable
@@ -175,10 +180,10 @@ export function LibraryScreen({ route, navigation }: any) {
                   </View>
                 )}
                 <View style={styles.playlistCopy}>
-                  <Text style={styles.playlistTitle} numberOfLines={1}>
+                  <Text style={[styles.playlistTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={styles.playlistMeta} numberOfLines={1}>
+                  <Text style={[styles.playlistMeta, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {typeof item.video_count === 'number'
                       ? `${item.video_count} ${item.video_count === 1 ? 'video' : 'videos'}`
                       : 'Playlist'}
@@ -193,15 +198,15 @@ export function LibraryScreen({ route, navigation }: any) {
             <View style={styles.iconWrap}>
               <Bookmark color={colors.primary} size={30} />
             </View>
-            <Text style={styles.emptyTitle}>No saved playlists yet</Text>
-            <Text style={styles.emptyDescription}>
+            <Text style={[styles.emptyTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>No saved playlists yet</Text>
+            <Text style={[styles.emptyDescription, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
               Bookmark any creator playlist to quickly return to it here.
             </Text>
             <Pressable
               style={styles.exploreButton}
               onPress={() => navigation.navigate('HomeTab' as any)}
             >
-              <Text style={styles.exploreButtonText}>Explore Playlists</Text>
+              <Text style={[styles.exploreButtonText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Explore Playlists</Text>
             </Pressable>
           </View>
         )
@@ -210,7 +215,7 @@ export function LibraryScreen({ route, navigation }: any) {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FFFFFF" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primaryTextColor} />
           }
         >
           {items.map(video => {
@@ -227,14 +232,14 @@ export function LibraryScreen({ route, navigation }: any) {
                   <View style={styles.thumbnailFallback} />
                 )}
                 <View style={styles.videoCopy}>
-                  <Text style={styles.videoTitle} numberOfLines={2}>
+                  <Text style={[styles.videoTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={2}>
                     {video.title}
                   </Text>
-                  <Text style={styles.videoDescription} numberOfLines={1}>
+                  <Text style={[styles.videoDescription, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {video.category || video.duration || 'Streamr Video'}
                   </Text>
                 </View>
-                <ChevronRight size={18} color="#475569" />
+                <ChevronRight size={18} color={theme.mutedTextColor} />
               </Pressable>
             );
           })}
@@ -244,13 +249,13 @@ export function LibraryScreen({ route, navigation }: any) {
           <View style={styles.iconWrap}>
             <Icon color={colors.primary} size={30} />
           </View>
-          <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-          <Text style={styles.emptyDescription}>{description}</Text>
+          <Text style={[styles.emptyTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{emptyTitle}</Text>
+          <Text style={[styles.emptyDescription, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{description}</Text>
           <Pressable
             style={styles.exploreButton}
             onPress={() => navigation.navigate('HomeTab' as any)}
           >
-            <Text style={styles.exploreButtonText}>Explore Videos</Text>
+            <Text style={[styles.exploreButtonText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Explore Videos</Text>
           </Pressable>
         </View>
       )}

@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import { Pressable, StatusBar, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,8 @@ import { styles } from './styles';
 import { colors } from '../../constants/colors';
 
 export function CategoryVideosScreen({ route, navigation }: any) {
+  const { theme } = useAppTheme();
+
   const { category: initialCategory = 'All' } = route.params || {};
 
   const [categories, setCategories] = useState<string[]>(['All']);
@@ -45,14 +48,14 @@ export function CategoryVideosScreen({ route, navigation }: any) {
         );
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <ChevronLeft color={colors.text} size={24} />
+          <ChevronLeft color={theme.primaryTextColor} size={24} />
         </Pressable>
-        <Text style={styles.headerTitle}>{selectedCategory} Streams</Text>
+        <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{selectedCategory} Streams</Text>
         <View style={styles.headerPlaceholder} />
       </View>
 

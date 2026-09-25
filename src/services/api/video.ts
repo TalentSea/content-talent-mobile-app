@@ -1,5 +1,5 @@
 import { apiGet, getApiAccessToken } from './client';
-import { API_BASE_URL, DEFAULT_AD_TAG_URL, getCreatorId } from '../../constants/config';
+import { API_BASE_PATH, API_BASE_URL } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchUserSubscriptionStatus } from './subscriptionApi';
 import { isUserAdFree, activateSubscription, loginAsGuest } from './authService';

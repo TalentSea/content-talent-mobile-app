@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -76,6 +77,8 @@ function getInitials(name?: string | null): string {
 }
 
 export function ProfileScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
+
   const [user, setUser] = useState(getCurrentUser());
   const [activeSection, setActiveSection] = useState<'history' | 'downloads' | 'saved' | 'liked' | null>('history');
   const [liveSub, setLiveSub] = useState<LiveSubscriptionDTO | null>(null);
@@ -200,8 +203,8 @@ export function ProfileScreen({ navigation }: any) {
     : 'FREE MEMBER';
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="light-content" backgroundColor="#05050A" />
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
+      <StatusBar barStyle={theme.mainBackgroundColor === '#FFFFFF' ? 'dark-content' : 'light-content'} backgroundColor={theme.mainBackgroundColor} />
 
       <ScrollView
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -210,18 +213,18 @@ export function ProfileScreen({ navigation }: any) {
           <RefreshControl
             refreshing={loading}
             onRefresh={reload}
-            tintColor="#FFFFFF"
+            tintColor={theme.primaryTextColor}
           />
         }
       >
         {/* Profile Card Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Account</Text>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>My Account</Text>
         </View>
 
         <View style={styles.content}>
           <Pressable
-            style={styles.userCard}
+            style={[styles.userCard, { backgroundColor: theme.cardBackgroundColor }]}
             onPress={() => {
               if (!userIsLoggedIn) {
                 navigation?.navigate('Login');
@@ -236,7 +239,7 @@ export function ProfileScreen({ navigation }: any) {
               {currentUser.avatar_url ? (
                 <Image source={{ uri: currentUser.avatar_url }} style={styles.avatarImage} />
               ) : (
-                <Text style={styles.avatarInitials}>{getInitials(currentUser.name)}</Text>
+                <Text style={[styles.avatarInitials, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{getInitials(currentUser.name)}</Text>
               )}
               {userIsLoggedIn && (
                 <View
@@ -254,26 +257,26 @@ export function ProfileScreen({ navigation }: any) {
                     borderColor: '#12121E',
                   }}
                 >
-                  <Edit2 size={10} color="#FFFFFF" />
+                  <Edit2 size={10} color={theme.primaryTextColor} />
                 </View>
               )}
             </View>
 
             <View style={styles.userInfoContainer}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.userNameText}>{currentUser.name}</Text>
+                <Text style={[styles.userNameText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{currentUser.name}</Text>
                 {userIsLoggedIn && <Edit2 size={13} color="#818CF8" />}
               </View>
-              <Text style={styles.userEmailText}>{currentUser.email || 'guest@streamr.app'}</Text>
+              <Text style={[styles.userEmailText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{currentUser.email || 'guest@streamr.app'}</Text>
               <View style={styles.membershipRow}>
-                <Crown size={14} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
-                <Text style={[styles.membershipText, !userIsSubscribed && { color: '#94A3B8' }]}>
+                <Crown size={14} color={userIsSubscribed ? '#A855F7' : theme.mutedTextColor} />
+                <Text style={[styles.membershipText, !userIsSubscribed && { color: theme.mutedTextColor }, { color: theme.primaryTextColor }]}>
                   {membershipLabel}
                 </Text>
               </View>
             </View>
 
-            <ChevronRight color="#475569" size={20} style={styles.cardChevron} />
+            <ChevronRight color={theme.mutedTextColor} size={20} style={styles.cardChevron} />
           </Pressable>
 
           {/* Profile Menu List */}
@@ -303,26 +306,26 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
                 }}
               >
-                <Crown size={20} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
+                <Crown size={20} color={userIsSubscribed ? '#A855F7' : theme.mutedTextColor} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
                   My Subscription
                 </Text>
-                <Text style={{ color: userIsSubscribed ? '#A855F7' : '#64748B', fontSize: 12, marginTop: 1, fontWeight: userIsSubscribed ? '600' : '400' }}>
+                <Text style={{ color: userIsSubscribed ? '#A855F7' : theme.mutedTextColor, fontSize: 12, marginTop: 1, fontWeight: userIsSubscribed ? '600' : '400' }}>
                   Current plan: {activePlanName}{daysRemainingStr}
                 </Text>
-                <Text style={{ color: userAdFree ? '#10B981' : '#94A3B8', fontSize: 11, marginTop: 1 }}>
+                <Text style={{ color: userAdFree ? '#10B981' : theme.mutedTextColor, fontSize: 11, marginTop: 1 }}>
                   {userAdFree ? '✨ Ad-Free Playback Active' : '📺 Ad-Supported Viewing'}
                 </Text>
               </View>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
 
             {/* 2. Watch History Section */}
@@ -340,7 +343,7 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
@@ -349,16 +352,16 @@ export function ProfileScreen({ navigation }: any) {
                 <Clock size={20} color="#8B5CF6" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
                   Watch History
                 </Text>
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 1 }}>
                   {history.length} watched videos in progress
                 </Text>
               </View>
               <ChevronRight
                 size={18}
-                color="#475569"
+                color={theme.mutedTextColor}
                 style={activeSection === 'history' ? { transform: [{ rotate: '90deg' }] } : undefined}
               />
             </Pressable>
@@ -378,7 +381,7 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
@@ -387,14 +390,14 @@ export function ProfileScreen({ navigation }: any) {
                 <Download size={20} color="#10B981" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
                   Downloads
                 </Text>
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 1 }}>
                   {downloadedVideoList.length} Downloads
                 </Text>
               </View>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
 
             {/* 4. Saved Content */}
@@ -412,7 +415,7 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
@@ -421,14 +424,14 @@ export function ProfileScreen({ navigation }: any) {
                 <Bookmark size={20} color="#3B82F6" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
                   Saved Content
                 </Text>
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 1 }}>
                   {savedVideos.length + savedPlaylists.length} bookmarked items
                 </Text>
               </View>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
 
             {/* 5. Liked Videos */}
@@ -446,7 +449,7 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
@@ -455,14 +458,14 @@ export function ProfileScreen({ navigation }: any) {
                 <Heart size={20} color="#EF4444" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: '#F1F5F9', fontSize: 15, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
                   Liked Videos
                 </Text>
-                <Text style={{ color: '#64748B', fontSize: 12, marginTop: 1 }}>
+                <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 1 }}>
                   {likedVideos.length} liked videos
                 </Text>
               </View>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
 
             {/* 6. Logout */}
@@ -480,7 +483,7 @@ export function ProfileScreen({ navigation }: any) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: '#181926',
+                  backgroundColor: theme.cardBackgroundColor,
                   justifyContent: 'center',
                   alignItems: 'center',
                   marginRight: 14,
@@ -498,7 +501,7 @@ export function ProfileScreen({ navigation }: any) {
               >
                 {userIsLoggedIn ? 'Logout' : 'Log In'}
               </Text>
-              <ChevronRight size={18} color="#475569" />
+              <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
           </View>
 
@@ -506,7 +509,7 @@ export function ProfileScreen({ navigation }: any) {
           {activeSection === 'history' && (
             <View style={{ marginTop: 8 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>
+                <Text style={{ color: theme.primaryTextColor, fontSize: 16, fontWeight: '700' }}>
                   Watch History
                 </Text>
                 {history.length > 0 && (
@@ -541,7 +544,7 @@ export function ProfileScreen({ navigation }: any) {
           {/* Expandable Section Display */}
           {activeSection === 'downloads' && (
             <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
+              <Text style={{ color: theme.primaryTextColor, fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
                 Saved Offline Downloads ({downloadedVideoList.length})
               </Text>
               <VerticalList
@@ -559,7 +562,7 @@ export function ProfileScreen({ navigation }: any) {
 
           {activeSection === 'saved' && (
             <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
+              <Text style={{ color: theme.primaryTextColor, fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
                 Saved Videos ({savedVideos.length})
               </Text>
               <VerticalList
@@ -576,7 +579,7 @@ export function ProfileScreen({ navigation }: any) {
 
           {activeSection === 'liked' && (
             <View style={{ marginTop: 8 }}>
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
+              <Text style={{ color: theme.primaryTextColor, fontSize: 16, fontWeight: '700', marginBottom: 10 }}>
                 Liked Videos ({likedVideos.length})
               </Text>
               <VerticalList
@@ -616,13 +619,13 @@ export function ProfileScreen({ navigation }: any) {
         >
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={[styles.modalTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Edit Profile</Text>
               <Pressable
                 onPress={() => setShowEditModal(false)}
                 hitSlop={8}
                 style={styles.modalCloseBtn}
               >
-                <X size={20} color="#94A3B8" />
+                <X size={20} color={theme.mutedTextColor} />
               </Pressable>
             </View>
 
@@ -632,11 +635,11 @@ export function ProfileScreen({ navigation }: any) {
                 {editPhotoUrl ? (
                   <Image source={{ uri: editPhotoUrl }} style={styles.previewAvatarImg} />
                 ) : (
-                  <Text style={styles.avatarInitials}>{getInitials(editName || currentUser.name)}</Text>
+                  <Text style={[styles.avatarInitials, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{getInitials(editName || currentUser.name)}</Text>
                 )}
               </View>
 
-              <Text style={styles.avatarPickerLabel}>Choose Profile Picture</Text>
+              <Text style={[styles.avatarPickerLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Choose Profile Picture</Text>
               <View style={styles.curatedAvatarsRow}>
                 {CURATED_AVATARS.map((url, idx) => {
                   const isSelected = editPhotoUrl === url;
@@ -657,22 +660,22 @@ export function ProfileScreen({ navigation }: any) {
             </View>
 
             {/* Custom Photo URL or File URI */}
-            <Text style={styles.inputLabel}>Custom Photo URL / File URI</Text>
+            <Text style={[styles.inputLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Custom Photo URL / File URI</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
               placeholder="https://... or file:///..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.mutedTextColor}
               autoCapitalize="none"
               value={editPhotoUrl}
               onChangeText={setEditPhotoUrl}
             />
 
             {/* Display Name Input */}
-            <Text style={styles.inputLabel}>Display Name</Text>
+            <Text style={[styles.inputLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Display Name</Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
               placeholder="Your full name"
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.mutedTextColor}
               value={editName}
               onChangeText={setEditName}
               autoCapitalize="words"
@@ -719,9 +722,9 @@ export function ProfileScreen({ navigation }: any) {
               disabled={savingProfile}
             >
               {savingProfile ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
+                <ActivityIndicator color={theme.primaryTextColor} size="small" />
               ) : (
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                <Text style={[styles.saveBtnText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Save Changes</Text>
               )}
             </Pressable>
           </View>

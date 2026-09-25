@@ -1,6 +1,6 @@
-import { API_BASE_URL, getCreatorId, setCreatorId } from '../../constants/config';
-import { refreshAccessToken, loginAsGuest } from './authService';
-
+import { API_BASE_URL, getCreatorId, setCreatorId, API_BASE_PATH } from '../../constants/config';
+import { loginAsGuest } from './authService';
+import { Alert } from 'react-native';
 export class ApiError extends Error {
   status: number;
   body?: unknown;
@@ -142,9 +142,9 @@ export async function apiRequest<T>(
     try {
       isRefreshing = true;
       try {
-        await refreshAccessToken();
-      } catch {
         await loginAsGuest();
+      } catch (e) {
+        console.warn('Guest fallback failed:', e);
       }
       isRefreshing = false;
 

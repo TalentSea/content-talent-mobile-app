@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   FlatList,
@@ -17,6 +18,8 @@ import { getThumbnailForVideo } from '../../utils/thumbnailUtils';
 import { styles } from './styles';
 
 export function PlaylistScreen({ navigation }: any) {
+  const { theme } = useAppTheme();
+
   const { videos } = useVideos();
   const [playlists, setPlaylists] = useState<PlaylistListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,18 +77,18 @@ export function PlaylistScreen({ navigation }: any) {
   }, [playlists, searchQuery]);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Header Bar */}
       <View style={styles.header}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={[styles.backIcon, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>‹</Text>
         </Pressable>
 
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>All Playlists</Text>
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>All Playlists</Text>
+          <Text style={[styles.headerSubtitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
             {playlists.length} {playlists.length === 1 ? 'Playlist' : 'Playlists'}
           </Text>
         </View>
@@ -96,9 +99,9 @@ export function PlaylistScreen({ navigation }: any) {
       {/* Search Filter Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Search color="#9CA3AF" size={16} />
+          <Search color={theme.mutedTextColor} size={16} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
             placeholder="Search playlists..."
             placeholderTextColor="#6B7280"
             value={searchQuery}
@@ -106,7 +109,7 @@ export function PlaylistScreen({ navigation }: any) {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={() => setSearchQuery('')}>
-              <Text style={styles.clearSearchText}>Clear</Text>
+              <Text style={[styles.clearSearchText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Clear</Text>
             </Pressable>
           )}
         </View>
@@ -127,7 +130,7 @@ export function PlaylistScreen({ navigation }: any) {
       ) : filteredPlaylists.length === 0 ? (
         <View style={styles.emptyContainer}>
           <ListVideo color="#4B5563" size={48} />
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
             {searchQuery
               ? `No playlists found matching "${searchQuery}"`
               : 'No playlists available.'}
@@ -137,7 +140,7 @@ export function PlaylistScreen({ navigation }: any) {
               style={styles.resetSearchBtn}
               onPress={() => setSearchQuery('')}
             >
-              <Text style={styles.resetSearchText}>Show all playlists</Text>
+              <Text style={[styles.resetSearchText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Show all playlists</Text>
             </Pressable>
           )}
         </View>
@@ -153,7 +156,7 @@ export function PlaylistScreen({ navigation }: any) {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#FFFFFF"
+              tintColor={theme.primaryTextColor}
             />
           }
           renderItem={({ item }) => (
@@ -178,16 +181,16 @@ export function PlaylistScreen({ navigation }: any) {
               <View style={styles.cardGradientOverlay}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.badge}>
-                    <Layers color="#FFFFFF" size={11} />
-                    <Text style={styles.badgeText}>{item.video_count || 0}</Text>
+                    <Layers color={theme.primaryTextColor} size={11} />
+                    <Text style={[styles.badgeText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{item.video_count || 0}</Text>
                   </View>
                 </View>
 
                 <View style={styles.cardBottom}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>
+                  <Text style={[styles.cardTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={styles.cardMeta}>
+                  <Text style={[styles.cardMeta, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>
                     {item.video_count || 0} {item.video_count === 1 ? 'Video' : 'Videos'}
                   </Text>
                 </View>

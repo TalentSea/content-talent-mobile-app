@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -158,6 +159,8 @@ export default function NativeVideoPlayer({
   onProgress,
   onAdEvent,
 }: VideoPlayerProps) {
+  const { theme } = useAppTheme();
+  const styles = createStyles(theme);
   const playerRef = useRef<any>(null);
   const hasSentLoadEventRef = useRef(false);
 
@@ -1040,7 +1043,7 @@ export default function NativeVideoPlayer({
                   <Text style={[
                     styles.speedText,
                     selectedQuality === '1080p Full HD' && styles.speedTextActive,
-                    planTier !== 'premium' && { color: '#9CA3AF' },
+                    planTier !== 'premium' && { color: theme.mutedTextColor },
                   ]}>
                     {planTier === 'premium' ? '1080p Full HD' : '1080p HD 🔒 (Requires Premium Plan)'}
                     {selectedQuality === '1080p Full HD' ? '  ✓' : ''}
@@ -1161,7 +1164,7 @@ export default function NativeVideoPlayer({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   container: {
     width: '100%',
     height: '100%',
@@ -1199,7 +1202,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   subtitleText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
@@ -1236,7 +1239,7 @@ const styles = StyleSheet.create({
   },
   backIconText: {
     fontSize: 24,
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontWeight: '300',
   },
   backIconTextFullscreen: {
@@ -1245,7 +1248,7 @@ const styles = StyleSheet.create({
   playerTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     flex: 1,
   },
   topBarRight: {
@@ -1279,7 +1282,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.primaryTextColor,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1307,15 +1310,15 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   ytIconButtonActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.primaryTextColor,
     borderRadius: 4,
   },
   ccBadgeText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 12,
     fontWeight: '800',
     borderWidth: 1,
-    borderColor: '#FFFFFF',
+    borderColor: theme.primaryTextColor,
     paddingHorizontal: 4,
     borderRadius: 2,
   },
@@ -1330,10 +1333,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     borderWidth: 1,
-    borderColor: '#FFFFFF',
+    borderColor: theme.primaryTextColor,
     paddingHorizontal: 4,
     borderRadius: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.primaryTextColor,
   },
   darkCcTextFullscreen: {
     fontSize: 14,
@@ -1342,7 +1345,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   ytSpeedText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1367,7 +1370,7 @@ const styles = StyleSheet.create({
     height: 80,
   },
   ytSkipText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 10,
     fontWeight: '600',
     position: 'absolute',
@@ -1419,7 +1422,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   timeText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -1525,7 +1528,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.primaryTextColor,
     position: 'absolute',
     top: -3,
     marginLeft: -5,
@@ -1541,7 +1544,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 50,
     right: 16,
-    backgroundColor: '#1E1E2E',
+    backgroundColor: theme.borderColor,
     borderRadius: 8,
     padding: 8,
     minWidth: 150,
@@ -1551,7 +1554,7 @@ const styles = StyleSheet.create({
   menuHeaderTitle: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: theme.mutedTextColor,
     marginBottom: 6,
     paddingHorizontal: 8,
   },
@@ -1560,7 +1563,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   speedText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 13,
   },
   speedTextActive: {
@@ -1574,14 +1577,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   errorBox: {
-    backgroundColor: '#1E1E2E',
+    backgroundColor: theme.borderColor,
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
     maxWidth: '80%',
   },
   errorText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     textAlign: 'center',
     fontSize: 13,
     marginBottom: 12,
@@ -1593,7 +1596,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   retryText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontWeight: '700',
     fontSize: 12,
   },
@@ -1610,7 +1613,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cdnFallbackText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
@@ -1629,7 +1632,7 @@ const styles = StyleSheet.create({
     elevation: 3500,
   },
   downloadToastText: {
-    color: '#FFFFFF',
+    color: theme.primaryTextColor,
     fontSize: 12,
     fontWeight: '600',
   },

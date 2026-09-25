@@ -87,8 +87,8 @@ export const styles = StyleSheet.create({
   // Category card
   card: {
     width: '48%',
-    height: 175,
-    borderRadius: 22,
+    height: 140,
+    borderRadius: 14,
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
@@ -96,13 +96,13 @@ export const styles = StyleSheet.create({
     backgroundColor: '#0D1117',
   },
   cardBackgroundImage: {
-    ...StyleSheet.absoluteFillObject,
+    ...(StyleSheet.absoluteFill as any),
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
   },
   cardOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...(StyleSheet.absoluteFill as any),
     backgroundColor: 'rgba(10, 15, 28, 0.65)',
     padding: 14,
     justifyContent: 'space-between',

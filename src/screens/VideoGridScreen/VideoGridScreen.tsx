@@ -1,3 +1,4 @@
+import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
   FlatList,
@@ -27,6 +28,8 @@ import { styles } from './styles';
 import { getCleanViewCountForVideo } from '../../services/viewTracker';
 
 export function VideoGridScreen({ route, navigation }: any) {
+  const { theme } = useAppTheme();
+
   const { section } = route.params || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -139,7 +142,7 @@ export function VideoGridScreen({ route, navigation }: any) {
   }, [isSaved, isLiked]);
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <SafeAreaView style={[styles.screen, { backgroundColor: theme.mainBackgroundColor }]}>
       <StatusBar barStyle="light-content" />
 
       {/* Header with Back Button & Title */}
@@ -149,10 +152,10 @@ export function VideoGridScreen({ route, navigation }: any) {
           onPress={() => navigation.goBack()}
           hitSlop={10}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Text style={[styles.backIcon, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>‹</Text>
         </Pressable>
 
-        <Text style={styles.expandedTitle}>{title}</Text>
+        <Text style={[styles.expandedTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{title}</Text>
         <View style={styles.backButtonSpacer} />
       </View>
 
@@ -170,7 +173,7 @@ export function VideoGridScreen({ route, navigation }: any) {
             }}
             onPress={() => setActiveMediaTab('videos')}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Videos ({baseVideos.length})</Text>
+            <Text style={{ color: theme.primaryTextColor, fontWeight: '700', fontSize: 13 }}>Videos ({baseVideos.length})</Text>
           </Pressable>
 
           <Pressable
@@ -184,7 +187,7 @@ export function VideoGridScreen({ route, navigation }: any) {
             }}
             onPress={() => setActiveMediaTab('playlists')}
           >
-            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Playlists ({activePlaylistsList.length})</Text>
+            <Text style={{ color: theme.primaryTextColor, fontWeight: '700', fontSize: 13 }}>Playlists ({activePlaylistsList.length})</Text>
           </Pressable>
         </View>
       )}
@@ -192,9 +195,9 @@ export function VideoGridScreen({ route, navigation }: any) {
       {/* Search Input Bar (Shown for Popular, Recently Added, etc.) */}
       {showSearchAndTabs && (
         <View style={styles.searchBarContainer}>
-          <Search size={16} color="#9CA3AF" style={styles.searchIcon} />
+          <Search size={16} color={theme.mutedTextColor} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
             placeholder="Search videos..."
             placeholderTextColor="#6B7280"
             value={searchQuery}
@@ -246,10 +249,10 @@ export function VideoGridScreen({ route, navigation }: any) {
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700', marginBottom: 4 }} numberOfLines={1}>
+                  <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700', marginBottom: 4 }} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={{ color: '#9CA3AF', fontSize: 12 }} numberOfLines={1}>
+                  <Text style={{ color: theme.mutedTextColor, fontSize: 12 }} numberOfLines={1}>
                     {typeof item.video_count === 'number'
                       ? `${item.video_count} ${item.video_count === 1 ? 'video' : 'videos'}`
                       : 'Playlist'}
@@ -259,7 +262,7 @@ export function VideoGridScreen({ route, navigation }: any) {
             );
           }}
           ListEmptyComponent={
-            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+            <Text style={{ color: theme.mutedTextColor, fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
               {isSaved ? 'No saved playlists found.' : 'No liked playlists found.'}
             </Text>
           }

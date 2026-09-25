@@ -1,9 +1,9 @@
 import { StyleSheet } from 'react-native';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: any) => StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#05050A',
+        backgroundColor: theme.mainBackgroundColor,
     },
     keyboardView: {
         flex: 1,
@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
     },
     iconGradientLayer1: {
         ...StyleSheet.absoluteFill,
-        backgroundColor: '#6366F1', // Indigo
+        backgroundColor: theme.primaryColor, // Indigo
         borderRadius: 20,
     },
     iconGradientLayer2: {
@@ -50,14 +50,14 @@ export const styles = StyleSheet.create({
         paddingLeft: 3,
     },
     brandTitle: {
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 22,
         fontWeight: '900',
         letterSpacing: 0.5,
         marginBottom: 4,
     },
     brandSubtitle: {
-        color: '#9CA3AF',
+        color: theme.mutedTextColor,
         fontSize: 13,
         fontWeight: '500',
         textAlign: 'center',
@@ -89,7 +89,7 @@ export const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 23,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         letterSpacing: -0.2,
     },
     headerLinkRow: {
@@ -98,7 +98,7 @@ export const styles = StyleSheet.create({
     },
     headerLinkText: {
         fontSize: 12.5,
-        color: '#9CA3AF',
+        color: theme.mutedTextColor,
     },
     headerLinkAction: {
         fontSize: 12.5,
@@ -117,11 +117,11 @@ export const styles = StyleSheet.create({
         borderRadius: 10,
         paddingHorizontal: 15,
         fontSize: 14.5,
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         backgroundColor: '#0B0B13',
     },
     inputFocused: {
-        borderColor: '#6366F1',
+        borderColor: theme.primaryColor,
         backgroundColor: '#0E0E1A',
     },
     inputRow: {
@@ -165,12 +165,12 @@ export const styles = StyleSheet.create({
         backgroundColor: '#0B0B13',
     },
     checkboxChecked: {
-        backgroundColor: '#6366F1',
-        borderColor: '#6366F1',
+        backgroundColor: theme.primaryColor,
+        borderColor: theme.primaryColor,
     },
     checkboxLabel: {
         fontSize: 12.5,
-        color: '#9CA3AF',
+        color: theme.mutedTextColor,
         flexShrink: 1,
     },
     checkboxLink: {
@@ -180,26 +180,26 @@ export const styles = StyleSheet.create({
 
     // ── Primary Action Button (Indigo/Blue) ──
     primaryButton: {
-        backgroundColor: '#6366F1',
+        backgroundColor: theme.primaryColor,
         borderRadius: 10,
         height: 48,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#6366F1',
+        shadowColor: theme.primaryColor,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.35,
         shadowRadius: 10,
         elevation: 4,
     },
     primaryButtonPressed: {
-        backgroundColor: '#4F46E5',
+        backgroundColor: theme.activeStateColor,
         opacity: 0.9,
     },
     primaryButtonDisabled: {
         opacity: 0.6,
     },
     primaryButtonText: {
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 15.5,
         fontWeight: '700',
         letterSpacing: 0.3,
@@ -280,7 +280,7 @@ export const styles = StyleSheet.create({
         marginRight: 6,
     },
     facebookBadgeText: {
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 12.5,
         fontWeight: '800',
         lineHeight: 14,
@@ -298,7 +298,7 @@ export const styles = StyleSheet.create({
         padding: 8,
     },
     guestSkipText: {
-        color: '#9CA3AF',
+        color: theme.mutedTextColor,
         fontSize: 13,
         fontWeight: '600',
     },
@@ -315,10 +315,10 @@ export const styles = StyleSheet.create({
         height: 56,
         backgroundColor: '#0A0A14',
         borderWidth: 1.5,
-        borderColor: '#4F46E5',
+        borderColor: theme.activeStateColor,
         borderRadius: 14,
         paddingHorizontal: 16,
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 26,
         fontWeight: '800',
         letterSpacing: 10,
@@ -337,7 +337,7 @@ export const styles = StyleSheet.create({
         fontSize: 13,
     },
     resendLink: {
-        color: '#6366F1',
+        color: theme.primaryColor,
         fontSize: 13,
         fontWeight: '700',
     },
@@ -380,7 +380,7 @@ export const styles = StyleSheet.create({
         marginBottom: 12,
     },
     modalTitle: {
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 19,
         fontWeight: '800',
     },
@@ -398,7 +398,7 @@ export const styles = StyleSheet.create({
     socialCardTitle: {
         fontSize: 22,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         letterSpacing: -0.3,
         marginBottom: 6,
     },
@@ -408,7 +408,7 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
     },
     fullSocialButtonGoogle: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.primaryTextColor,
         height: 52,
         borderRadius: 12,
         justifyContent: 'center',
@@ -446,7 +446,7 @@ export const styles = StyleSheet.create({
         width: 26,
         height: 26,
         borderRadius: 13,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.primaryTextColor,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
@@ -466,7 +466,7 @@ export const styles = StyleSheet.create({
         width: 24,
         height: 24,
         borderRadius: 12,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: theme.primaryTextColor,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
@@ -478,7 +478,7 @@ export const styles = StyleSheet.create({
         marginTop: -1,
     },
     fullSocialButtonFacebookText: {
-        color: '#FFFFFF',
+        color: theme.primaryTextColor,
         fontSize: 15.5,
         fontWeight: '700',
         letterSpacing: 0.2,
