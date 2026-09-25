@@ -43,9 +43,12 @@ import {
     UserProfile,
 } from '../../services/api/authService';
 import { DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
+import { fetchMobileBrandingApi } from '../../services/api/brandingApi';
+import { useAppTheme } from '../../context/ThemeContext';
 import { styles } from './styles';
 
 export function LoginScreen({ route, navigation, initialMode }: any) {
+    const { setTheme, setBranding } = useAppTheme();
     const defaultMode = initialMode || route?.params?.mode || 'login';
     const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
 
@@ -529,6 +532,17 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                 authRes?.refresh_token || `${provider}_session`,
                 finalUser,
             );
+
+            // Fetch branding now that we have a token
+            try {
+                const brandingData = await fetchMobileBrandingApi();
+                if (brandingData) {
+                    setBranding(brandingData);
+                    if (brandingData.colors) setTheme(brandingData.colors);
+                }
+            } catch (err) {
+                console.warn(`[LoginScreen] Branding fetch error for ${provider}:`, err);
+            }
 
             navigateToHome();
         } catch (error) {

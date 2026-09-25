@@ -24,28 +24,24 @@ export function RootNavigator() {
         async function runUnifiedBootstrap() {
             try {
                 // Unified single-trip bootstrap:
-                // 1. Restore auth session from disk
-                // 2. Fetch live studio branding + 9 dynamic theme color tokens
-                const [authResult, brandingResult] = await Promise.allSettled([
-                    restoreStoredSession(),
-                    fetchMobileBrandingApi(),
-                ]);
-
-                // Intercept branding payload & dynamic colors
-                if (brandingResult.status === 'fulfilled' && brandingResult.value) {
-                    const brandingData = brandingResult.value;
-                    if (isMounted) {
-                        setBranding(brandingData);
-                        if (brandingData.colors) {
-                            setTheme(brandingData.colors);
-                        }
-                    }
-                }
-
-                const user = authResult.status === 'fulfilled' ? authResult.value : null;
+                // 1. Restore auth session from disk FIRST to inject the JWT token
+                const user = await restoreStoredSession();
                 const loggedIn = isUserLoggedIn();
 
                 if (user && loggedIn && isMounted) {
+                    // 2. ONLY fetch branding AFTER session is restored, since it requires Authorization header
+                    try {
+                        const brandingData = await fetchMobileBrandingApi();
+                        if (brandingData && isMounted) {
+                            setBranding(brandingData);
+                            if (brandingData.colors) {
+                                setTheme(brandingData.colors);
+                            }
+                        }
+                    } catch (bErr) {
+                        console.warn('[RootNavigator] Branding fetch failed:', bErr);
+                    }
+
                     console.log('[RootNavigator] Initial session restored for logged-in user:', user.name);
                     setInitialRoute('MainTabs');
                 } else if (isMounted) {

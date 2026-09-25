@@ -87,6 +87,18 @@ export function normalizeVideoItem(item: any): import('../../../types/video').Ap
     }
   }
 
+  // Format integer duration to MM:SS string
+  let formattedDuration = item.duration;
+  if (typeof item.duration === 'number') {
+    const mins = Math.floor(item.duration / 60);
+    const secs = item.duration % 60;
+    formattedDuration = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  } else if (typeof item.duration === 'string') {
+    formattedDuration = item.duration;
+  } else {
+    formattedDuration = null;
+  }
+
   const streamUrl = getDistinctStreamUrlForVideo(item);
 
   let rawHlsUrl = item.hls_stream_url || item.playback_url || item.stream_url;
@@ -105,6 +117,7 @@ export function normalizeVideoItem(item: any): import('../../../types/video').Ap
     likes: finalLikes,
     views_count: finalViews,
     likes_count: finalLikes,
+    duration: formattedDuration,
     main_thumbnail_url: thumbUrl,
     hls_stream_url: rawHlsUrl,
     playback_url: streamUrl,
@@ -127,12 +140,7 @@ export async function fetchVideos(
   try {
     const query = new URLSearchParams();
 
-<<<<<<< HEAD
-=======
-    const cid = getCreatorId();
-    // Creator ID is passed in the auth token
 
->>>>>>> 22e82306 (feat: unify app bootstrap, implement dynamic theming, and optimize network sync)
     if (params.search !== undefined) {
       query.set('search', params.search);
     }
@@ -150,13 +158,25 @@ export async function fetchVideos(
     query.set('limit', String(params.limit ?? 50));
 
     // Mobile Videos Endpoint (/api/v1/mobile/videos)
-    const response = await apiGet<PaginatedVideosResponse>(
+    const response = await apiGet<any>(
       `/api/v1/mobile/videos?${query.toString()}`,
     );
-    if (response && Array.isArray(response.items)) {
+    if (response) {
+      let items: any[] = [];
+      if (Array.isArray(response.items)) {
+        items = response.items;
+      } else if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (Array.isArray(response)) {
+        items = response;
+      }
+
       return {
-        ...response,
-        items: response.items.map(normalizeVideoItem),
+        total: response.total ?? items.length,
+        page: response.page ?? params.page ?? 1,
+        limit: response.limit ?? params.limit ?? 50,
+        total_pages: response.total_pages ?? 1,
+        items: items.map(normalizeVideoItem),
       };
     }
 

@@ -122,7 +122,7 @@ export async function fetchPlaylistVideos(
 ): Promise<PaginatedPlaylistVideosResponse> {
   try {
     const query = new URLSearchParams();
-<<<<<<< HEAD
+
     query.set('page', String(page));
     query.set('limit', String(limit));
 

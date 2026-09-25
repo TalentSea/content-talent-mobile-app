@@ -101,7 +101,7 @@ export function HomeScreen({ navigation }: any) {
       }
     }
     loadLiveMobileData();
-  }, [videos]);
+  }, [videos.length]);
 
   // Max video count limits per section:
   // 1. Recently Added: up to 15 videos
@@ -122,7 +122,7 @@ export function HomeScreen({ navigation }: any) {
   // Build Hero Banner Carousel items directly from the backend featured videos response
   const heroItems: HeroItem[] = apiBanners.map((b, idx) => {
     const matchingVideo = videos.find(v => v.id === b.id);
-    
+
     return {
       id: `hero_banner_${b.id}_${idx}`,
       type: 'video',

@@ -23,8 +23,11 @@ export type MobileCategoryItem = {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
     return {
-      ...response,
-      items: response.items.map(normalizeVideoItem),
+      total: response.total ?? items.length,
+      page: response.page ?? 1,
+      limit: response.limit ?? 20,
+      total_pages: response.total_pages ?? 1,
+      items: items.map(normalizeVideoItem),
     };
   } catch (error) {
     console.warn('[fetchUserWatchHistoryApi] Mobile API notice:', error);
@@ -35,13 +38,23 @@ export type MobileCategoryItem = {
 export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/continue-watching
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/continue-watching`);
-    if (!response || !response.items) {
+    const response = await apiGet<any>(`/api/v1/mobile/videos/continue-watching`);
+    let items: any[] = [];
+    if (response) {
+      if (Array.isArray(response.items)) items = response.items;
+      else if (Array.isArray(response.data)) items = response.data;
+      else if (Array.isArray(response)) items = response;
+    }
+    
+    if (items.length === 0) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
     return {
-      ...response,
-      items: response.items.map(normalizeVideoItem),
+      total: response.total ?? items.length,
+      page: response.page ?? 1,
+      limit: response.limit ?? 20,
+      total_pages: response.total_pages ?? 1,
+      items: items.map(normalizeVideoItem),
     };
   } catch (error) {
     console.warn('[fetchUserContinueWatchingApi] Mobile API notice:', error);
@@ -97,13 +110,23 @@ export async function removeVideoWatchHistoryApi(videoId: number): Promise<Actio
 export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/liked
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/liked`);
-    if (!response || !response.items) {
+    const response = await apiGet<any>(`/api/v1/mobile/videos/liked`);
+    let items: any[] = [];
+    if (response) {
+      if (Array.isArray(response.items)) items = response.items;
+      else if (Array.isArray(response.data)) items = response.data;
+      else if (Array.isArray(response)) items = response;
+    }
+    
+    if (items.length === 0) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
     return {
-      ...response,
-      items: response.items.map(normalizeVideoItem),
+      total: response.total ?? items.length,
+      page: response.page ?? 1,
+      limit: response.limit ?? 20,
+      total_pages: response.total_pages ?? 1,
+      items: items.map(normalizeVideoItem),
     };
   } catch (error) {
     console.warn('[fetchUserLikedVideosApi] Mobile API notice:', error);
@@ -123,13 +146,23 @@ export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean 
 export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/saved
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/saved`);
-    if (!response || !response.items) {
+    const response = await apiGet<any>(`/api/v1/mobile/videos/saved`);
+    let items: any[] = [];
+    if (response) {
+      if (Array.isArray(response.items)) items = response.items;
+      else if (Array.isArray(response.data)) items = response.data;
+      else if (Array.isArray(response)) items = response;
+    }
+    
+    if (items.length === 0) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
     return {
-      ...response,
-      items: response.items.map(normalizeVideoItem),
+      total: response.total ?? items.length,
+      page: response.page ?? 1,
+      limit: response.limit ?? 20,
+      total_pages: response.total_pages ?? 1,
+      items: items.map(normalizeVideoItem),
     };
   } catch (error) {
     console.warn('[fetchUserSavedVideosApi] Mobile API notice:', error);
@@ -174,7 +207,7 @@ export async function recordAdImpressionApi(
   }
 }
 
-<<<<<<< HEAD
+
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   // Consumer app category list is available at GET /api/v1/categories. It delivers active, published categories sorted by display order.
   const endpoints = [
@@ -210,5 +243,3 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
   return [];
 }
 
-=======
->>>>>>> 22e82306 (feat: unify app bootstrap, implement dynamic theming, and optimize network sync)

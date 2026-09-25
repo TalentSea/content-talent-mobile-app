@@ -19,9 +19,10 @@ export async function fetchFeaturedVideosApi(): Promise<FeaturedVideo[]> {
   try {
     const rawRes = await apiGet<FeaturedVideo[]>(`/api/v1/mobile/featured-videos`);
     
-    // Unconfigured Fallback: returns empty array
-    if (Array.isArray(rawRes)) {
-      return rawRes;
+    if (rawRes) {
+      if (Array.isArray(rawRes)) return rawRes;
+      if (Array.isArray(rawRes.items)) return rawRes.items;
+      if (Array.isArray(rawRes.data)) return rawRes.data;
     }
   } catch (e) {
     console.warn('[fetchFeaturedVideosApi] Error fetching /api/v1/mobile/featured-videos:', e);
