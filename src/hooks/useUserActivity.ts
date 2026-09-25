@@ -4,6 +4,7 @@ import {
   getSavedVideos,
   getLikedPlaylists,
   getSavedPlaylists,
+  getSavedShorts,
   isVideoLiked,
   isVideoSaved,
   subscribeUserActivity,
@@ -13,15 +14,19 @@ import {
   toggleLikePlaylist,
   isPlaylistSaved,
   toggleSavePlaylist,
+  isShortSaved,
+  toggleSaveShort,
   PlaylistActivityItem,
 } from '../services/userActivity';
 import type { ApiVideo } from '../types/video';
+import type { ShortItem } from '../services/api/shortsApi';
 
 export function useUserActivity(availableVideos: ApiVideo[] = []) {
   const [likedVideos, setLikedVideos] = useState<ApiVideo[]>(getLikedVideos);
   const [savedVideos, setSavedVideos] = useState<ApiVideo[]>(getSavedVideos);
   const [likedPlaylists, setLikedPlaylists] = useState<PlaylistActivityItem[]>(getLikedPlaylists);
   const [savedPlaylists, setSavedPlaylists] = useState<PlaylistActivityItem[]>(getSavedPlaylists);
+  const [savedShorts, setSavedShorts] = useState<ShortItem[]>(getSavedShorts);
 
   useEffect(() => {
     let mounted = true;
@@ -31,6 +36,7 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
       setSavedVideos(getSavedVideos());
       setLikedPlaylists(getLikedPlaylists());
       setSavedPlaylists(getSavedPlaylists());
+      setSavedShorts(getSavedShorts());
     };
     update();
     const unsubscribe = subscribeUserActivity(update);
@@ -63,6 +69,7 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
     savedVideos: filteredSavedVideos,
     likedPlaylists,
     savedPlaylists,
+    savedShorts,
     isVideoLiked,
     isVideoSaved,
     toggleLikeVideo,
@@ -71,5 +78,7 @@ export function useUserActivity(availableVideos: ApiVideo[] = []) {
     toggleLikePlaylist,
     isPlaylistSaved,
     toggleSavePlaylist,
+    isShortSaved,
+    toggleSaveShort,
   };
 }

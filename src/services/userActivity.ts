@@ -33,10 +33,13 @@ export type PlaylistActivityItem = {
   video_count?: number;
 };
 
+import type { ShortItem } from './api/shortsApi';
+
 let likedVideosStore: ApiVideo[] = [];
 let savedVideosStore: ApiVideo[] = [];
 let savedPlaylistsStore: PlaylistActivityItem[] = [];
 let likedPlaylistsStore: PlaylistActivityItem[] = [];
+let savedShortsStore: ShortItem[] = [];
 
 let globalLikesCounts: Record<string, number> = {};
 let globalUserLikesMap: Record<string, Record<string, boolean>> = {};
@@ -56,6 +59,7 @@ async function persistUserActivityToDisk() {
       saved: savedVideosStore,
       savedPlaylists: savedPlaylistsStore,
       likedPlaylists: likedPlaylistsStore,
+      savedShorts: savedShortsStore,
     });
     await RNFS.writeFile(filePath, data, 'utf8');
   } catch (err) {
@@ -74,6 +78,7 @@ async function restoreUserActivityFromDisk() {
       savedVideosStore = parsed && Array.isArray(parsed.saved) ? parsed.saved : [];
       savedPlaylistsStore = parsed && Array.isArray(parsed.savedPlaylists) ? parsed.savedPlaylists : [];
       likedPlaylistsStore = parsed && Array.isArray(parsed.likedPlaylists) ? parsed.likedPlaylists : [];
+      savedShortsStore = parsed && Array.isArray(parsed.savedShorts) ? parsed.savedShorts : [];
       notifyActivityListeners();
       return;
     }
@@ -81,6 +86,7 @@ async function restoreUserActivityFromDisk() {
     savedVideosStore = [];
     savedPlaylistsStore = [];
     likedPlaylistsStore = [];
+    savedShortsStore = [];
     notifyActivityListeners();
   } catch (err) {
     console.warn('[userActivity] Disk restore notice:', err);
@@ -88,6 +94,7 @@ async function restoreUserActivityFromDisk() {
     savedVideosStore = [];
     savedPlaylistsStore = [];
     likedPlaylistsStore = [];
+    savedShortsStore = [];
     notifyActivityListeners();
   }
 }
@@ -417,6 +424,32 @@ export function getSavedVideos(availableVideos?: ApiVideo[]): ApiVideo[] {
     return savedVideosStore.filter(v => availableIds.has(v.id));
   }
   return [...savedVideosStore];
+}
+
+export function isShortSaved(shortId: number | string): boolean {
+  return savedShortsStore.some(s => String(s.id) === String(shortId));
+}
+
+export function toggleSaveShort(short: ShortItem): boolean {
+  const index = savedShortsStore.findIndex(s => String(s.id) === String(short.id));
+  let isNowSaved = false;
+
+  if (index >= 0) {
+    savedShortsStore.splice(index, 1);
+    isNowSaved = false;
+  } else {
+    savedShortsStore.unshift({ ...short, isSaved: true });
+    isNowSaved = true;
+  }
+
+  notifyActivityListeners();
+  persistUserActivityToDisk();
+
+  return isNowSaved;
+}
+
+export function getSavedShorts(): ShortItem[] {
+  return [...savedShortsStore];
 }
 
 export async function resetAllVideoLikesToZero(): Promise<void> {

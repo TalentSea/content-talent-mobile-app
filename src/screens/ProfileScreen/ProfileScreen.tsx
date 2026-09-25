@@ -1,32 +1,26 @@
 import { useAppTheme } from '../../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StatusBar,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
   Bookmark,
-  Camera,
   Check,
   ChevronLeft,
   ChevronRight,
   Clock,
   Crown,
   Download,
-  Edit2,
   Heart,
   HelpCircle,
   LogIn,
@@ -51,21 +45,11 @@ import {
   isUserSubscribed,
   isUserAdFree,
   subscribeAuthChange,
-  updateSubscriberProfile,
-  uploadSubscriberProfilePhoto,
 } from '../../services/api/authService';
 import { fetchUserSubscriptionStatus, LiveSubscriptionDTO } from '../../services/api/subscriptionApi';
 import type { DownloadedVideoItem } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
-
-const CURATED_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces',
-];
 
 function getInitials(name?: string | null): string {
   if (!name) return 'AK';
@@ -82,12 +66,6 @@ export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
   const [activeSection, setActiveSection] = useState<'history' | 'downloads' | 'saved' | 'liked' | null>('history');
   const [liveSub, setLiveSub] = useState<LiveSubscriptionDTO | null>(null);
-
-  // Edit Profile Modal State
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editPhotoUrl, setEditPhotoUrl] = useState('');
-  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -116,7 +94,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const { videos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
-  const { savedVideos, likedVideos, savedPlaylists } = useUserActivity(videos);
+  const { savedVideos, likedVideos, savedPlaylists, savedShorts } = useUserActivity(videos);
   const { history, removeWatchHistoryItem, clearWatchHistory } = useWatchHistory(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
@@ -228,10 +206,6 @@ export function ProfileScreen({ navigation }: any) {
             onPress={() => {
               if (!userIsLoggedIn) {
                 navigation?.navigate('Login');
-              } else {
-                setEditName(currentUser.name || '');
-                setEditPhotoUrl(currentUser.avatar_url || '');
-                setShowEditModal(true);
               }
             }}
           >
@@ -241,33 +215,13 @@ export function ProfileScreen({ navigation }: any) {
               ) : (
                 <Text style={[styles.avatarInitials, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{getInitials(currentUser.name)}</Text>
               )}
-              {userIsLoggedIn && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: -2,
-                    right: -2,
-                    backgroundColor: '#6366F1',
-                    borderRadius: 10,
-                    width: 20,
-                    height: 20,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderWidth: 2,
-                    borderColor: '#12121E',
-                  }}
-                >
-                  <Edit2 size={10} color={theme.primaryTextColor} />
-                </View>
-              )}
             </View>
 
             <View style={styles.userInfoContainer}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[styles.userNameText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{currentUser.name}</Text>
-                {userIsLoggedIn && <Edit2 size={13} color="#818CF8" />}
+                <Text style={[styles.userNameText, { color: theme.primaryTextColor }]}>{currentUser.name}</Text>
               </View>
-              <Text style={[styles.userEmailText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{currentUser.email || 'guest@streamr.app'}</Text>
+              <Text style={[styles.userEmailText, { color: theme.primaryTextColor }]}>{currentUser.email || 'guest@streamr.app'}</Text>
               <View style={styles.membershipRow}>
                 <Crown size={14} color={userIsSubscribed ? '#A855F7' : theme.mutedTextColor} />
                 <Text style={[styles.membershipText, !userIsSubscribed && { color: theme.mutedTextColor }, { color: theme.primaryTextColor }]}>
@@ -276,7 +230,9 @@ export function ProfileScreen({ navigation }: any) {
               </View>
             </View>
 
-            <ChevronRight color={theme.mutedTextColor} size={20} style={styles.cardChevron} />
+            {!userIsLoggedIn && (
+              <ChevronRight color={theme.mutedTextColor} size={20} style={styles.cardChevron} />
+            )}
           </Pressable>
 
           {/* Profile Menu List */}
@@ -400,7 +356,7 @@ export function ProfileScreen({ navigation }: any) {
               <ChevronRight size={18} color={theme.mutedTextColor} />
             </Pressable>
 
-            {/* 4. Saved Content */}
+            {/* 4. Saved Section (Videos, Playlists, Shorts) */}
             <Pressable
               style={{
                 flexDirection: 'row',
@@ -425,10 +381,10 @@ export function ProfileScreen({ navigation }: any) {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: theme.primaryTextColor, fontSize: 15, fontWeight: '700' }}>
-                  Saved Content
+                  Saved
                 </Text>
                 <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 1 }}>
-                  {savedVideos.length + savedPlaylists.length} bookmarked items
+                  {savedVideos.length} videos • {savedPlaylists.length} playlists • {savedShorts.length} shorts
                 </Text>
               </View>
               <ChevronRight size={18} color={theme.mutedTextColor} />
@@ -606,130 +562,6 @@ export function ProfileScreen({ navigation }: any) {
         onClose={closePlayer}
       />
 
-      {/* ── Edit Profile Modal ── */}
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.modalBackdrop}
-        >
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Edit Profile</Text>
-              <Pressable
-                onPress={() => setShowEditModal(false)}
-                hitSlop={8}
-                style={styles.modalCloseBtn}
-              >
-                <X size={20} color={theme.mutedTextColor} />
-              </Pressable>
-            </View>
-
-            {/* Avatar Preview & Selection */}
-            <View style={styles.avatarPickerSection}>
-              <View style={styles.previewAvatarWrapper}>
-                {editPhotoUrl ? (
-                  <Image source={{ uri: editPhotoUrl }} style={styles.previewAvatarImg} />
-                ) : (
-                  <Text style={[styles.avatarInitials, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>{getInitials(editName || currentUser.name)}</Text>
-                )}
-              </View>
-
-              <Text style={[styles.avatarPickerLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Choose Profile Picture</Text>
-              <View style={styles.curatedAvatarsRow}>
-                {CURATED_AVATARS.map((url, idx) => {
-                  const isSelected = editPhotoUrl === url;
-                  return (
-                    <Pressable
-                      key={idx}
-                      style={[
-                        styles.curatedAvatarBtn,
-                        isSelected && styles.curatedAvatarBtnSelected,
-                      ]}
-                      onPress={() => setEditPhotoUrl(url)}
-                    >
-                      <Image source={{ uri: url }} style={styles.curatedAvatarImg} />
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Custom Photo URL or File URI */}
-            <Text style={[styles.inputLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Custom Photo URL / File URI</Text>
-            <TextInput
-              style={[styles.textInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
-              placeholder="https://... or file:///..."
-              placeholderTextColor={theme.mutedTextColor}
-              autoCapitalize="none"
-              value={editPhotoUrl}
-              onChangeText={setEditPhotoUrl}
-            />
-
-            {/* Display Name Input */}
-            <Text style={[styles.inputLabel, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Display Name</Text>
-            <TextInput
-              style={[styles.textInput, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}
-              placeholder="Your full name"
-              placeholderTextColor={theme.mutedTextColor}
-              value={editName}
-              onChangeText={setEditName}
-              autoCapitalize="words"
-            />
-
-            {/* Save Button */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.saveBtn,
-                pressed && styles.saveBtnPressed,
-                savingProfile && styles.saveBtnDisabled,
-              ]}
-              onPress={async () => {
-                const cleanName = editName.trim();
-                if (!cleanName) {
-                  Alert.alert('Edit Profile', 'Please enter a valid display name.');
-                  return;
-                }
-
-                try {
-                  setSavingProfile(true);
-
-                  // 1. Update Name if modified (PATCH /api/v1/mobile/auth/profile)
-                  if (cleanName !== currentUser.name) {
-                    await updateSubscriberProfile(cleanName);
-                  }
-
-                  // 2. Upload / Update Photo if modified (POST /api/v1/mobile/auth/profile/photo)
-                  if (editPhotoUrl && editPhotoUrl !== currentUser.avatar_url) {
-                    await uploadSubscriberProfilePhoto(editPhotoUrl);
-                  }
-
-                  setShowEditModal(false);
-                  setUser(getCurrentUser());
-                  Alert.alert('Profile Saved', 'Your profile details have been updated.');
-                } catch (err: any) {
-                  console.warn('[EditProfile] Save error:', err);
-                  const msg = err?.detail || err?.message || 'Could not update profile.';
-                  Alert.alert('Update Notice', msg);
-                } finally {
-                  setSavingProfile(false);
-                }
-              }}
-              disabled={savingProfile}
-            >
-              {savingProfile ? (
-                <ActivityIndicator color={theme.primaryTextColor} size="small" />
-              ) : (
-                <Text style={[styles.saveBtnText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Save Changes</Text>
-              )}
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }

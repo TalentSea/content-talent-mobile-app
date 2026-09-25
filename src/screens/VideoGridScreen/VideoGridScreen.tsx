@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Search } from 'lucide-react-native';
+import { Bookmark, Play, Search } from 'lucide-react-native';
 
 import { CategoryTabs } from '../../components/CategoryTabs';
 import { VerticalList } from '../../components/VerticalList';
@@ -34,11 +34,11 @@ export function VideoGridScreen({ route, navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [categories, setCategories] = useState<string[]>(['All']);
-  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists'>('videos');
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists' | 'shorts'>('videos');
 
   const { videos, popularVideos, processingVideos, loading, reload } = useVideos();
   const { downloadedVideos } = useDownloads(videos);
-  const { savedVideos, likedVideos, savedPlaylists, likedPlaylists } = useUserActivity(videos);
+  const { savedVideos, likedVideos, savedPlaylists, likedPlaylists, savedShorts, toggleSaveShort } = useUserActivity(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
 
   const downloadedVideoList: ApiVideo[] = downloadedVideos
@@ -87,7 +87,7 @@ export function VideoGridScreen({ route, navigation }: any) {
       : isDownloads
         ? 'Downloads'
         : isSaved
-          ? 'Saved Content'
+          ? 'Saved'
           : isLiked
             ? 'Liked Content'
             : 'Processing Videos';
@@ -159,12 +159,12 @@ export function VideoGridScreen({ route, navigation }: any) {
         <View style={styles.backButtonSpacer} />
       </View>
 
-      {/* Media Type Tabs (Videos / Playlists) for Saved Section */}
+      {/* Media Type Tabs (Videos / Playlists / Shorts) for Saved Section */}
       {isSaved && (
-        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14, gap: 10 }}>
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 14, gap: 8 }}>
           <Pressable
             style={{
-              paddingHorizontal: 20,
+              paddingHorizontal: 16,
               paddingVertical: 8,
               borderRadius: 20,
               backgroundColor: activeMediaTab === 'videos' ? '#E50914' : '#1C1D27',
@@ -178,7 +178,7 @@ export function VideoGridScreen({ route, navigation }: any) {
 
           <Pressable
             style={{
-              paddingHorizontal: 20,
+              paddingHorizontal: 16,
               paddingVertical: 8,
               borderRadius: 20,
               backgroundColor: activeMediaTab === 'playlists' ? '#E50914' : '#1C1D27',
@@ -188,6 +188,20 @@ export function VideoGridScreen({ route, navigation }: any) {
             onPress={() => setActiveMediaTab('playlists')}
           >
             <Text style={{ color: theme.primaryTextColor, fontWeight: '700', fontSize: 13 }}>Playlists ({activePlaylistsList.length})</Text>
+          </Pressable>
+
+          <Pressable
+            style={{
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+              backgroundColor: activeMediaTab === 'shorts' ? '#E50914' : '#1C1D27',
+              borderWidth: 1,
+              borderColor: activeMediaTab === 'shorts' ? '#E50914' : 'rgba(255, 255, 255, 0.08)',
+            }}
+            onPress={() => setActiveMediaTab('shorts')}
+          >
+            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>Shorts ({savedShorts.length})</Text>
           </Pressable>
         </View>
       )}
@@ -216,7 +230,138 @@ export function VideoGridScreen({ route, navigation }: any) {
       )}
 
       {/* Main Content Area */}
-      {(isSaved || isLiked) && activeMediaTab === 'playlists' ? (
+      {isSaved && activeMediaTab === 'shorts' ? (
+        <FlatList
+          data={savedShorts}
+          keyExtractor={(item, index) => `saved-short-${item.id}-${index}`}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 30, paddingTop: 6 }}
+          renderItem={({ item }) => {
+            const shortVideo: ApiVideo = {
+              id: item.id,
+              title: item.title,
+              description: item.description || null,
+              stream_url: item.streamUrl,
+              playback_url: item.streamUrl,
+              main_thumbnail_url: item.thumbnailUrl || null,
+              duration: item.duration ? String(item.duration) : null,
+              views_count: item.viewsCount || 0,
+              views: item.viewsCount || 0,
+              likes_count: item.likesCount || 0,
+              likes: item.likesCount || 0,
+              category: 'Shorts',
+              status: 'published',
+              tags: [],
+              encode_progress: 100,
+              is_playable: true,
+              published_at: item.publishedAt || null,
+              scheduled_at: null,
+              created_at: null,
+            };
+
+            return (
+              <Pressable
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  paddingVertical: 10,
+                  gap: 14,
+                  borderBottomWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.06)',
+                }}
+                onPress={() => playVideo(shortVideo)}
+              >
+                <View
+                  style={{
+                    width: 74,
+                    height: 106,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    backgroundColor: '#1C1D2A',
+                    position: 'relative',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {item.thumbnailUrl ? (
+                    <Image
+                      source={{ uri: item.thumbnailUrl }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                      <Play color="#818CF8" size={24} fill="#818CF8" />
+                    </View>
+                  )}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                      paddingHorizontal: 5,
+                      paddingVertical: 2,
+                      borderRadius: 4,
+                    }}
+                  >
+                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800' }}>SHORT</Text>
+                  </View>
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '700', lineHeight: 20, marginBottom: 4 }}
+                    numberOfLines={2}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text style={{ color: '#9CA3AF', fontSize: 12, marginBottom: 8 }} numberOfLines={1}>
+                    {item.creatorName || 'Creator'} • {item.viewsCount} views
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Pressable
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        backgroundColor: '#E50914',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 14,
+                      }}
+                      onPress={() => playVideo(shortVideo)}
+                    >
+                      <Play size={12} color="#FFFFFF" fill="#FFFFFF" />
+                      <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>Watch</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        backgroundColor: '#1E1F2E',
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 14,
+                      }}
+                      onPress={() => toggleSaveShort(item)}
+                    >
+                      <Bookmark size={12} color="#3B82F6" fill="#3B82F6" />
+                      <Text style={{ color: '#9CA3AF', fontSize: 12, fontWeight: '600' }}>Saved</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          }}
+          ListEmptyComponent={
+            <Text style={{ color: '#9CA3AF', fontSize: 13, textAlign: 'center', marginVertical: 30 }}>
+              No saved shorts yet. Tap "Save" while watching Shorts to view them here.
+            </Text>
+          }
+        />
+      ) : (isSaved || isLiked) && activeMediaTab === 'playlists' ? (
         <FlatList
           data={activePlaylistsList}
           keyExtractor={(item, index) => `fav-pl-${item.id}-${index}`}

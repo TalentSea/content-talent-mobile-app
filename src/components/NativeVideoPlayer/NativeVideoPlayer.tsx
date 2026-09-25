@@ -1,5 +1,5 @@
 import { useAppTheme } from '../../context/ThemeContext';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,6 +7,7 @@ import {
   findNodeHandle,
   Platform,
   Pressable,
+  StyleProp,
   StyleSheet,
   Text,
   UIManager,
@@ -119,14 +120,18 @@ type VideoPlayerProps = {
   onToggleAutoplay?: () => void;
   onToggleFullscreen?: () => void;
   onLoadRatio?: (ratio: number) => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   onClose?: () => void;
   onEnd?: () => void;
   onProgress?: (currentTime: number, duration: number, isAdPlaying?: boolean) => void;
   onAdEvent?: (eventType: string) => void;
 };
 
-export default function NativeVideoPlayer({
+export type NativeVideoPlayerRef = {
+  seekTo: (seconds: number) => void;
+};
+
+const NativeVideoPlayer = React.forwardRef<NativeVideoPlayerRef, VideoPlayerProps>(function NativeVideoPlayer({
   video,
   id,
   category,
@@ -158,7 +163,7 @@ export default function NativeVideoPlayer({
   onEnd,
   onProgress,
   onAdEvent,
-}: VideoPlayerProps) {
+}: VideoPlayerProps, ref: React.Ref<NativeVideoPlayerRef>) {
   const { theme } = useAppTheme();
   const styles = createStyles(theme);
   const playerRef = useRef<any>(null);
@@ -292,6 +297,10 @@ export default function NativeVideoPlayer({
       UIManager.dispatchViewManagerCommand(node, 1, [seconds]);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    seekTo,
+  }), []);
 
   const skipForward = () => {
     const newTime = Math.min(currentTime + 10, duration > 0 ? duration : currentTime + 10);
@@ -1162,7 +1171,9 @@ export default function NativeVideoPlayer({
       ) : null}
     </View>
   );
-}
+});
+
+export default NativeVideoPlayer;
 
 const createStyles = (theme: any) => StyleSheet.create({
   container: {

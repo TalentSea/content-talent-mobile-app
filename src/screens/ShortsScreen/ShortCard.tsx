@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Animated,
-  Image,
+  Dimensions,
+  PanResponder,
   Pressable,
   Share,
+  StyleSheet,
   Text,
   View,
 } from 'react-native';
 import {
+  Bookmark,
   Heart,
   MessageCircle,
   MoreHorizontal,
@@ -17,14 +20,19 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react-native';
-import NativeVideoPlayer from '../../components/NativeVideoPlayer/NativeVideoPlayer';
+import NativeVideoPlayer, { NativeVideoPlayerRef } from '../../components/NativeVideoPlayer/NativeVideoPlayer';
 import {
   ShortItem,
   toggleShortLikeApi,
+  toggleShortSaveApi,
   recordShortShareApi,
 } from '../../services/api/shortsApi';
+import { isShortSaved, toggleSaveShort } from '../../services/userActivity';
+import { triggerHaptic } from '../../utils/haptics';
 import { ShortsOptionsModal } from './ShortsOptionsModal';
 import { styles } from './styles';
+
+const { width: WINDOW_WIDTH } = Dimensions.get('window');
 
 type SubtitleCue = {
   start: number;
@@ -76,10 +84,9 @@ function generateAutoCues(title: string, desc?: string | null, totalDuration: nu
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 
-  // Group into readable subtitle phrases (3 to 5 words)
   const chunkSize = Math.max(3, Math.min(5, Math.ceil(words.length / 4)));
   const cues: SubtitleCue[] = [];
-  const cueDuration = 2.8; // 2.8s per phrase, ideal for reels/shorts readability
+  const cueDuration = 2.8;
   let curTime = 0.0;
 
   for (let i = 0; i < words.length; i += chunkSize) {
@@ -94,10 +101,18 @@ function generateAutoCues(title: string, desc?: string | null, totalDuration: nu
   return cues;
 }
 
+function formatTime(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 type ShortCardProps = {
   item: ShortItem;
   isActive: boolean;
+  isPlaybackAllowed?: boolean;
   isMuted: boolean;
+  cardHeight?: number;
   onToggleMute: () => void;
   onOpenComments?: (shortId: number) => void;
   onLikeToggle?: (shortId: number, isLiked: boolean, likesCount: number) => void;
@@ -106,20 +121,36 @@ type ShortCardProps = {
 export function ShortCard({
   item,
   isActive,
+  isPlaybackAllowed = true,
   isMuted,
+  cardHeight,
   onToggleMute,
   onOpenComments,
   onLikeToggle,
 }: ShortCardProps) {
+  const playerRef = useRef<NativeVideoPlayerRef>(null);
+
   const [userPaused, setUserPaused] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const [isLiked, setIsLiked] = useState(item.isLiked || false);
   const [likesCount, setLikesCount] = useState(item.likesCount || 0);
   const [commentsCount, setCommentsCount] = useState(item.commentsCount || 0);
+  const [isSaved, setIsSaved] = useState(() => isShortSaved(item.id) || !!item.isSaved);
+  const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  // Hold to Speed Up (2X Playback Rate like YouTube/TikTok)
+  const [isSpeedingUp, setIsSpeedingUp] = useState(false);
 
   // Playback & Timing State
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(item.duration || 30);
+
+  // Scrubber progress bar seeking state
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTargetTime, setScrubTargetTime] = useState<number | null>(null);
+
+  // Description expand/collapse state (...more)
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
 
   // Captions & Options Modal State
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -134,26 +165,33 @@ export function ShortCard({
   const lastTapRef = useRef<number>(0);
   const singleTapTimerRef = useRef<any>(null);
 
+  // Retention Milestones & Loop Telemetry Tracking
+  const milestonesFiredRef = useRef<Set<number>>(new Set());
+  const loopsCompletedRef = useRef<number>(0);
+
   useEffect(() => {
     setIsLiked(item.isLiked || false);
     setLikesCount(item.likesCount || 0);
     setCommentsCount(item.commentsCount || 0);
-  }, [item.id, item.isLiked, item.likesCount, item.commentsCount]);
+    setIsSaved(isShortSaved(item.id) || !!item.isSaved);
+  }, [item.id, item.isLiked, item.likesCount, item.commentsCount, item.isSaved]);
 
   useEffect(() => {
-    // Reset pause state when active index changes
     if (!isActive) {
       setUserPaused(false);
       setShowBadge(false);
       setShowHeartBurst(false);
+      setIsSpeedingUp(false);
+      setIsScrubbing(false);
+      setIsDescExpanded(false);
+      milestonesFiredRef.current.clear();
+      loopsCompletedRef.current = 0;
     }
   }, [isActive]);
 
-  // Load / Generate Subtitle Cues
+  // Load Subtitle Cues
   useEffect(() => {
     let isMounted = true;
-
-    // Check if the selected track corresponds to an external caption URL
     const trackItem = (item.captions || []).find(
       c => (c.srclang || '') === selectedTrack || (c.language || '') === selectedTrack
     );
@@ -167,14 +205,12 @@ export function ShortCard({
             setSubtitleCues(parsed.length > 0 ? parsed : generateAutoCues(item.title, item.description, duration));
           }
         })
-        .catch(err => {
-          console.warn('[ShortCard] Notice fetching VTT caption:', err);
+        .catch(() => {
           if (isMounted) {
             setSubtitleCues(generateAutoCues(item.title, item.description, duration));
           }
         });
     } else {
-      // Auto-generated cues from title & description
       setSubtitleCues(generateAutoCues(item.title, item.description, duration));
     }
 
@@ -183,6 +219,63 @@ export function ShortCard({
     };
   }, [item.id, item.title, item.description, item.captions, selectedTrack, duration]);
 
+  // Retention Telemetry Milestones (25%, 50%, 75%, 100%, and loop count)
+  useEffect(() => {
+    if (!isActive || duration <= 0) return;
+    const progressPercent = Math.floor((currentTime / duration) * 100);
+
+    const milestones = [25, 50, 75, 100];
+    for (const m of milestones) {
+      if (progressPercent >= m && !milestonesFiredRef.current.has(m)) {
+        milestonesFiredRef.current.add(m);
+      }
+    }
+
+    // Check video loop restart
+    if (currentTime >= duration - 0.6 && !milestonesFiredRef.current.has(100)) {
+      milestonesFiredRef.current.add(100);
+      loopsCompletedRef.current += 1;
+    } else if (currentTime < 1.0 && milestonesFiredRef.current.has(100)) {
+      // Loop restarted smoothly
+      milestonesFiredRef.current.clear();
+    }
+  }, [isActive, currentTime, duration, item.id]);
+
+  // PanResponder for Interactive Bottom Scrubber
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        setIsScrubbing(true);
+        triggerHaptic('selection');
+        const touchX = evt.nativeEvent.pageX;
+        const targetRatio = Math.max(0, Math.min(1, touchX / WINDOW_WIDTH));
+        const targetSec = targetRatio * (duration > 0 ? duration : 30);
+        setScrubTargetTime(targetSec);
+      },
+      onPanResponderMove: (evt) => {
+        const touchX = evt.nativeEvent.pageX;
+        const targetRatio = Math.max(0, Math.min(1, touchX / WINDOW_WIDTH));
+        const targetSec = targetRatio * (duration > 0 ? duration : 30);
+        setScrubTargetTime(targetSec);
+      },
+      onPanResponderRelease: () => {
+        if (scrubTargetTime !== null) {
+          playerRef.current?.seekTo(scrubTargetTime);
+          setCurrentTime(scrubTargetTime);
+          triggerHaptic('light');
+        }
+        setIsScrubbing(false);
+        setScrubTargetTime(null);
+      },
+      onPanResponderTerminate: () => {
+        setIsScrubbing(false);
+        setScrubTargetTime(null);
+      },
+    })
+  ).current;
+
   const triggerHeartBurst = () => {
     setShowHeartBurst(true);
     heartScale.setValue(0);
@@ -190,13 +283,13 @@ export function ShortCard({
 
     Animated.parallel([
       Animated.spring(heartScale, {
-        toValue: 1.2,
+        toValue: 1.25,
         friction: 4,
         useNativeDriver: true,
       }),
       Animated.timing(heartOpacity, {
         toValue: 0,
-        duration: 900,
+        duration: 850,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -206,6 +299,7 @@ export function ShortCard({
 
   const handleDoubleTap = async () => {
     triggerHeartBurst();
+    triggerHaptic('medium');
     if (!isLiked) {
       const nextLiked = true;
       const nextCount = likesCount + 1;
@@ -229,12 +323,12 @@ export function ShortCard({
     setShowBadge(true);
     setTimeout(() => {
       setShowBadge(false);
-    }, 800);
+    }, 700);
   };
 
   const handleSurfacePress = () => {
     const now = Date.now();
-    const DOUBLE_TAP_DELAY = 300;
+    const DOUBLE_TAP_DELAY = 280;
 
     if (now - lastTapRef.current < DOUBLE_TAP_DELAY) {
       if (singleTapTimerRef.current) {
@@ -253,6 +347,7 @@ export function ShortCard({
   };
 
   const handleToggleLike = async () => {
+    triggerHaptic('medium');
     const nextState = !isLiked;
     const nextCount = nextState ? likesCount + 1 : Math.max(0, likesCount - 1);
     setIsLiked(nextState);
@@ -273,7 +368,27 @@ export function ShortCard({
     }
   };
 
+  const handleToggleSave = () => {
+    triggerHaptic('light');
+    const nextSaved = toggleSaveShort(item);
+    setIsSaved(nextSaved);
+    setSaveToast(nextSaved ? 'Saved to your list' : 'Removed from saved');
+    setTimeout(() => {
+      setSaveToast(null);
+    }, 1500);
+
+    toggleShortSaveApi(item.id).catch(err =>
+      console.warn('[ShortCard] API save notice:', err)
+    );
+  };
+
+  const handleToggleSound = () => {
+    triggerHaptic('light');
+    onToggleMute();
+  };
+
   const handleShare = async () => {
+    triggerHaptic('light');
     try {
       recordShortShareApi(item.id).catch(() => {});
       const shareUrl = item.streamUrl || `streamr://shorts/${item.id}`;
@@ -293,42 +408,50 @@ export function ShortCard({
     return String(num);
   };
 
-  // Keep currentTime moving smoothly even if ExoPlayer progress event throttles or duration is unset
+  // Continuous timer ticker to keep UI moving smoothly
   useEffect(() => {
-    if (!isActive || userPaused) return;
+    if (!isActive || userPaused || !isPlaybackAllowed || isScrubbing) return;
+    const rate = isSpeedingUp ? 2.0 : 1.0;
+    const intervalMs = isSpeedingUp ? 125 : 250;
+
     const timer = setInterval(() => {
       setCurrentTime(prev => {
-        const next = prev + 0.25;
+        const next = prev + 0.25 * rate;
         const max = duration > 0 ? duration : 30;
         return next >= max ? 0 : next;
       });
-    }, 250);
+    }, intervalMs);
     return () => clearInterval(timer);
-  }, [isActive, userPaused, duration]);
+  }, [isActive, userPaused, isPlaybackAllowed, isScrubbing, isSpeedingUp, duration]);
 
-  // Find active subtitle cue based on playback currentTime (cycles seamlessly with video)
-  const activeCue = React.useMemo(() => {
+  // Find active subtitle cue for Dynamic Highlight / Karaoke Subtitles
+  const activeCueObj = useMemo(() => {
     if (!captionsEnabled || subtitleCues.length === 0) return null;
     const lastCue = subtitleCues[subtitleCues.length - 1];
     const totalCueTime = lastCue ? lastCue.end : 0;
     const timeInCycle = totalCueTime > 0 ? currentTime % totalCueTime : currentTime;
     const match = subtitleCues.find(c => timeInCycle >= c.start && timeInCycle < c.end);
-    return match ? match.text : subtitleCues[0]?.text || null;
+    return match || subtitleCues[0] || null;
   }, [captionsEnabled, subtitleCues, currentTime]);
 
+  const activeProgressSec = isScrubbing && scrubTargetTime !== null ? scrubTargetTime : currentTime;
+  const progressRatio = duration > 0 ? Math.min(1, Math.max(0, activeProgressSec / duration)) : 0;
+
   return (
-    <View style={styles.shortCard}>
+    <View style={[styles.shortCard, cardHeight ? { height: cardHeight } : null]}>
       {/* Video Player */}
       <NativeVideoPlayer
+        ref={playerRef}
         uri={item.streamUrl}
-        autoStart={isActive && !userPaused}
+        autoStart={isActive && isPlaybackAllowed && !userPaused}
         controls={false}
         loop={true}
         muted={isMuted}
+        playbackRate={isSpeedingUp ? 2.0 : 1.0}
         resizeMode="cover"
-        style={styles.playerStyle}
+        style={StyleSheet.flatten([styles.playerStyle, cardHeight ? { height: cardHeight } : null])}
         onProgress={(cur, dur) => {
-          if (typeof cur === 'number' && !isNaN(cur)) {
+          if (!isScrubbing && typeof cur === 'number' && !isNaN(cur)) {
             setCurrentTime(cur);
           }
           if (typeof dur === 'number' && dur > 0) {
@@ -337,8 +460,21 @@ export function ShortCard({
         }}
       />
 
-      {/* Tap Overlay (Handles single tap for Play/Pause and double tap for Like) */}
-      <Pressable style={styles.touchableOverlay} onPress={handleSurfacePress}>
+      {/* Tap Overlay (single tap = pause/play, double tap = like, hold = 2X speed) */}
+      <Pressable
+        style={styles.touchableOverlay}
+        onPress={handleSurfacePress}
+        onLongPress={() => {
+          setIsSpeedingUp(true);
+          triggerHaptic('medium');
+        }}
+        onPressOut={() => {
+          if (isSpeedingUp) {
+            setIsSpeedingUp(false);
+          }
+        }}
+        delayLongPress={350}
+      >
         {showBadge && (
           <View style={styles.playPauseBadge}>
             {userPaused ? (
@@ -366,24 +502,63 @@ export function ShortCard({
         )}
       </Pressable>
 
-      {/* Subtitle Cue Overlay (when Captions are ON) */}
-      {captionsEnabled && activeCue ? (
-        <View style={styles.shortsSubtitleOverlay} pointerEvents="none">
+      {/* 2X Speed Floating Indicator (when holding down screen) */}
+      {isSpeedingUp && (
+        <View style={styles.speedPillIndicator} pointerEvents="none">
+          <Play size={13} color="#FFFFFF" fill="#FFFFFF" />
+          <Play size={13} color="#FFFFFF" fill="#FFFFFF" style={{ marginLeft: -5 }} />
+          <Text style={styles.speedPillText}>2X Speed</Text>
+        </View>
+      )}
+
+      {/* Dynamic Highlight / Karaoke Subtitles Overlay (Auto-adjusted higher when description expanded) */}
+      {captionsEnabled && activeCueObj ? (
+        <View
+          style={[
+            styles.shortsSubtitleOverlay,
+            { bottom: isDescExpanded ? 180 : 90 },
+          ]}
+          pointerEvents="none"
+        >
           <View style={styles.shortsSubtitleBox}>
             <Text style={styles.shortsSubtitleText}>
-              {activeCue}
+              {(() => {
+                const words = activeCueObj.text.split(/\s+/).filter(Boolean);
+                const cueDur = Math.max(0.1, activeCueObj.end - activeCueObj.start);
+                const cycleTime = subtitleCues[subtitleCues.length - 1]?.end
+                  ? currentTime % subtitleCues[subtitleCues.length - 1].end
+                  : currentTime;
+                const elapsedInCue = Math.max(0, cycleTime - activeCueObj.start);
+                const progressRatioCue = Math.min(1, elapsedInCue / cueDur);
+                const currentWordIdx = Math.floor(progressRatioCue * words.length);
+
+                return words.map((word, wIdx) => {
+                  const isSpoken = wIdx <= currentWordIdx;
+                  return (
+                    <Text
+                      key={wIdx}
+                      style={{
+                        color: isSpoken ? '#FACC15' : '#E2E8F0',
+                        fontWeight: isSpoken ? '900' : '600',
+                      }}
+                    >
+                      {word}{' '}
+                    </Text>
+                  );
+                });
+              })()}
             </Text>
           </View>
         </View>
       ) : null}
 
-      {/* Right Sidebar Action Icons */}
+      {/* Right Sidebar Action Icons (matching YouTube Shorts / Image 2 with transparent background) */}
       <View style={styles.rightSidebar}>
         {/* Like Button */}
         <Pressable style={styles.actionButton} onPress={handleToggleLike}>
-          <View style={styles.iconCircle}>
+          <View style={styles.actionIconContainer}>
             <Heart
-              size={24}
+              size={28}
               color={isLiked ? '#EF4444' : '#FFFFFF'}
               fill={isLiked ? '#EF4444' : 'transparent'}
             />
@@ -394,29 +569,51 @@ export function ShortCard({
         {/* Comments Button */}
         <Pressable
           style={styles.actionButton}
-          onPress={() => onOpenComments?.(item.id)}
+          onPress={() => {
+            triggerHaptic('light');
+            onOpenComments?.(item.id);
+          }}
         >
-          <View style={styles.iconCircle}>
-            <MessageCircle size={24} color="#FFFFFF" />
+          <View style={styles.actionIconContainer}>
+            <MessageCircle size={28} color="#FFFFFF" fill="transparent" />
           </View>
           <Text style={styles.actionText}>{formatCount(commentsCount)}</Text>
         </Pressable>
 
+        {/* Save Button */}
+        <Pressable style={styles.actionButton} onPress={handleToggleSave}>
+          <View style={styles.actionIconContainer}>
+            <Bookmark
+              size={28}
+              color={isSaved ? '#38BDF8' : '#FFFFFF'}
+              fill={isSaved ? '#38BDF8' : 'transparent'}
+            />
+          </View>
+          <Text
+            style={[
+              styles.actionText,
+              isSaved && { color: '#38BDF8', fontWeight: '800' },
+            ]}
+          >
+            {isSaved ? 'Saved' : 'Save'}
+          </Text>
+        </Pressable>
+
         {/* Share Button */}
         <Pressable style={styles.actionButton} onPress={handleShare}>
-          <View style={styles.iconCircle}>
-            <Share2 size={24} color="#FFFFFF" />
+          <View style={styles.actionIconContainer}>
+            <Share2 size={28} color="#FFFFFF" fill="transparent" />
           </View>
           <Text style={styles.actionText}>Share</Text>
         </Pressable>
 
         {/* Mute / Unmute Toggle Button */}
-        <Pressable style={styles.actionButton} onPress={onToggleMute}>
-          <View style={styles.iconCircle}>
+        <Pressable style={styles.actionButton} onPress={handleToggleSound}>
+          <View style={styles.actionIconContainer}>
             {isMuted ? (
-              <VolumeX size={24} color="#EF4444" />
+              <VolumeX size={28} color="#EF4444" />
             ) : (
-              <Volume2 size={24} color="#FFFFFF" />
+              <Volume2 size={28} color="#FFFFFF" />
             )}
           </View>
           <Text style={styles.actionText}>{isMuted ? 'Muted' : 'Sound'}</Text>
@@ -425,19 +622,14 @@ export function ShortCard({
         {/* More Options (...) & Caption Settings Button */}
         <Pressable
           style={styles.actionButton}
-          onPress={() => setShowOptionsModal(true)}
+          onPress={() => {
+            triggerHaptic('light');
+            setShowOptionsModal(true);
+          }}
         >
-          <View
-            style={[
-              styles.iconCircle,
-              captionsEnabled && {
-                borderColor: '#818CF8',
-                backgroundColor: 'rgba(99, 102, 241, 0.25)',
-              },
-            ]}
-          >
+          <View style={styles.actionIconContainer}>
             <MoreHorizontal
-              size={24}
+              size={28}
               color={captionsEnabled ? '#818CF8' : '#FFFFFF'}
             />
           </View>
@@ -452,11 +644,101 @@ export function ShortCard({
         </Pressable>
       </View>
 
-      {/* Bottom Info Overlay (without @username) */}
+      {/* Save Action Overlay Banner Toast */}
+      {saveToast && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 70,
+            alignSelf: 'center',
+            backgroundColor: 'rgba(15, 23, 42, 0.92)',
+            paddingHorizontal: 16,
+            paddingVertical: 10,
+            borderRadius: 24,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            borderWidth: 1,
+            borderColor: 'rgba(59, 130, 246, 0.4)',
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.35,
+            shadowRadius: 8,
+            elevation: 6,
+            zIndex: 99,
+          }}
+          pointerEvents="none"
+        >
+          <Bookmark size={16} color="#38BDF8" fill={isSaved ? '#38BDF8' : 'transparent'} />
+          <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+            {saveToast}
+          </Text>
+        </View>
+      )}
+
+      {/* Bottom Info Overlay (without username or avatar, positioned like in Image 2) */}
       <View style={styles.bottomInfoContainer}>
-        <Text style={styles.shortTitleText} numberOfLines={2}>
-          {item.title} {item.description ? `• ${item.description}` : ''}
-        </Text>
+        <View>
+          <Text
+            style={styles.shortTitleText}
+            numberOfLines={isDescExpanded ? undefined : 2}
+          >
+            <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>{item.title}</Text>
+            {item.description ? (
+              <Text style={{ fontWeight: '400', color: '#E2E8F0' }}>
+                {' '}• {item.description}
+              </Text>
+            ) : null}
+          </Text>
+
+          {/* Expandable Description Toggle: ...more / less */}
+          {(item.description || (item.title && item.title.length > 50)) && (
+            <Pressable
+              onPress={() => {
+                triggerHaptic('light');
+                setIsDescExpanded(prev => !prev);
+              }}
+              hitSlop={8}
+              style={{ alignSelf: 'flex-start', marginTop: 2, marginBottom: 2 }}
+            >
+              <Text style={{ color: '#CBD5E1', fontSize: 13, fontWeight: '800' }}>
+                {isDescExpanded ? 'less' : '...more'}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
+
+      {/* Interactive Scrubber Progress Bar at the Bottom of Card */}
+      <View style={styles.scrubberContainer} {...panResponder.panHandlers}>
+        <View style={[styles.scrubberTrack, isScrubbing && styles.scrubberTrackActive]}>
+          <View
+            style={[
+              styles.scrubberProgress,
+              { width: `${progressRatio * 100}%` },
+              isScrubbing && styles.scrubberProgressActive,
+            ]}
+          />
+        </View>
+
+        {/* Scrubbing Live Time Bubble */}
+        {isScrubbing && (
+          <View
+            style={[
+              styles.scrubIndicatorPill,
+              {
+                left: Math.max(
+                  16,
+                  Math.min(WINDOW_WIDTH - 88, progressRatio * WINDOW_WIDTH - 36)
+                ),
+              },
+            ]}
+          >
+            <Text style={styles.scrubIndicatorText}>
+              {formatTime(activeProgressSec)} / {formatTime(duration)}
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Shorts Options & Captions Settings Modal */}
@@ -472,4 +754,3 @@ export function ShortCard({
     </View>
   );
 }
-
