@@ -58,8 +58,6 @@ export async function fetchPlaylists(
 ): Promise<PaginatedPlaylistsResponse> {
   try {
     const query = new URLSearchParams();
-    const cid = getCreatorId();
-    if (cid) query.set('creator_id', String(cid));
     if (search) query.set('search', search);
     query.set('page', String(page));
     query.set('limit', String(limit));
@@ -97,9 +95,8 @@ export async function fetchPlaylistDetails(
   playlistId: number,
 ): Promise<PlaylistDetails> {
   try {
-    const cid = getCreatorId();
     // GET /api/v1/mobile/playlists/{playlist_id} — Get Playlist Details & Video Feed
-    const response = await apiGet<any>(`/api/v1/mobile/playlists/${playlistId}?creator_id=${cid}`);
+    const response = await apiGet<any>(`/api/v1/mobile/playlists/${playlistId}`);
     if (response) {
       const details = response.data || response;
       return {
@@ -121,8 +118,6 @@ export async function fetchPlaylistVideos(
 ): Promise<PaginatedPlaylistVideosResponse> {
   try {
     const query = new URLSearchParams();
-    const cid = getCreatorId();
-    if (cid) query.set('creator_id', String(cid));
     query.set('page', String(page));
     query.set('limit', String(limit));
 

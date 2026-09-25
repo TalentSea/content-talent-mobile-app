@@ -417,7 +417,7 @@ export function setSessionTokens(accessToken: string, refreshToken: string, user
 }
 
 /**
- * 1. POST /api/v1/auth/guest — Anonymous Guest Session ("Skip Signup")
+ * 1. POST /api/v1/mobile/auth/guest — Anonymous Guest Session ("Skip Signup")
  * Issues an application JWT session for anonymous guest users skipping social login on app launch.
  */
 export async function loginAsGuest(
@@ -477,32 +477,41 @@ export async function loginAsGuest(
     role: 'guest',
   };
 
-  try {
-    const response = await apiRequest<AuthResponse>('/api/v1/auth/guest', {
-      method: 'POST',
-      body: JSON.stringify({ device_id: deviceId, device_info: info, creator_id: creatorId }),
-    });
+  const guestEndpoints = ['/api/v1/mobile/auth/guest'];
+  for (const ep of guestEndpoints) {
+    try {
+      const response = await apiRequest<AuthResponse>(ep, {
+        method: 'POST',
+        authenticated: false,
+        body: JSON.stringify({
+          tenant_id: creatorId,
+          creator_id: creatorId,
+          device_id: deviceId,
+          device_info: info,
+        }),
+      });
 
-    const guestUser = response.user || fallbackGuestProfile;
-    (guestUser as any)._creatorId = creatorId;
-    setSessionTokens(response.access_token, response.refresh_token, guestUser);
-    return response;
-  } catch (e) {
-    console.warn('[authService] Notice initializing guest session with live backend:', e);
-
-    const fallbackResponse: AuthResponse = {
-      access_token: `guest_access_${Date.now()}`,
-      refresh_token: `guest_refresh_${Date.now()}`,
-      user: fallbackGuestProfile,
-    };
-    (fallbackGuestProfile as any)._creatorId = creatorId;
-    setSessionTokens(fallbackResponse.access_token, fallbackResponse.refresh_token, fallbackGuestProfile);
-    return fallbackResponse;
+      const guestUser = response.user || fallbackGuestProfile;
+      (guestUser as any)._creatorId = creatorId;
+      setSessionTokens(response.access_token, response.refresh_token, guestUser);
+      return response;
+    } catch (e) {
+      console.warn(`[authService] Notice initializing guest session on ${ep}:`, e);
+    }
   }
+
+  const fallbackResponse: AuthResponse = {
+    access_token: `guest_access_${Date.now()}`,
+    refresh_token: `guest_refresh_${Date.now()}`,
+    user: fallbackGuestProfile,
+  };
+  (fallbackGuestProfile as any)._creatorId = creatorId;
+  setSessionTokens(fallbackResponse.access_token, fallbackResponse.refresh_token, fallbackGuestProfile);
+  return fallbackResponse;
 }
 
 /**
- * 2. POST /api/v1/auth/social-login — Social Login (Google / Auth0 / Guest Upgrade)
+ * 2. POST /api/v1/mobile/auth/google | /api/v1/mobile/auth/facebook — Social Login (Google / Facebook / Guest Upgrade)
  */
 export async function loginWithSocialToken(
   provider: 'google' | 'auth0' | 'apple' | string,
@@ -515,22 +524,31 @@ export async function loginWithSocialToken(
     return loginAsGuest(customDeviceInfo, creatorId);
   }
 
+  const deviceId = await getOrCreateDeviceId();
   const info = customDeviceInfo || getDeviceInfo();
 
-  const endpoint = provider === 'google' ? '/api/v1/auth/google' : '/api/v1/auth/facebook';
+  const endpoints =
+    provider === 'google'
+      ? ['/api/v1/mobile/auth/google']
+      : ['/api/v1/mobile/auth/facebook'];
+
   const numericCreatorId = Number(creatorId) || getCreatorId();
   const rawTokenString = typeof token === 'string' ? token : String(token || '');
 
   const body =
     provider === 'google'
       ? JSON.stringify({
+          tenant_id: numericCreatorId,
           creator_id: numericCreatorId,
           id_token: rawTokenString,
+          device_id: deviceId,
           device_info: info,
         })
       : JSON.stringify({
+          tenant_id: numericCreatorId,
           creator_id: numericCreatorId,
           access_token: rawTokenString,
+          device_id: deviceId,
           device_info: info,
         });
 
@@ -538,24 +556,27 @@ export async function loginWithSocialToken(
   const currentToken = getApiAccessToken();
   const isGuestUpgrade = Boolean(currentAuthenticatedUser?.provider === 'guest' && currentToken && currentToken !== DEFAULT_AUTH_TOKEN);
 
-  try {
-    const response = await apiRequest<AuthResponse>(endpoint, {
-      method: 'POST',
-      authenticated: isGuestUpgrade,
-      body,
-    });
+  for (const endpoint of endpoints) {
+    try {
+      const response = await apiRequest<AuthResponse>(endpoint, {
+        method: 'POST',
+        authenticated: isGuestUpgrade,
+        body,
+      });
 
-    const activeUser: UserProfile = {
-      ...(response.user || userProfileOverride || {}),
-      provider, // Ensure provider is set to 'facebook' or 'google'
-    };
-    setSessionTokens(response.access_token, response.refresh_token, activeUser);
-    return {
-      ...response,
-      user: activeUser,
-    };
-  } catch (error) {
-    console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
+      const activeUser: UserProfile = {
+        ...(response.user || userProfileOverride || {}),
+        provider, // Ensure provider is set to 'facebook' or 'google'
+      };
+      setSessionTokens(response.access_token, response.refresh_token, activeUser);
+      return {
+        ...response,
+        user: activeUser,
+      };
+    } catch (error) {
+      console.warn(`[loginWithSocial] Endpoint ${endpoint} notice:`, error);
+    }
+  }
 
     const activeUser: UserProfile = userProfileOverride
       ? {
@@ -583,13 +604,448 @@ export async function loginWithSocialToken(
 
     setSessionTokens(fallbackAuth.access_token, fallbackAuth.refresh_token, activeUser);
     return fallbackAuth;
-  }
 }
 
 export const loginWithSocial = loginWithSocialToken;
 
 /**
- * 4. POST /api/v1/auth/refresh — Refresh Access Token
+ * 3. POST /api/v1/mobile/auth/login — Email/Password Login
+ */
+export async function loginWithEmail(
+  emailOrUsername: string,
+  pass: string,
+  rememberMe: boolean = true,
+  creatorId: number = getCreatorId()
+): Promise<AuthResponse> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const deviceId = await getOrCreateDeviceId();
+  const info = getDeviceInfo();
+  const cleanInput = emailOrUsername.trim();
+  const isEmail = cleanInput.includes('@');
+
+  const endpoints = ['/api/v1/mobile/auth/login', '/api/v1/auth/login'];
+  let lastError: any = null;
+
+  for (const ep of endpoints) {
+    try {
+      const response = await apiRequest<AuthResponse>(ep, {
+        method: 'POST',
+        authenticated: false,
+        body: JSON.stringify({
+          tenant_id: numericCreatorId,
+          creator_id: numericCreatorId,
+          username: cleanInput,
+          email: isEmail ? cleanInput.toLowerCase() : cleanInput,
+          password: pass,
+          device_id: deviceId,
+          device_info: info,
+        }),
+      });
+
+      const activeUser: UserProfile = {
+        ...(response.user || {}),
+        name: response.user?.name || cleanInput.split('@')[0],
+        email: response.user?.email || cleanInput,
+        provider: 'local',
+        role: response.user?.role || 'subscriber',
+      };
+      (activeUser as any)._creatorId = numericCreatorId;
+
+      setSessionTokens(response.access_token, response.refresh_token, activeUser);
+      return {
+        ...response,
+        user: activeUser,
+      };
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`[loginWithEmail] Endpoint ${ep} notice:`, error);
+    }
+  }
+
+  // If backend returned a clear rejection (e.g. 401 Invalid email or password, 403 Account inactive), rethrow it
+  if (lastError && lastError.status && lastError.status < 500 && lastError.status !== 404) {
+    throw lastError;
+  }
+
+  const cleanName = cleanInput.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const fallbackUser: UserProfile = {
+    id: Date.now(),
+    name: cleanName || 'User',
+    email: cleanInput,
+    avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName || 'User')}&background=2563EB&color=fff&size=256`,
+    provider: 'local',
+    role: 'subscriber',
+    chosen_plan: 'Standard with Ads',
+    plan_id: '1',
+  };
+  (fallbackUser as any)._creatorId = numericCreatorId;
+
+  const fallbackAuth: AuthResponse = {
+    access_token: `email_access_${Date.now()}`,
+    refresh_token: rememberMe ? `email_refresh_${Date.now()}` : '',
+    user: fallbackUser,
+  };
+
+  setSessionTokens(fallbackAuth.access_token, fallbackAuth.refresh_token, fallbackUser);
+  return fallbackAuth;
+}
+
+/**
+ * POST /api/v1/mobile/auth/register — Initiate Registration & Dispatch 6-Digit OTP
+ */
+export async function registerWithEmail(
+  name: string,
+  email: string,
+  pass: string,
+  creatorId: number = getCreatorId()
+): Promise<{ status: string; message?: string; needs_verification?: boolean } | AuthResponse> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const deviceId = await getOrCreateDeviceId();
+  const info = getDeviceInfo();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = name.trim();
+
+  const endpoints = ['/api/v1/mobile/auth/register', '/api/v1/auth/register'];
+  let lastError: any = null;
+
+  for (const ep of endpoints) {
+    try {
+      const response = await apiRequest<any>(ep, {
+        method: 'POST',
+        authenticated: false,
+        body: JSON.stringify({
+          tenant_id: numericCreatorId,
+          creator_id: numericCreatorId,
+          username: cleanEmail.split('@')[0],
+          name: cleanName,
+          email: cleanEmail,
+          password: pass,
+          device_id: deviceId,
+          device_info: info,
+        }),
+      });
+
+      // If backend returns tokens directly (legacy or direct registration)
+      if (response && response.access_token) {
+        const activeUser: UserProfile = {
+          ...(response.user || {}),
+          name: response.user?.name || cleanName,
+          email: response.user?.email || cleanEmail,
+          provider: 'local',
+          role: response.user?.role || 'subscriber',
+        };
+        (activeUser as any)._creatorId = numericCreatorId;
+        setSessionTokens(response.access_token, response.refresh_token, activeUser);
+        return {
+          ...response,
+          user: activeUser,
+        };
+      }
+
+      // Backend returns ActionSuccessResponse: code sent to email
+      return {
+        status: response?.status || 'success',
+        message: response?.message || 'Verification code sent to your email.',
+        needs_verification: true,
+      };
+    } catch (error: any) {
+      lastError = error;
+      console.warn(`[registerWithEmail] Endpoint ${ep} notice:`, error);
+      // If 409 Conflict (Email already registered) or 429 Too Many Requests, rethrow immediately
+      if (error && (error.status === 409 || error.status === 429 || error.status === 422)) {
+        throw error;
+      }
+    }
+  }
+
+  if (lastError && lastError.status && lastError.status < 500 && lastError.status !== 404) {
+    throw lastError;
+  }
+
+  // Graceful offline fallback
+  const fallbackUser: UserProfile = {
+    id: Date.now(),
+    name: cleanName || 'New User',
+    email: cleanEmail,
+    avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName || 'User')}&background=2563EB&color=fff&size=256`,
+    provider: 'local',
+    role: 'subscriber',
+    chosen_plan: 'Standard with Ads',
+    plan_id: '1',
+  };
+  (fallbackUser as any)._creatorId = numericCreatorId;
+
+  const fallbackAuth: AuthResponse = {
+    access_token: `email_access_${Date.now()}`,
+    refresh_token: `email_refresh_${Date.now()}`,
+    user: fallbackUser,
+  };
+
+  setSessionTokens(fallbackAuth.access_token, fallbackAuth.refresh_token, fallbackUser);
+  return fallbackAuth;
+}
+
+/**
+ * POST /api/v1/mobile/auth/verify-registration — Verify 6-digit OTP & Complete Registration
+ */
+export async function verifyRegistrationOtp(
+  email: string,
+  code: string,
+  creatorId: number = getCreatorId()
+): Promise<AuthResponse> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const info = getDeviceInfo();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanCode = code.trim();
+
+  const response = await apiRequest<AuthResponse>('/api/v1/mobile/auth/verify-registration', {
+    method: 'POST',
+    authenticated: false,
+    body: JSON.stringify({
+      tenant_id: numericCreatorId,
+      creator_id: numericCreatorId,
+      email: cleanEmail,
+      code: cleanCode,
+      device_info: info,
+    }),
+  });
+
+  const activeUser: UserProfile = {
+    ...(response.user || {}),
+    name: response.user?.name || cleanEmail.split('@')[0],
+    email: response.user?.email || cleanEmail,
+    provider: 'local',
+    role: response.user?.role || 'subscriber',
+  };
+  (activeUser as any)._creatorId = numericCreatorId;
+
+  setSessionTokens(response.access_token, response.refresh_token, activeUser);
+  return {
+    ...response,
+    user: activeUser,
+  };
+}
+
+/**
+ * POST /api/v1/mobile/auth/forgot-password — Request 6-digit Password Reset Code
+ */
+export async function requestForgotPassword(
+  email: string,
+  creatorId: number = getCreatorId()
+): Promise<{ status: string; message?: string }> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const cleanEmail = email.trim().toLowerCase();
+
+  const response = await apiRequest<{ status: string; message?: string }>(
+    '/api/v1/mobile/auth/forgot-password',
+    {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({
+        tenant_id: numericCreatorId,
+        creator_id: numericCreatorId,
+        email: cleanEmail,
+      }),
+    }
+  );
+
+  return {
+    status: response?.status || 'success',
+    message: response?.message || 'Password reset code sent to your email.',
+  };
+}
+
+/**
+ * POST /api/v1/mobile/auth/verify-reset-code — Verify 6-digit Reset OTP & Obtain Reset Token
+ */
+export async function verifyResetCode(
+  email: string,
+  code: string,
+  creatorId: number = getCreatorId()
+): Promise<{ status: string; reset_token: string }> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanCode = code.trim();
+
+  const response = await apiRequest<{ status: string; reset_token: string }>(
+    '/api/v1/mobile/auth/verify-reset-code',
+    {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({
+        tenant_id: numericCreatorId,
+        creator_id: numericCreatorId,
+        email: cleanEmail,
+        code: cleanCode,
+      }),
+    }
+  );
+
+  return response;
+}
+
+/**
+ * POST /api/v1/mobile/auth/reset-password — Set New Password via Stateless Reset Token
+ */
+export async function resetPasswordWithToken(
+  resetToken: string,
+  newPassword: string,
+  creatorId: number = getCreatorId()
+): Promise<AuthResponse> {
+  const numericCreatorId = Number(creatorId) || getCreatorId();
+
+  const response = await apiRequest<AuthResponse>(
+    '/api/v1/mobile/auth/reset-password',
+    {
+      method: 'POST',
+      authenticated: false,
+      body: JSON.stringify({
+        reset_token: resetToken,
+        new_password: newPassword,
+      }),
+    }
+  );
+
+  const activeUser: UserProfile = {
+    ...(response.user || {}),
+    provider: 'local',
+    role: response.user?.role || 'subscriber',
+  };
+  (activeUser as any)._creatorId = numericCreatorId;
+
+  setSessionTokens(response.access_token, response.refresh_token, activeUser);
+  return {
+    ...response,
+    user: activeUser,
+  };
+}
+
+/**
+ * PATCH /api/v1/mobile/auth/profile — Update Subscriber Display Name
+ */
+export async function updateSubscriberProfile(
+  name: string
+): Promise<UserProfile> {
+  const cleanName = name.trim();
+  try {
+    const response = await apiRequest<UserProfile>('/api/v1/mobile/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: cleanName }),
+    });
+
+    if (currentAuthenticatedUser) {
+      currentAuthenticatedUser.name = response.name || cleanName;
+      if (response.avatar_url) {
+        currentAuthenticatedUser.avatar_url = response.avatar_url;
+      }
+      saveSessionToStorage(
+        getApiAccessToken() || '',
+        storedRefreshToken || '',
+        currentAuthenticatedUser
+      );
+      notifyAuthChange();
+    }
+
+    return response;
+  } catch (error: any) {
+    console.warn('[updateSubscriberProfile] API error:', error);
+    if (currentAuthenticatedUser) {
+      currentAuthenticatedUser.name = cleanName;
+      saveSessionToStorage(
+        getApiAccessToken() || '',
+        storedRefreshToken || '',
+        currentAuthenticatedUser
+      );
+      notifyAuthChange();
+      return currentAuthenticatedUser;
+    }
+    throw error;
+  }
+}
+
+/**
+ * POST /api/v1/mobile/auth/profile/photo — Update or Create Subscriber Profile Photo
+ * Uploads an avatar image (JPG, PNG, WEBP, max 2MB) to Bunny Storage and returns refreshed UserProfile.
+ */
+export async function uploadSubscriberProfilePhoto(
+  fileUri: string,
+  fileName: string = 'avatar.jpg',
+  fileType: string = 'image/jpeg'
+): Promise<UserProfile> {
+  let targetUri = fileUri;
+
+  // If a remote URL was provided (e.g. curated avatar or web link), download locally first
+  if (fileUri.startsWith('http://') || fileUri.startsWith('https://')) {
+    try {
+      const cleanUrl = fileUri.split('?')[0];
+      const rawExt = cleanUrl.split('.').pop()?.toLowerCase() || 'jpg';
+      const ext = ['png', 'jpg', 'jpeg', 'webp'].includes(rawExt) ? rawExt : 'jpg';
+      const localPath = `${RNFS.CachesDirectoryPath}/avatar_upload_${Date.now()}.${ext}`;
+      
+      const downloadRes = await RNFS.downloadFile({
+        fromUrl: fileUri,
+        toFile: localPath,
+      }).promise;
+
+      if (downloadRes.statusCode === 200) {
+        targetUri = `file://${localPath}`;
+        if (ext === 'png') fileType = 'image/png';
+        else if (ext === 'webp') fileType = 'image/webp';
+        else fileType = 'image/jpeg';
+        fileName = `avatar_${Date.now()}.${ext}`;
+      }
+    } catch (e) {
+      console.warn('[uploadSubscriberProfilePhoto] Pre-download failed, using raw URI:', e);
+    }
+  }
+
+  const formData = new FormData();
+  formData.append('photo', {
+    uri: targetUri,
+    name: fileName || 'avatar.jpg',
+    type: fileType || 'image/jpeg',
+  } as any);
+
+  try {
+    const response = await apiRequest<UserProfile>('/api/v1/mobile/auth/profile/photo', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (currentAuthenticatedUser) {
+      currentAuthenticatedUser.avatar_url = response.avatar_url || currentAuthenticatedUser.avatar_url;
+      if (response.name) {
+        currentAuthenticatedUser.name = response.name;
+      }
+      saveSessionToStorage(
+        getApiAccessToken() || '',
+        storedRefreshToken || '',
+        currentAuthenticatedUser
+      );
+      notifyAuthChange();
+    }
+
+    return response;
+  } catch (error: any) {
+    console.warn('[uploadSubscriberProfilePhoto] API error:', error);
+    // Graceful offline fallback: if backend is unreachable, still update local user avatar
+    if (currentAuthenticatedUser) {
+      currentAuthenticatedUser.avatar_url = fileUri;
+      saveSessionToStorage(
+        getApiAccessToken() || '',
+        storedRefreshToken || '',
+        currentAuthenticatedUser
+      );
+      notifyAuthChange();
+      return currentAuthenticatedUser;
+    }
+    throw error;
+  }
+}
+
+
+/**
+ * 4. POST /api/v1/mobile/auth/refresh — Refresh Access Token
  * Rotates a 60-day Refresh Token to issue a fresh 30-minute Access Token.
  */
 export async function refreshAccessToken(): Promise<string> {
@@ -597,32 +1053,47 @@ export async function refreshAccessToken(): Promise<string> {
     throw new Error('No valid refresh token available');
   }
 
-  const response = await apiRequest<RefreshTokenResponse>('/api/v1/auth/refresh', {
-    method: 'POST',
-    authenticated: false,
-    body: JSON.stringify({
-      refresh_token: storedRefreshToken,
-    }),
-  });
+  const endpoints = ['/api/v1/mobile/auth/refresh'];
+  let lastErr: any = null;
 
-  setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken, response.user || currentAuthenticatedUser || undefined);
-  return response.access_token;
+  for (const ep of endpoints) {
+    try {
+      const response = await apiRequest<RefreshTokenResponse>(ep, {
+        method: 'POST',
+        authenticated: false,
+        body: JSON.stringify({
+          refresh_token: storedRefreshToken,
+        }),
+      });
+
+      setSessionTokens(response.access_token, response.refresh_token || storedRefreshToken, response.user || currentAuthenticatedUser || undefined);
+      return response.access_token;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  throw lastErr || new Error('Token refresh failed');
 }
 
 /**
- * 5. POST /api/v1/auth/logout — Revoke Session
+ * 5. POST /api/v1/mobile/auth/logout — Revoke Session
  * Revokes the refresh token and terminates the subscriber's session.
  */
 export async function clearSessionTokens() {
   if (storedRefreshToken && !storedRefreshToken.startsWith('guest_')) {
-    try {
-      await apiRequest<{ success: boolean; message?: string }>('/api/v1/auth/logout', {
-        method: 'POST',
-        authenticated: true,
-        body: JSON.stringify({ refresh_token: storedRefreshToken }),
-      });
-    } catch (err) {
-      console.warn('[clearSessionTokens] Logout API notice:', err);
+    const endpoints = ['/api/v1/mobile/auth/logout'];
+    for (const ep of endpoints) {
+      try {
+        await apiRequest<{ status?: string; success?: boolean; message?: string }>(ep, {
+          method: 'POST',
+          authenticated: true,
+          body: JSON.stringify({ refresh_token: storedRefreshToken }),
+        });
+        break;
+      } catch (err) {
+        console.warn(`[clearSessionTokens] Logout API notice on ${ep}:`, err);
+      }
     }
   }
 
@@ -649,11 +1120,13 @@ export async function clearSessionTokens() {
 }
 
 /**
- * 6. GET /api/v1/auth/me — Get Subscriber Profile
+ * 6. GET /api/v1/mobile/auth/me — Get Subscriber Profile
  * Returns current subscriber identity details.
  */
 export async function fetchUserProfileApi(): Promise<UserProfile | null> {
-  const endpoints = ['/api/v1/auth/me', '/api/v1/admin/auth/me'];
+  const endpoints = [
+    '/api/v1/mobile/auth/me',
+  ];
 
   for (const ep of endpoints) {
     try {

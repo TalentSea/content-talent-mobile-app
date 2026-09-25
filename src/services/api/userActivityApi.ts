@@ -1,7 +1,6 @@
 import { apiGet, apiRequest } from './client';
 import type { PaginatedVideosResponse } from '../../types/video';
 import { normalizeVideoItem } from './video';
-import { getCreatorId } from '../../constants/config';
 
 export type UserHistoryResponseItem = {
   video_id: number;
@@ -14,8 +13,10 @@ export type MobileCategoryItem = {
   name: string;
   slug: string;
   description?: string | null;
+  thumbnailUrl?: string | null;
   icon?: string;
   color?: string;
+  contentCount?: number;
   video_count?: number;
 };
 
@@ -25,9 +26,8 @@ export type MobileCategoriesResponse = {
 
 export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosResponse> {
   try {
-    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/history
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/history?creator_id=${cid}`);
+    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/history');
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -43,9 +43,8 @@ export async function fetchUserWatchHistoryApi(): Promise<PaginatedVideosRespons
 
 export async function fetchUserContinueWatchingApi(): Promise<PaginatedVideosResponse> {
   try {
-    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/continue-watching
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/continue-watching?creator_id=${cid}`);
+    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/continue-watching');
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -78,29 +77,36 @@ export async function recordUserWatchHistoryApi(
   }
 }
 
-export async function clearUserWatchHistoryApi() {
+export type ActionStatusResponse = {
+  status: 'success' | 'error' | string;
+};
+
+export async function clearUserWatchHistoryApi(): Promise<ActionStatusResponse> {
   try {
     // Exclusive Mobile Endpoint: DELETE /api/v1/mobile/videos/history
-    await apiRequest('/api/v1/mobile/videos/history', { method: 'DELETE' });
+    const res = await apiRequest<ActionStatusResponse>('/api/v1/mobile/videos/history', { method: 'DELETE' });
+    return { status: res?.status || 'success' };
   } catch (error) {
     console.warn('[clearUserWatchHistoryApi] Mobile API notice:', error);
+    return { status: 'error' };
   }
 }
 
-export async function removeVideoWatchHistoryApi(videoId: number) {
+export async function removeVideoWatchHistoryApi(videoId: number): Promise<ActionStatusResponse> {
   try {
     // Exclusive Mobile Endpoint: DELETE /api/v1/mobile/videos/history/{video_id}
-    await apiRequest(`/api/v1/mobile/videos/history/${videoId}`, { method: 'DELETE' });
+    const res = await apiRequest<ActionStatusResponse>(`/api/v1/mobile/videos/history/${videoId}`, { method: 'DELETE' });
+    return { status: res?.status || 'success' };
   } catch (error) {
     console.warn(`[removeVideoWatchHistoryApi] Mobile API notice for video ${videoId}:`, error);
+    return { status: 'error' };
   }
 }
 
 export async function fetchUserLikedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
-    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/liked
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/liked?creator_id=${cid}`);
+    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/liked');
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -125,9 +131,8 @@ export async function toggleUserLikedVideoApi(videoId: number, isLiked: boolean 
 
 export async function fetchUserSavedVideosApi(): Promise<PaginatedVideosResponse> {
   try {
-    const cid = getCreatorId();
     // Exclusive Mobile Endpoint: GET /api/v1/mobile/videos/saved
-    const response = await apiGet<PaginatedVideosResponse>(`/api/v1/mobile/videos/saved?creator_id=${cid}`);
+    const response = await apiGet<PaginatedVideosResponse>('/api/v1/mobile/videos/saved');
     if (!response || !response.items) {
       return { total: 0, page: 1, limit: 20, total_pages: 1, items: [] };
     }
@@ -179,9 +184,10 @@ export async function recordAdImpressionApi(
 }
 
 export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
-  const cid = getCreatorId();
+  // Consumer app category list is available at GET /api/v1/categories. It delivers active, published categories sorted by display order.
   const endpoints = [
-    `/api/v1/mobile/categories?creator_id=${cid}`,
+    '/api/v1/categories',
+    '/api/v1/mobile/categories',
   ];
 
   for (const path of endpoints) {
@@ -197,9 +203,11 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
           name: item.name || item.title || item.category_name || 'Category',
           slug: item.slug || (item.name ? item.name.toLowerCase().replace(/\s+/g, '-') : `cat_${idx}`),
           description: item.description || item.subtitle || item.desc || null,
+          thumbnailUrl: item.thumbnailUrl || item.thumbnail_url || item.thumbnail || item.image_url || item.image || item.poster_url || item.poster || null,
           color: item.color,
           icon: item.icon,
-          video_count: item.video_count ?? item.videos_count ?? item.count ?? item.total_videos ?? undefined,
+          contentCount: item.contentCount ?? item.content_count ?? item.video_count ?? item.videos_count ?? item.count ?? item.total_videos ?? undefined,
+          video_count: item.contentCount ?? item.content_count ?? item.video_count ?? item.videos_count ?? item.count ?? item.total_videos ?? undefined,
         }));
       }
     } catch (error) {
@@ -209,3 +217,4 @@ export async function fetchUserCategoriesApi(): Promise<MobileCategoryItem[]> {
 
   return [];
 }
+

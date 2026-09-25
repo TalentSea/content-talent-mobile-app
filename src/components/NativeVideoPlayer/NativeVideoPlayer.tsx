@@ -182,7 +182,8 @@ export default function NativeVideoPlayer({
   const [showQualityMenu, setShowQualityMenu] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState<string>('Auto');
   const [currentVolume, setCurrentVolume] = useState(volume);
-  const [activeCaptions, setActiveCaptions] = useState(captions);
+  
+  const activeCaptions = captions || [];
 
   // MP4 Download states
   const [isDownloading, setIsDownloading] = useState(false);
@@ -190,22 +191,27 @@ export default function NativeVideoPlayer({
   const [downloadingLabel, setDownloadingLabel] = useState('');
   const [subtitleCues, setSubtitleCues] = useState<SubtitleCue[]>([]);
 
+  const captionsCount = activeCaptions.length;
+  const inbuiltCount = inbuiltCaptionTracks.length;
+
   useEffect(() => {
-    setActiveCaptions(captions);
-    if (inbuiltCaptionTracks.length > 0 || hasInbuiltCaptionsProp) {
+    if (inbuiltCount > 0 || hasInbuiltCaptionsProp) {
       setHasEmbeddedCaptions(true);
     }
-    if (selectedCaptionIndex === -1 && (captions.length > 0 || inbuiltCaptionTracks.length > 0)) {
+    if (selectedCaptionIndex === -1 && (captionsCount > 0 || inbuiltCount > 0)) {
       setSelectedCaptionIndex(0);
     }
-  }, [captions, inbuiltCaptionTracks, hasInbuiltCaptionsProp]);
+  }, [captionsCount, inbuiltCount, hasInbuiltCaptionsProp]);
+
+  const currentCaptionUri = (selectedCaptionIndex !== -1 && activeCaptions[selectedCaptionIndex])
+    ? activeCaptions[selectedCaptionIndex].uri
+    : null;
 
   useEffect(() => {
     let isMounted = true;
-    const currentTrack = activeCaptions[selectedCaptionIndex];
 
-    if (selectedCaptionIndex !== -1 && currentTrack && currentTrack.uri) {
-      fetch(currentTrack.uri)
+    if (currentCaptionUri) {
+      fetch(currentCaptionUri)
         .then(res => res.text())
         .then(vttText => {
           if (isMounted) {
@@ -224,7 +230,7 @@ export default function NativeVideoPlayer({
     return () => {
       isMounted = false;
     };
-  }, [selectedCaptionIndex, activeCaptions]);
+  }, [currentCaptionUri]);
 
   const activeCueText = selectedCaptionIndex !== -1 && subtitleCues.length > 0
     ? subtitleCues.find(c => currentTime >= c.start && currentTime <= c.end)?.text || null

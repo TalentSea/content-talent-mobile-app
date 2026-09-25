@@ -2,16 +2,20 @@ import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     Pressable,
+    ScrollView,
     StatusBar,
     Text,
     TextInput,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Play } from 'lucide-react-native';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { Check, ChevronLeft, Play, X, KeyRound, Mail, ArrowLeft } from 'lucide-react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 let LoginManager: any = null;
 let AccessToken: any = null;
 let Profile: any = null;
@@ -23,19 +27,81 @@ try {
 } catch (e) {
     // Safe fallback if fbsdk is not installed
 }
-import { loginWithSocial, loginAsGuest, setSessionTokens, restoreStoredSession, SocialProvider, UserProfile } from '../../services/api/authService';
+
+import {
+    loginWithSocial,
+    loginWithEmail,
+    registerWithEmail,
+    verifyRegistrationOtp,
+    requestForgotPassword,
+    verifyResetCode,
+    resetPasswordWithToken,
+    loginAsGuest,
+    setSessionTokens,
+    restoreStoredSession,
+    SocialProvider,
+    UserProfile,
+} from '../../services/api/authService';
 import { DEFAULT_AUTH_TOKEN, getCreatorId } from '../../constants/config';
 import { styles } from './styles';
 
-export function LoginScreen({ navigation }: any) {
-    const [loadingProvider, setLoadingProvider] = useState<SocialProvider | null>(null);
+export function LoginScreen({ route, navigation, initialMode }: any) {
+    const defaultMode = initialMode || route?.params?.mode || 'login';
+    const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
+
+    // Form inputs state
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+
+    // Registration OTP Verification State
+    const [otpMode, setOtpMode] = useState(false);
+    const [otpCode, setOtpCode] = useState('');
+    const [resendCooldown, setResendCooldown] = useState(0);
+
+    // Forgot Password Modal State
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotStep, setForgotStep] = useState<'email' | 'code' | 'password'>('email');
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotCode, setForgotCode] = useState('');
+    const [forgotNewPassword, setForgotNewPassword] = useState('');
+    const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+    const [forgotResetToken, setForgotResetToken] = useState('');
+    const [forgotSubmitting, setForgotSubmitting] = useState(false);
+
+    // Auth loading state
+    const [submitting, setSubmitting] = useState(false);
+    const [loadingProvider, setLoadingProvider] = useState<SocialProvider | 'email' | null>(null);
     const [isCheckingSession, setIsCheckingSession] = useState(true);
 
+    // Facebook fallback modal state
     const [showFacebookModal, setShowFacebookModal] = useState(false);
     const [fbEmailOrPhone, setFbEmailOrPhone] = useState('');
     const [fbPassword, setFbPassword] = useState('');
     const [fbUsername, setFbUsername] = useState('');
     const [fbLoggingIn, setFbLoggingIn] = useState(false);
+
+    useEffect(() => {
+        let timer: any = null;
+        if (resendCooldown > 0) {
+            timer = setInterval(() => {
+                setResendCooldown(prev => Math.max(0, prev - 1));
+            }, 1000);
+        }
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [resendCooldown]);
+
+    useEffect(() => {
+        if (route?.params?.mode) {
+            setMode(route.params.mode);
+        }
+    }, [route?.params?.mode]);
 
     useEffect(() => {
         let isMounted = true;
@@ -77,96 +143,214 @@ export function LoginScreen({ navigation }: any) {
         };
     }, [navigation]);
 
-    const handleFacebookModalSubmit = async () => {
-        const input = fbEmailOrPhone.trim();
-        const pass = fbPassword.trim();
+    // ── Email / Password Submit Handler ──
+    const handleSubmit = async () => {
+        const cleanEmail = email.trim();
+        const cleanPass = password.trim();
 
-        if (!input) {
-            Alert.alert('Facebook Login', 'Please enter your Facebook email address or mobile number.');
-            return;
+        if (mode === 'register') {
+            const cleanName = name.trim();
+            const cleanConfirm = confirmPassword.trim();
+
+            if (!cleanName) {
+                Alert.alert('Register', 'Please enter your full name.');
+                return;
+            }
+            if (!cleanEmail || !cleanEmail.includes('@')) {
+                Alert.alert('Register', 'Please enter a valid email address.');
+                return;
+            }
+            if (!cleanPass || cleanPass.length < 6) {
+                Alert.alert('Register', 'Password must be at least 6 characters.');
+                return;
+            }
+            if (cleanPass !== cleanConfirm) {
+                Alert.alert('Register', 'Passwords do not match.');
+                return;
+            }
+            if (!termsAccepted) {
+                Alert.alert('Terms & Privacy', 'Please accept the terms and privacy policy to continue.');
+                return;
+            }
+
+            try {
+                setSubmitting(true);
+                const regRes = await registerWithEmail(cleanName, cleanEmail, cleanPass, getCreatorId());
+
+                if ((regRes as any)?.needs_verification) {
+                    setOtpMode(true);
+                    setResendCooldown(60);
+                    Alert.alert(
+                        'Verification Code Sent',
+                        `We have sent a 6-digit verification code to ${cleanEmail}. Please enter it to complete registration.`
+                    );
+                } else {
+                    // Direct token issued (auto-login)
+                    if (navigation) {
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Home' }],
+                        });
+                    }
+                }
+            } catch (error: any) {
+                console.warn('[Register] error:', error);
+                const msg = error?.detail || error?.message || 'Could not complete registration. Please try again.';
+                Alert.alert('Registration Notice', msg);
+            } finally {
+                setSubmitting(false);
+            }
+        } else {
+            // Mode === 'login'
+            if (!cleanEmail) {
+                Alert.alert('Log in', 'Please enter your email address or username.');
+                return;
+            }
+            if (!cleanPass) {
+                Alert.alert('Log in', 'Please enter your password.');
+                return;
+            }
+
+            try {
+                setSubmitting(true);
+                await loginWithEmail(cleanEmail, cleanPass, rememberMe, getCreatorId());
+                if (navigation) {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Home' }],
+                    });
+                }
+            } catch (error: any) {
+                console.warn('[Login] error:', error);
+                const msg = error?.detail || error?.message || 'Invalid email or password.';
+                Alert.alert('Login Notice', msg);
+            } finally {
+                setSubmitting(false);
+            }
         }
-        if (!pass) {
-            Alert.alert('Facebook Login', 'Please enter your Facebook password.');
+    };
+
+    // ── OTP Registration Verification ──
+    const handleVerifyOtp = async () => {
+        const cleanCode = otpCode.trim();
+        if (cleanCode.length !== 6 || !/^\d{6}$/.test(cleanCode)) {
+            Alert.alert('Verification Code', 'Please enter a valid 6-digit numeric verification code.');
             return;
         }
 
         try {
-            setFbLoggingIn(true);
-
-            let email = input;
-            if (input.includes('_gmail_com')) {
-                email = input.replace('_gmail_com', '@gmail.com');
-            } else if (!input.includes('@') && /^\d+$/.test(input)) {
-                email = `${input}@facebook.com`;
-            } else if (!input.includes('@')) {
-                email = `${input}@gmail.com`;
-            }
-
-            let cleanName = fbUsername.trim();
-            if (!cleanName) {
-                const prefix = email.split('@')[0];
-                const words = prefix
-                    .replace(/[._]/g, ' ')
-                    .replace(/\d+/g, ' ')
-                    .split(' ')
-                    .filter(Boolean);
-                if (words.length > 0) {
-                    cleanName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-                } else {
-                    cleanName = 'Prathi Nagalakshmi';
-                }
-            }
-
-            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=1877F2&color=fff&size=256`;
-
-            const fbProfile: UserProfile = {
-                id: Date.now(),
-                name: cleanName,
-                email: email,
-                avatar_url: avatarUrl,
-                provider: 'facebook',
-                role: 'subscriber',
-            };
-
-            const sendToken = `mock_facebook_${input.replace(/[^a-zA-Z0-9]/g, '_')}`;
-            const authRes = await loginWithSocial('facebook', sendToken, undefined, fbProfile, getCreatorId());
-
-            const finalFbUser: UserProfile = {
-                ...(authRes?.user || {}),
-                ...fbProfile,
-                name: fbProfile.name,
-                email: fbProfile.email,
-                avatar_url: fbProfile.avatar_url,
-                provider: 'facebook',
-            };
-
-            setSessionTokens(
-                authRes?.access_token || DEFAULT_AUTH_TOKEN,
-                authRes?.refresh_token || 'facebook_session',
-                finalFbUser,
-            );
-
-            setShowFacebookModal(false);
+            setSubmitting(true);
+            await verifyRegistrationOtp(email.trim(), cleanCode, getCreatorId());
             if (navigation) {
                 navigation.reset({
                     index: 0,
                     routes: [{ name: 'Home' }],
                 });
             }
-        } catch (err) {
-            console.warn('[FacebookModal] error:', err);
-            setShowFacebookModal(false);
-            if (navigation) {
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Home' }],
-                });
-            }
+        } catch (err: any) {
+            console.warn('[handleVerifyOtp] error:', err);
+            const msg = err?.detail || err?.message || 'Invalid or expired verification code.';
+            Alert.alert('Verification Error', msg);
         } finally {
-            setFbLoggingIn(false);
+            setSubmitting(false);
         }
     };
 
+    const handleResendOtp = async () => {
+        if (resendCooldown > 0) return;
+        try {
+            setSubmitting(true);
+            await registerWithEmail(name.trim() || 'User', email.trim(), password.trim(), getCreatorId());
+            setResendCooldown(60);
+            Alert.alert('Code Resent', `A new verification code has been sent to ${email.trim()}.`);
+        } catch (err: any) {
+            const msg = err?.detail || err?.message || 'Could not resend code. Please wait 60s and try again.';
+            Alert.alert('Resend Notice', msg);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // ── Forgot Password Handlers ──
+    const handleOpenForgotModal = () => {
+        setForgotEmail(email.trim() || '');
+        setForgotCode('');
+        setForgotNewPassword('');
+        setForgotConfirmPassword('');
+        setForgotResetToken('');
+        setForgotStep('email');
+        setShowForgotModal(true);
+    };
+
+    const handleForgotRequestCode = async () => {
+        const clean = forgotEmail.trim().toLowerCase();
+        if (!clean || !clean.includes('@')) {
+            Alert.alert('Reset Password', 'Please enter a valid registered email address.');
+            return;
+        }
+        try {
+            setForgotSubmitting(true);
+            await requestForgotPassword(clean, getCreatorId());
+            setForgotStep('code');
+            Alert.alert('Code Sent', `We sent a 6-digit reset code to ${clean}.`);
+        } catch (err: any) {
+            const msg = err?.detail || err?.message || 'Could not send reset code.';
+            Alert.alert('Reset Notice', msg);
+        } finally {
+            setForgotSubmitting(false);
+        }
+    };
+
+    const handleForgotVerifyCode = async () => {
+        const clean = forgotCode.trim();
+        if (clean.length !== 6 || !/^\d{6}$/.test(clean)) {
+            Alert.alert('Reset Code', 'Please enter the 6-digit verification code.');
+            return;
+        }
+        try {
+            setForgotSubmitting(true);
+            const res = await verifyResetCode(forgotEmail.trim().toLowerCase(), clean, getCreatorId());
+            if (res && res.reset_token) {
+                setForgotResetToken(res.reset_token);
+                setForgotStep('password');
+            }
+        } catch (err: any) {
+            const msg = err?.detail || err?.message || 'Invalid or expired verification code.';
+            Alert.alert('Invalid Code', msg);
+        } finally {
+            setForgotSubmitting(false);
+        }
+    };
+
+    const handleForgotResetPassword = async () => {
+        const newPass = forgotNewPassword.trim();
+        if (newPass.length < 6) {
+            Alert.alert('New Password', 'Password must be at least 6 characters.');
+            return;
+        }
+        if (newPass !== forgotConfirmPassword.trim()) {
+            Alert.alert('Password Mismatch', 'Passwords do not match.');
+            return;
+        }
+        try {
+            setForgotSubmitting(true);
+            await resetPasswordWithToken(forgotResetToken, newPass, getCreatorId());
+            setShowForgotModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } catch (err: any) {
+            const msg = err?.detail || err?.message || 'Could not reset password.';
+            Alert.alert('Reset Error', msg);
+        } finally {
+            setForgotSubmitting(false);
+        }
+    };
+
+    // ── Social Login Handler ──
     const handleSocialLogin = async (provider: SocialProvider) => {
         try {
             setLoadingProvider(provider);
@@ -185,7 +369,6 @@ export function LoginScreen({ navigation }: any) {
 
                     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
                     const response = await GoogleSignin.signIn();
-                    console.log('[GoogleSignin] Complete response:', JSON.stringify(response));
 
                     realToken =
                         response?.data?.idToken ||
@@ -255,7 +438,6 @@ export function LoginScreen({ navigation }: any) {
                         const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
 
                         if (result?.isCancelled) {
-                            console.log('[FacebookSignin] User cancelled login');
                             setLoadingProvider(null);
                             return;
                         }
@@ -322,7 +504,6 @@ export function LoginScreen({ navigation }: any) {
             }
 
             if (!realToken && !realProfile) {
-                console.log(`[handleSocialLogin] No token or profile received for ${provider}. Aborting login.`);
                 setLoadingProvider(null);
                 return;
             }
@@ -358,6 +539,87 @@ export function LoginScreen({ navigation }: any) {
         }
     };
 
+    // ── Facebook Direct Modal Fallback ──
+    const handleFacebookModalSubmit = async () => {
+        const input = fbEmailOrPhone.trim();
+        const pass = fbPassword.trim();
+
+        if (!input) {
+            Alert.alert('Facebook Login', 'Please enter your Facebook email address or mobile number.');
+            return;
+        }
+        if (!pass) {
+            Alert.alert('Facebook Login', 'Please enter your Facebook password.');
+            return;
+        }
+
+        try {
+            setFbLoggingIn(true);
+            let emailVal = input;
+            if (input.includes('_gmail_com')) {
+                emailVal = input.replace('_gmail_com', '@gmail.com');
+            } else if (!input.includes('@') && /^\d+$/.test(input)) {
+                emailVal = `${input}@facebook.com`;
+            } else if (!input.includes('@')) {
+                emailVal = `${input}@gmail.com`;
+            }
+
+            let cleanName = fbUsername.trim();
+            if (!cleanName) {
+                const prefix = emailVal.split('@')[0];
+                const words = prefix.replace(/[._]/g, ' ').replace(/\d+/g, ' ').split(' ').filter(Boolean);
+                if (words.length > 0) {
+                    cleanName = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                } else {
+                    cleanName = 'Facebook User';
+                }
+            }
+
+            const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanName)}&background=1877F2&color=fff&size=256`;
+            const fbProfile: UserProfile = {
+                id: Date.now(),
+                name: cleanName,
+                email: emailVal,
+                avatar_url: avatarUrl,
+                provider: 'facebook',
+                role: 'subscriber',
+            };
+
+            const sendToken = `mock_facebook_${input.replace(/[^a-zA-Z0-9]/g, '_')}`;
+            const authRes = await loginWithSocial('facebook', sendToken, undefined, fbProfile, getCreatorId());
+
+            const finalFbUser: UserProfile = {
+                ...(authRes?.user || {}),
+                ...fbProfile,
+            };
+
+            setSessionTokens(
+                authRes?.access_token || DEFAULT_AUTH_TOKEN,
+                authRes?.refresh_token || 'facebook_session',
+                finalFbUser,
+            );
+
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } catch (err) {
+            console.warn('[FacebookModal] error:', err);
+            setShowFacebookModal(false);
+            if (navigation) {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Home' }],
+                });
+            }
+        } finally {
+            setFbLoggingIn(false);
+        }
+    };
+
     const handleContinueAsGuest = async () => {
         try {
             setLoadingProvider('guest');
@@ -378,7 +640,7 @@ export function LoginScreen({ navigation }: any) {
     if (isCheckingSession) {
         return (
             <SafeAreaView style={[styles.screen, { justifyContent: 'center', alignItems: 'center' }]}>
-                <StatusBar barStyle="light-content" backgroundColor="#0A0A12" />
+                <StatusBar barStyle="light-content" backgroundColor="#05050A" />
                 <ActivityIndicator color="#6366F1" size="large" />
             </SafeAreaView>
         );
@@ -386,136 +648,174 @@ export function LoginScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.screen}>
-            <StatusBar barStyle="light-content" backgroundColor="#0A0A12" />
+            <StatusBar barStyle="light-content" backgroundColor="#05050A" />
 
-            <View style={styles.content}>
-                {/* Hero Logo Section */}
-                <View style={styles.heroSection}>
-                    <View style={styles.iconContainer}>
-                        <View style={styles.iconGradientLayer1} />
-                        <View style={styles.iconGradientLayer2} />
-                        <View style={styles.iconInner}>
-                            <Play
-                                color="#FFFFFF"
-                                size={32}
-                                fill="#FFFFFF"
-                                strokeWidth={0}
-                            />
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={styles.keyboardView}
+            >
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                >
+                    {/* ── Hero Brand Header ── */}
+                    <View style={styles.heroSection}>
+                        <View style={styles.iconContainer}>
+                            <View style={styles.iconGradientLayer1} />
+                            <View style={styles.iconGradientLayer2} />
+                            <View style={styles.iconInner}>
+                                <Play
+                                    color="#FFFFFF"
+                                    size={24}
+                                    fill="#FFFFFF"
+                                    strokeWidth={0}
+                                />
+                            </View>
                         </View>
+                        <Text style={styles.brandTitle}>Streamr</Text>
+                        <Text style={styles.brandSubtitle}>
+                            {mode === 'register'
+                                ? 'Create an account to join the community'
+                                : 'Sign in to your streaming account'}
+                        </Text>
                     </View>
 
-                    <Text style={styles.title}>Welcome to Streamr</Text>
-                    <Text style={styles.subtitle}>Log in with your Google or Facebook account to start watching</Text>
-                </View>
+                    {/* Main Dark Card Container */}
+                    <View style={styles.card}>
+                        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                            <Text style={styles.socialCardTitle}>Sign In</Text>
+                            <Text style={styles.socialCardSubtitle}>
+                                Connect instantly to continue streaming
+                            </Text>
+                        </View>
 
-                {/* Direct Social Login Actions */}
-                <View style={styles.buttonsSection}>
-                    {/* Google Direct Login */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.socialButton,
-                            pressed && styles.socialButtonPressed,
-                            loadingProvider !== null && styles.socialButtonDisabled,
-                        ]}
-                        onPress={() => handleSocialLogin('google')}
-                        disabled={loadingProvider !== null}
-                    >
-                        {loadingProvider === 'google' ? (
-                            <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                            <View style={styles.socialButtonContent}>
-                                <View style={styles.googleIconCircle}>
-                                    <Text style={styles.googleIconText}>G</Text>
+                        {/* Google Sign In Button */}
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.fullSocialButtonGoogle,
+                                pressed && styles.fullSocialButtonPressed,
+                                loadingProvider !== null && { opacity: 0.7 },
+                            ]}
+                            onPress={() => handleSocialLogin('google')}
+                            disabled={loadingProvider !== null || submitting}
+                        >
+                            {loadingProvider === 'google' ? (
+                                <ActivityIndicator color="#1F2937" size="small" />
+                            ) : (
+                                <View style={styles.fullSocialButtonContent}>
+                                    <View style={styles.googleIconCircle}>
+                                        <Text style={styles.googleIconLetter}>G</Text>
+                                    </View>
+                                    <Text style={styles.fullSocialButtonGoogleText}>
+                                        Continue with Google
+                                    </Text>
                                 </View>
-                                <Text style={styles.socialButtonText}>Log in with Google</Text>
-                            </View>
-                        )}
-                    </Pressable>
+                            )}
+                        </Pressable>
 
-                    {/* Facebook Direct Login */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.socialButton,
-                            pressed && styles.socialButtonPressed,
-                            loadingProvider !== null && styles.socialButtonDisabled,
-                        ]}
-                        onPress={() => handleSocialLogin('facebook')}
-                        disabled={loadingProvider !== null}
-                    >
-                        {loadingProvider === 'facebook' ? (
-                            <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                            <View style={styles.socialButtonContent}>
-                                <View style={styles.facebookIconCircle}>
-                                    <Text style={styles.facebookIconText}>f</Text>
+                        {/* Facebook Sign In Button */}
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.fullSocialButtonFacebook,
+                                pressed && styles.fullSocialButtonPressed,
+                                loadingProvider !== null && { opacity: 0.7 },
+                            ]}
+                            onPress={() => handleSocialLogin('facebook')}
+                            disabled={loadingProvider !== null || submitting}
+                        >
+                            {loadingProvider === 'facebook' ? (
+                                <ActivityIndicator color="#FFFFFF" size="small" />
+                            ) : (
+                                <View style={styles.fullSocialButtonContent}>
+                                    <View style={styles.facebookIconCircle}>
+                                        <Text style={styles.facebookIconLetter}>f</Text>
+                                    </View>
+                                    <Text style={styles.fullSocialButtonFacebookText}>
+                                        Continue with Facebook
+                                    </Text>
                                 </View>
-                                <Text style={styles.socialButtonText}>Log in with Facebook</Text>
-                            </View>
-                        )}
-                    </Pressable>
+                            )}
+                        </Pressable>
 
-                    {/* Continue as Guest Button */}
+                        {/* Terms & Privacy Footnote */}
+                        <Text style={styles.socialTermsText}>
+                            By continuing, you agree to our{' '}
+                            <Text
+                                style={styles.socialTermsLink}
+                                onPress={() => Alert.alert('Terms of Service', 'By using Streamr, you agree to our Terms of Service.')}
+                            >
+                                Terms
+                            </Text>
+                            {' '}and{' '}
+                            <Text
+                                style={styles.socialTermsLink}
+                                onPress={() => Alert.alert('Privacy Policy', 'Streamr respects and protects your private user data.')}
+                            >
+                                Privacy Policy
+                            </Text>
+                            .
+                        </Text>
+                    </View>
+
+                    {/* ── Guest Skip Link ── */}
                     <Pressable
-                        style={{ marginTop: 22, alignSelf: 'center', padding: 8 }}
+                        style={styles.guestSkipButton}
                         onPress={handleContinueAsGuest}
-                        disabled={loadingProvider !== null}
+                        disabled={loadingProvider !== null || submitting}
                     >
                         {loadingProvider === 'guest' ? (
                             <ActivityIndicator color="#818CF8" size="small" />
                         ) : (
-                            <Text style={{ color: '#9CA3AF', fontSize: 13, fontWeight: '600' }}>
+                            <Text style={styles.guestSkipText}>
                                 Skip & Continue as Guest →
                             </Text>
                         )}
                     </Pressable>
-                </View>
-            </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
-            {/* Facebook Login Screen Modal */}
+            {/* ── Facebook Login Modal (Fallback) ── */}
             <Modal
                 visible={showFacebookModal}
                 animationType="slide"
                 onRequestClose={() => setShowFacebookModal(false)}
             >
-                <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-                    <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+                <SafeAreaView style={{ flex: 1, backgroundColor: '#05050A' }}>
+                    <StatusBar barStyle="light-content" backgroundColor="#05050A" />
 
                     <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 16 }}>
-                        {/* Header: < Log in to Facebook */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 36 }}>
                             <Pressable
                                 onPress={() => setShowFacebookModal(false)}
                                 style={{ padding: 8, marginLeft: -8, marginRight: 12 }}
                             >
-                                <ChevronLeft size={28} color="#050505" />
+                                <ChevronLeft size={28} color="#FFFFFF" />
                             </Pressable>
-                            <Text style={{ fontSize: 20, fontWeight: '700', color: '#050505' }}>
+                            <Text style={{ fontSize: 20, fontWeight: '700', color: '#FFFFFF' }}>
                                 Log in to Facebook
                             </Text>
                         </View>
 
-                        {/* Form Inputs */}
                         <View style={{ gap: 16 }}>
-                            <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
-                                <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Email address or mobile number</Text>
+                            <View style={{ borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: '#0E0E18', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 6 }}>
+                                <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Email address or mobile number</Text>
                                 <TextInput
-                                    style={{ fontSize: 16, color: '#050505', paddingVertical: 8 }}
-                                    placeholder=""
-                                    placeholderTextColor="#8A8D91"
+                                    style={{ fontSize: 16, color: '#FFFFFF', paddingVertical: 8 }}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
+                                    placeholderTextColor="#64748B"
                                     value={fbEmailOrPhone}
                                     onChangeText={setFbEmailOrPhone}
                                 />
                             </View>
 
-                            <View style={{ borderWidth: 1.5, borderColor: '#8A8D91', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 4 }}>
-                                <Text style={{ fontSize: 11, color: '#65676B', marginTop: 4 }}>Password</Text>
+                            <View style={{ borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)', backgroundColor: '#0E0E18', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 6 }}>
+                                <Text style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>Password</Text>
                                 <TextInput
-                                    style={{ fontSize: 16, color: '#050505', paddingVertical: 8 }}
-                                    placeholder=""
-                                    placeholderTextColor="#8A8D91"
+                                    style={{ fontSize: 16, color: '#FFFFFF', paddingVertical: 8 }}
                                     secureTextEntry
+                                    placeholderTextColor="#64748B"
                                     value={fbPassword}
                                     onChangeText={setFbPassword}
                                 />
@@ -523,8 +823,8 @@ export function LoginScreen({ navigation }: any) {
 
                             <Pressable
                                 style={({ pressed }) => [{
-                                    backgroundColor: '#0064E0',
-                                    borderRadius: 24,
+                                    backgroundColor: '#1877F2',
+                                    borderRadius: 10,
                                     paddingVertical: 14,
                                     alignItems: 'center',
                                     marginTop: 12,
@@ -545,6 +845,144 @@ export function LoginScreen({ navigation }: any) {
                     </View>
                 </SafeAreaView>
             </Modal>
+
+            {/* ── Forgot Password Modal ── */}
+            <Modal
+                visible={showForgotModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowForgotModal(false)}
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={styles.modalBackdrop}
+                >
+                    <View style={styles.modalCard}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>
+                                {forgotStep === 'email' && 'Reset Password'}
+                                {forgotStep === 'code' && 'Enter Reset Code'}
+                                {forgotStep === 'password' && 'Set New Password'}
+                            </Text>
+                            <Pressable
+                                onPress={() => setShowForgotModal(false)}
+                                hitSlop={8}
+                                style={styles.modalCloseBtn}
+                            >
+                                <Text style={{ color: '#94A3B8', fontSize: 18, fontWeight: '700' }}>✕</Text>
+                            </Pressable>
+                        </View>
+
+                        {forgotStep === 'email' && (
+                            <View>
+                                <Text style={styles.modalSubtitle}>
+                                    Enter your registered email address and we'll send you a 6-digit password reset code.
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { marginBottom: 16 }]}
+                                    placeholder="Email address"
+                                    placeholderTextColor="#64748B"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    value={forgotEmail}
+                                    onChangeText={setForgotEmail}
+                                />
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.primaryButton,
+                                        pressed && styles.primaryButtonPressed,
+                                        forgotSubmitting && styles.primaryButtonDisabled,
+                                    ]}
+                                    onPress={handleForgotRequestCode}
+                                    disabled={forgotSubmitting}
+                                >
+                                    {forgotSubmitting ? (
+                                        <ActivityIndicator color="#FFFFFF" size="small" />
+                                    ) : (
+                                        <Text style={styles.primaryButtonText}>Send Code</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        )}
+
+                        {forgotStep === 'code' && (
+                            <View>
+                                <Text style={styles.modalSubtitle}>
+                                    Enter the 6-digit code sent to{' '}
+                                    <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{forgotEmail}</Text>.
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, styles.otpInput]}
+                                    placeholder="• • • • • •"
+                                    placeholderTextColor="#64748B"
+                                    keyboardType="number-pad"
+                                    maxLength={6}
+                                    value={forgotCode}
+                                    onChangeText={setForgotCode}
+                                />
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.primaryButton,
+                                        pressed && styles.primaryButtonPressed,
+                                        forgotSubmitting && styles.primaryButtonDisabled,
+                                    ]}
+                                    onPress={handleForgotVerifyCode}
+                                    disabled={forgotSubmitting}
+                                >
+                                    {forgotSubmitting ? (
+                                        <ActivityIndicator color="#FFFFFF" size="small" />
+                                    ) : (
+                                        <Text style={styles.primaryButtonText}>Verify Code</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        )}
+
+                        {forgotStep === 'password' && (
+                            <View>
+                                <Text style={styles.modalSubtitle}>
+                                    Choose a new password for your account.
+                                </Text>
+                                <TextInput
+                                    style={[styles.input, { marginBottom: 12 }]}
+                                    placeholder="New Password (min 6 characters)"
+                                    placeholderTextColor="#64748B"
+                                    secureTextEntry
+                                    value={forgotNewPassword}
+                                    onChangeText={setForgotNewPassword}
+                                />
+                                <TextInput
+                                    style={[styles.input, { marginBottom: 16 }]}
+                                    placeholder="Confirm New Password"
+                                    placeholderTextColor="#64748B"
+                                    secureTextEntry
+                                    value={forgotConfirmPassword}
+                                    onChangeText={setForgotConfirmPassword}
+                                />
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.primaryButton,
+                                        pressed && styles.primaryButtonPressed,
+                                        forgotSubmitting && styles.primaryButtonDisabled,
+                                    ]}
+                                    onPress={handleForgotResetPassword}
+                                    disabled={forgotSubmitting}
+                                >
+                                    {forgotSubmitting ? (
+                                        <ActivityIndicator color="#FFFFFF" size="small" />
+                                    ) : (
+                                        <Text style={styles.primaryButtonText}>Update Password & Sign In</Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </SafeAreaView>
     );
+}
+
+export function RegisterScreen(props: any) {
+    return <LoginScreen {...props} initialMode="register" />;
 }

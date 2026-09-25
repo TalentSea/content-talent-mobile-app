@@ -1,8 +1,8 @@
-import { apiGet } from './client';
+import { apiGet, getApiAccessToken } from './client';
 import { API_BASE_URL, DEFAULT_AD_TAG_URL, getCreatorId } from '../../constants/config';
 import { fetchHLSCaptions } from './captionsApi';
 import { fetchUserSubscriptionStatus } from './subscriptionApi';
-import { isUserAdFree, activateSubscription } from './authService';
+import { isUserAdFree, activateSubscription, loginAsGuest } from './authService';
 import { getCleanViewCountForVideo, setBackendViewCount } from '../viewTracker';
 import { getCleanLikesCountForVideo, setBackendLikesCount } from '../userActivity';
 import type {
@@ -115,13 +115,17 @@ export function normalizeVideoItem(item: any): import('../../../types/video').Ap
 export async function fetchVideos(
   params: FetchVideosParams = {},
 ): Promise<PaginatedVideosResponse> {
+  // Ensure we have an authenticated token (guest or subscriber)
+  if (!getApiAccessToken()) {
+    try {
+      await loginAsGuest();
+    } catch (authErr) {
+      console.warn('[fetchVideos] Guest session bootstrap notice:', authErr);
+    }
+  }
+
   try {
     const query = new URLSearchParams();
-
-    const cid = getCreatorId();
-    if (cid) {
-      query.set('creator_id', String(cid));
-    }
 
     if (params.search !== undefined) {
       query.set('search', params.search);
@@ -173,9 +177,8 @@ export async function fetchVideoDetails(
   videoId: number,
 ): Promise<VideoDetails> {
   try {
-    const cid = getCreatorId();
     // Mobile Video Details (/api/v1/mobile/videos/{id})
-    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}?creator_id=${cid}`);
+    const mobileRes = await apiGet<VideoDetails>(`/api/v1/mobile/videos/${videoId}`);
     if (mobileRes) {
       return normalizeVideoItem(mobileRes) as VideoDetails;
     }

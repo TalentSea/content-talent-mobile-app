@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { LoginScreen } from '../screens/LoginScreen/LoginScreen';
+import { LoginScreen, RegisterScreen } from '../screens/LoginScreen/LoginScreen';
 import { HomeScreen } from '../screens/HomeScreen/HomeScreen';
 import { CategoryVideosScreen } from '../screens/CategoryVideosScreen/CategoryVideosScreen';
 import { PlaylistScreen } from '../screens/PlaylistScreen/PlaylistScreen';
@@ -17,6 +17,7 @@ import { NotificationsScreen } from '../screens/NotificationsScreen/Notification
 import { SettingsScreen } from '../screens/SettingsScreen/SettingsScreen';
 import { LibraryScreen } from '../screens/LibraryScreen/LibraryScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen/SubscriptionScreen';
+import { ShortsScreen } from '../screens/ShortsScreen/ShortsScreen';
 import { LibraryProvider } from '../contexts/LibraryContext';
 import { restoreStoredSession, isUserLoggedIn } from '../services/api/authService';
 import type { RootStackParamList } from './types';
@@ -71,7 +72,9 @@ export function RootNavigator() {
                     }}
                 >
                     <Stack.Screen name="Login" component={LoginScreen} />
+                    <Stack.Screen name="Register" component={RegisterScreen} />
                     <Stack.Screen name="Home" component={HomeScreen} />
+                    <Stack.Screen name="Shorts" component={ShortsScreen} />
                     <Stack.Screen name="CategoryVideos" component={CategoryVideosScreen} />
                     <Stack.Screen name="Playlist" component={PlaylistScreen} />
                     <Stack.Screen name="PlaylistDetail" component={PlaylistDetailScreen} />

@@ -19,7 +19,7 @@ export function registerCreatorIdListener(listener: (newId: number) => void): vo
 
 export const API_BASE_URL =
   typeof process !== 'undefined' && process.env && process.env.API_BASE_URL
-    ? process.env.API_BASE_URL
+    ? String(process.env.API_BASE_URL).trim().replace(/\/+$/, '')
     : 'https://mc-8b2il1t9co.bunny.run';
 export const DEFAULT_AUTH_TOKEN = 'talentsea_secret_api_key_2026';
 export const RAZORPAY_KEY_ID = 'rzp_test_TZdrjdhyuxCuaR';

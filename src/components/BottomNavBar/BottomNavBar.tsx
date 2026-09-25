@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Home, Grid, User } from 'lucide-react-native';
+import { Home, Film, Grid, User } from 'lucide-react-native';
 import { styles } from './styles';
 
 type BottomNavBarProps = {
-  activeTab: 'Home' | 'Categories' | 'Profile';
+  activeTab: 'Home' | 'Shorts' | 'Categories' | 'Profile';
   navigation: any;
 };
 
@@ -26,6 +26,24 @@ export function BottomNavBar({ activeTab, navigation }: BottomNavBarProps) {
           ]}
         >
           Home
+        </Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.tab}
+        onPress={() => navigation.navigate('Shorts')}
+      >
+        <Film
+          size={20}
+          color={activeTab === 'Shorts' ? '#EF4444' : '#6B7280'}
+        />
+        <Text
+          style={[
+            styles.tabText,
+            activeTab === 'Shorts' && { color: '#EF4444', fontWeight: '700' },
+          ]}
+        >
+          Shorts
         </Text>
       </Pressable>
 

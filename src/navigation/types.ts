@@ -1,7 +1,8 @@
 export type VideoSectionKey = 'popular' | 'processing' | 'continue' | 'recent';
 
 export type RootStackParamList = {
-    Login: undefined;
+    Login: { mode?: 'login' | 'register' } | undefined;
+    Register: undefined;
     Home: undefined;
     CategoryVideos: {
         category: string;
@@ -27,4 +28,5 @@ export type RootStackParamList = {
         section: VideoSectionKey;
     };
     Subscription: undefined;
+    Shorts: undefined;
 };

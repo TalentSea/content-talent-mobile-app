@@ -1,29 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StatusBar,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Bell,
   Bookmark,
+  Camera,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
   Crown,
   Download,
+  Edit2,
   Heart,
   HelpCircle,
   LogIn,
   LogOut,
   Settings,
   Trash2,
+  User,
+  X,
 } from 'lucide-react-native';
 import { BottomNavBar } from '../../components/BottomNavBar';
 import { VerticalList } from '../../components/VerticalList';
@@ -41,11 +51,21 @@ import {
   isUserSubscribed,
   isUserAdFree,
   subscribeAuthChange,
+  updateSubscriberProfile,
+  uploadSubscriberProfilePhoto,
 } from '../../services/api/authService';
 import { fetchUserSubscriptionStatus, LiveSubscriptionDTO } from '../../services/api/subscriptionApi';
 import type { DownloadedVideoItem } from '../../services/downloadService';
 import type { ApiVideo } from '../../types/video';
 import { styles } from './styles';
+
+const CURATED_AVATARS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=256&h=256&fit=crop&crop=faces',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=256&h=256&fit=crop&crop=faces',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces',
+];
 
 function getInitials(name?: string | null): string {
   if (!name) return 'AK';
@@ -60,6 +80,12 @@ export function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState(getCurrentUser());
   const [activeSection, setActiveSection] = useState<'history' | 'downloads' | 'saved' | 'liked' | null>('history');
   const [liveSub, setLiveSub] = useState<LiveSubscriptionDTO | null>(null);
+
+  // Edit Profile Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editPhotoUrl, setEditPhotoUrl] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     const unsub = subscribeAuthChange(() => {
@@ -200,6 +226,10 @@ export function ProfileScreen({ navigation }: any) {
             onPress={() => {
               if (!userIsLoggedIn) {
                 navigation?.navigate('Login');
+              } else {
+                setEditName(currentUser.name || '');
+                setEditPhotoUrl(currentUser.avatar_url || '');
+                setShowEditModal(true);
               }
             }}
           >
@@ -209,10 +239,32 @@ export function ProfileScreen({ navigation }: any) {
               ) : (
                 <Text style={styles.avatarInitials}>{getInitials(currentUser.name)}</Text>
               )}
+              {userIsLoggedIn && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: -2,
+                    right: -2,
+                    backgroundColor: '#6366F1',
+                    borderRadius: 10,
+                    width: 20,
+                    height: 20,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: '#12121E',
+                  }}
+                >
+                  <Edit2 size={10} color="#FFFFFF" />
+                </View>
+              )}
             </View>
 
             <View style={styles.userInfoContainer}>
-              <Text style={styles.userNameText}>{currentUser.name}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.userNameText}>{currentUser.name}</Text>
+                {userIsLoggedIn && <Edit2 size={13} color="#818CF8" />}
+              </View>
               <Text style={styles.userEmailText}>{currentUser.email || 'guest@streamr.app'}</Text>
               <View style={styles.membershipRow}>
                 <Crown size={14} color={userIsSubscribed ? '#A855F7' : '#94A3B8'} />
@@ -554,6 +606,131 @@ export function ProfileScreen({ navigation }: any) {
         }}
         onClose={closePlayer}
       />
+
+      {/* ── Edit Profile Modal ── */}
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Pressable
+                onPress={() => setShowEditModal(false)}
+                hitSlop={8}
+                style={styles.modalCloseBtn}
+              >
+                <X size={20} color="#94A3B8" />
+              </Pressable>
+            </View>
+
+            {/* Avatar Preview & Selection */}
+            <View style={styles.avatarPickerSection}>
+              <View style={styles.previewAvatarWrapper}>
+                {editPhotoUrl ? (
+                  <Image source={{ uri: editPhotoUrl }} style={styles.previewAvatarImg} />
+                ) : (
+                  <Text style={styles.avatarInitials}>{getInitials(editName || currentUser.name)}</Text>
+                )}
+              </View>
+
+              <Text style={styles.avatarPickerLabel}>Choose Profile Picture</Text>
+              <View style={styles.curatedAvatarsRow}>
+                {CURATED_AVATARS.map((url, idx) => {
+                  const isSelected = editPhotoUrl === url;
+                  return (
+                    <Pressable
+                      key={idx}
+                      style={[
+                        styles.curatedAvatarBtn,
+                        isSelected && styles.curatedAvatarBtnSelected,
+                      ]}
+                      onPress={() => setEditPhotoUrl(url)}
+                    >
+                      <Image source={{ uri: url }} style={styles.curatedAvatarImg} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Custom Photo URL or File URI */}
+            <Text style={styles.inputLabel}>Custom Photo URL / File URI</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="https://... or file:///..."
+              placeholderTextColor="#64748B"
+              autoCapitalize="none"
+              value={editPhotoUrl}
+              onChangeText={setEditPhotoUrl}
+            />
+
+            {/* Display Name Input */}
+            <Text style={styles.inputLabel}>Display Name</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Your full name"
+              placeholderTextColor="#64748B"
+              value={editName}
+              onChangeText={setEditName}
+              autoCapitalize="words"
+            />
+
+            {/* Save Button */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveBtn,
+                pressed && styles.saveBtnPressed,
+                savingProfile && styles.saveBtnDisabled,
+              ]}
+              onPress={async () => {
+                const cleanName = editName.trim();
+                if (!cleanName) {
+                  Alert.alert('Edit Profile', 'Please enter a valid display name.');
+                  return;
+                }
+
+                try {
+                  setSavingProfile(true);
+
+                  // 1. Update Name if modified (PATCH /api/v1/mobile/auth/profile)
+                  if (cleanName !== currentUser.name) {
+                    await updateSubscriberProfile(cleanName);
+                  }
+
+                  // 2. Upload / Update Photo if modified (POST /api/v1/mobile/auth/profile/photo)
+                  if (editPhotoUrl && editPhotoUrl !== currentUser.avatar_url) {
+                    await uploadSubscriberProfilePhoto(editPhotoUrl);
+                  }
+
+                  setShowEditModal(false);
+                  setUser(getCurrentUser());
+                  Alert.alert('Profile Saved', 'Your profile details have been updated.');
+                } catch (err: any) {
+                  console.warn('[EditProfile] Save error:', err);
+                  const msg = err?.detail || err?.message || 'Could not update profile.';
+                  Alert.alert('Update Notice', msg);
+                } finally {
+                  setSavingProfile(false);
+                }
+              }}
+              disabled={savingProfile}
+            >
+              {savingProfile ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.saveBtnText}>Save Changes</Text>
+              )}
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }

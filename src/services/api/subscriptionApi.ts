@@ -64,10 +64,9 @@ const REAL_CREATOR_PLANS_FALLBACK: SubscriptionPlan[] = [
  * Fetches subscription plans set by the creator directly via backend REST API.
  */
 export async function fetchSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  const cid = getCreatorId();
   const endpoints = [
-    `/api/v1/mobile/plans?creator_id=${cid}`,
-    `/api/v1/mobile/subscription-plans?creator_id=${cid}`,
+    '/api/v1/mobile/plans',
+    '/api/v1/mobile/subscription-plans',
   ];
 
   for (const path of endpoints) {
@@ -269,12 +268,11 @@ export type LiveSubscriptionStatusResponse = {
  * Returns plan_name 'Free Plan' when user has no active paid subscription.
  */
 export async function fetchUserSubscriptionStatus(): Promise<LiveSubscriptionStatusResponse> {
-  const cid = getCreatorId();
   const endpoints = [
-    `/api/v1/mobile/subscriptions/me?creator_id=${cid}`,
-    `/api/v1/subscriptions/me?creator_id=${cid}`,
-    `/api/v1/mobile/users/me?creator_id=${cid}`,
-    `/api/v1/users/me?creator_id=${cid}`,
+    '/api/v1/mobile/subscriptions/me',
+    '/api/v1/subscriptions/me',
+    '/api/v1/mobile/users/me',
+    '/api/v1/users/me',
   ];
 
   for (const path of endpoints) {

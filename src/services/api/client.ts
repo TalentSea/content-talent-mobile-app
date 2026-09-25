@@ -1,5 +1,5 @@
-import { API_BASE_URL, getCreatorId } from '../../constants/config';
-import { refreshAccessToken } from './authService';
+import { API_BASE_URL, getCreatorId, setCreatorId } from '../../constants/config';
+import { refreshAccessToken, loginAsGuest } from './authService';
 
 export class ApiError extends Error {
   status: number;
@@ -18,6 +18,14 @@ let isRefreshing = false;
 
 export function setApiAccessToken(token: string | null) {
   accessToken = token;
+
+  // Auto-decode JWT payload & sync active creator_id from authenticated token
+  if (token) {
+    const jwtCreatorId = decodeJwtCreatorId(token);
+    if (jwtCreatorId && jwtCreatorId > 0) {
+      setCreatorId(jwtCreatorId);
+    }
+  }
 }
 
 export function getApiAccessToken(): string | null {
@@ -105,11 +113,15 @@ export async function apiRequest<T>(
     headers: requestHeaders,
   });
 
-  // Handle 401 Unauthorized -> Refresh access token
-  if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/api/v1/auth/')) {
+  // Handle 401 Unauthorized -> Refresh access token or fall back to guest session
+  if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/auth/')) {
     try {
       isRefreshing = true;
-      await refreshAccessToken();
+      try {
+        await refreshAccessToken();
+      } catch {
+        await loginAsGuest();
+      }
       isRefreshing = false;
 
       return apiRequest<T>(path, {
@@ -118,7 +130,7 @@ export async function apiRequest<T>(
       });
     } catch (refreshErr) {
       isRefreshing = false;
-      console.warn('[client.ts] Silent token refresh failed:', refreshErr);
+      console.warn('[client.ts] Silent token recovery failed:', refreshErr);
     }
   }
 
