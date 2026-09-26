@@ -23,11 +23,18 @@ import {
   Tv,
   Zap,
 } from 'lucide-react-native';
-import { activateSubscription, getCurrentUser } from '../../services/api/authService';
+import {
+  activateSubscription,
+  getCurrentUser,
+  getUserSubscriptionTier,
+  isUserSubscribed,
+} from '../../services/api/authService';
 import {
   createRazorpayOrder,
   createSubscription,
   fetchSubscriptionPlans,
+  fetchUserSubscriptionStatus,
+  LiveSubscriptionDTO,
   SubscriptionPlan,
   verifyRazorpayPayment,
 } from '../../services/api/subscriptionApi';
@@ -50,13 +57,20 @@ export function SubscriptionScreen({ navigation }: any) {
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [showRazorpayModal, setShowRazorpayModal] = useState<boolean>(false);
   const [razorpayOrder, setRazorpayOrder] = useState<any>(null);
+  const [liveSub, setLiveSub] = useState<LiveSubscriptionDTO | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     async function loadPlans() {
       try {
         setLoadingPlans(true);
-        const data = await fetchSubscriptionPlans();
+        const [data, status] = await Promise.all([
+          fetchSubscriptionPlans(),
+          fetchUserSubscriptionStatus().catch(() => null),
+        ]);
+        if (isMounted && status?.subscription) {
+          setLiveSub(status.subscription);
+        }
         if (isMounted && data.length > 0) {
           setPlans(data);
           const currentUserPlanId = user?.plan_id ? String(user.plan_id) : '';
@@ -225,6 +239,36 @@ export function SubscriptionScreen({ navigation }: any) {
   };
 
   const activePlan = plans.find(p => p.id === selectedPlanId) || plans[0];
+
+  const userIsSub = Boolean(liveSub?.plan_name && liveSub.plan_name !== 'Free Plan') || isUserSubscribed();
+  const subTier = getUserSubscriptionTier();
+  const currentPlanName = liveSub?.plan_name || (userIsSub ? (subTier === 'premium' ? 'Premium Ad-Free' : 'Standard with Ads') : (user?.chosen_plan || 'Free Plan'));
+
+  const matchedPlan = plans.find(p =>
+    p.id === String(liveSub?.plan_id || user?.plan_id) ||
+    p.name.toLowerCase() === currentPlanName.toLowerCase() ||
+    (currentPlanName.toLowerCase().includes('premium') && p.name.toLowerCase().includes('premium')) ||
+    (currentPlanName.toLowerCase().includes('standard') && p.name.toLowerCase().includes('standard'))
+  );
+
+  const currentFeatures: string[] = matchedPlan?.features && matchedPlan.features.length > 0
+    ? matchedPlan.features
+    : userIsSub
+      ? [
+          'Full video catalog access',
+          'High definition (1080p Full HD) streaming',
+          '100% Ad-free uninterrupted playback',
+          'Offline mobile video downloads',
+          'Up to 3 concurrent device screens',
+          'Priority access to newly released content',
+        ]
+      : [
+          'Full creator video catalog access',
+          'Standard definition (720p HD) streaming',
+          'Ad-supported viewing experience',
+          '1 active device stream',
+          'Watch history and personalized recommendations',
+        ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.mainBackgroundColor }]}>
@@ -401,110 +445,85 @@ export function SubscriptionScreen({ navigation }: any) {
           })
         )}
 
-        {/* Dynamic Plan Comparison Feature Matrix */}
-        <Text style={[styles.sectionTitle, { marginTop: 16 }, { color: theme.primaryTextColor }]}>Plan Comparison</Text>
+        {/* Current Plan : Plan Features */}
+        <Text style={[styles.sectionTitle, { marginTop: 18, color: theme.primaryTextColor }]}>
+          Current Plan : Plan features
+        </Text>
 
-        <View style={styles.matrixCard}>
-          {/* Header Row */}
-          <View style={styles.matrixHeaderRow}>
-            <Text style={[styles.matrixHeaderCell, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Feature</Text>
-            {plans.map(p => (
-              <Text
-                key={p.id}
-                style={[styles.matrixHeaderCell,
-                  { flex: 1, textAlign: 'center' },
-                  p.id === selectedPlanId && { color: '#6366F1', fontWeight: '800' },
-                , { color: theme.primaryTextColor }]}
-                numberOfLines={2}
-              >
-                {p.name}
+        <View
+          style={[
+            styles.currentPlanCard,
+            {
+              backgroundColor: theme.cardBackgroundColor,
+              borderColor: userIsSub ? '#10B981' : 'rgba(255,255,255,0.08)',
+            },
+          ]}
+        >
+          <View style={styles.currentPlanHeader}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <Text style={[styles.currentPlanName, { color: theme.primaryTextColor }]}>
+                  {currentPlanName}
+                </Text>
+                <View
+                  style={[
+                    styles.currentPlanBadge,
+                    {
+                      backgroundColor: userIsSub ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                      borderColor: userIsSub ? '#10B981' : '#6366F1',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      color: userIsSub ? '#10B981' : '#818CF8',
+                      fontSize: 10,
+                      fontWeight: '800',
+                      letterSpacing: 0.5,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {userIsSub ? 'ACTIVE SUBSCRIBER' : 'FREE TIER'}
+                  </Text>
+                </View>
+              </View>
+
+              {liveSub?.days_remaining ? (
+                <Text style={{ color: '#10B981', fontSize: 12, fontWeight: '600', marginTop: 4 }}>
+                  ⏳ {liveSub.days_remaining} days remaining in current billing cycle
+                </Text>
+              ) : (
+                <Text style={{ color: theme.mutedTextColor, fontSize: 12, marginTop: 4 }}>
+                  {userIsSub ? 'Auto-renewing membership active' : 'Ad-supported free access'}
+                </Text>
+              )}
+            </View>
+
+            <View style={{ alignItems: 'flex-end', flexShrink: 0 }}>
+              <Text style={[styles.currentPlanPrice, { color: theme.primaryTextColor }]}>
+                {matchedPlan?.price || (userIsSub ? '₹199' : '₹0')}
               </Text>
-            ))}
+              <Text style={{ color: theme.mutedTextColor, fontSize: 11 }}>
+                {matchedPlan?.period || (userIsSub ? '/month' : 'Free Forever')}
+              </Text>
+            </View>
           </View>
 
-          {/* Row 1: Catalog Access */}
-          <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Catalog Access</Text>
-            {plans.map(p => (
-              <View key={p.id} style={{ flex: 1, alignItems: 'center' }}>
-                <Check size={16} color="#10B981" />
+          <View style={[styles.currentPlanDivider, { backgroundColor: 'rgba(255, 255, 255, 0.08)' }]} />
+
+          <Text style={{ color: theme.primaryTextColor, fontSize: 13, fontWeight: '700', marginBottom: 10 }}>
+            Plan Features:
+          </Text>
+
+          <View style={{ gap: 8 }}>
+            {currentFeatures.map((feat, idx) => (
+              <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <CheckCircle2 size={16} color={userIsSub ? '#10B981' : '#6366F1'} />
+                <Text style={{ color: theme.primaryTextColor, fontSize: 13, flex: 1, lineHeight: 18 }}>
+                  {feat}
+                </Text>
               </View>
             ))}
-          </View>
-
-          {/* Row 2: Ad Experience */}
-          <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Ad Experience</Text>
-            {plans.map(p => {
-              const nameLower = (p.name || '').toLowerCase();
-              const isAdFree = !nameLower.includes('with_ads') && !nameLower.includes('ad-supported') && !nameLower.includes('standard');
-              return (
-                <Text
-                  key={p.id}
-                  style={[styles.matrixCellText,
-                    { flex: 1, textAlign: 'center' },
-                    isAdFree && styles.matrixCellTextHighlight,
-                  , { color: theme.primaryTextColor }]}
-                >
-                  {isAdFree ? '100% Ad-Free' : 'Ad-Supported'}
-                </Text>
-              );
-            })}
-          </View>
-
-          {/* Row 3: Video Resolution */}
-          <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Resolution</Text>
-            {plans.map(p => {
-              const nameLower = (p.name || '').toLowerCase();
-              const feats = (p.features || []).join(' ').toLowerCase();
-              const is1080p = nameLower.includes('premium') || feats.includes('1080p') || feats.includes('4k') || feats.includes('full hd');
-              return (
-                <Text
-                  key={p.id}
-                  style={[styles.matrixCellText,
-                    { flex: 1, textAlign: 'center' },
-                    is1080p && styles.matrixCellTextHighlight,
-                  , { color: theme.primaryTextColor }]}
-                >
-                  {is1080p ? '1080p Full HD' : '720p HD'}
-                </Text>
-              );
-            })}
-          </View>
-
-          {/* Row 4: Concurrent Devices */}
-          <View style={[styles.matrixRow, styles.matrixRowAlt]}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Concurrent Devices</Text>
-            {plans.map(p => {
-              const feats = (p.features || []).join(' ').toLowerCase();
-              const isMulti = feats.includes('3') || feats.includes('multiple') || p.name.toLowerCase().includes('premium');
-              return (
-                <Text
-                  key={p.id}
-                  style={[styles.matrixCellText,
-                    { flex: 1, textAlign: 'center' },
-                    isMulti && styles.matrixCellTextHighlight,
-                  , { color: theme.primaryTextColor }]}
-                >
-                  {isMulti ? 'Up to 3 Devices' : '1 Device'}
-                </Text>
-              );
-            })}
-          </View>
-
-          {/* Row 5: Offline Downloads */}
-          <View style={styles.matrixRow}>
-            <Text style={[styles.matrixFeatureName, { flex: 1.8 }, { color: theme.primaryTextColor }]}>Offline Downloads</Text>
-            {plans.map(p => {
-              const feats = (p.features || []).join(' ').toLowerCase();
-              const hasOffline = feats.includes('download') || p.name.toLowerCase().includes('premium');
-              return (
-                <View key={p.id} style={{ flex: 1, alignItems: 'center' }}>
-                  {hasOffline ? <Check size={16} color="#10B981" /> : <Minus size={14} color="#4B5563" />}
-                </View>
-              );
-            })}
           </View>
         </View>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Animated,
   Dimensions,
+  Image,
   PanResponder,
   Pressable,
   Share,
@@ -110,6 +111,7 @@ function formatTime(secs: number): string {
 type ShortCardProps = {
   item: ShortItem;
   isActive: boolean;
+  shouldPreload?: boolean;
   isPlaybackAllowed?: boolean;
   isMuted: boolean;
   cardHeight?: number;
@@ -121,6 +123,7 @@ type ShortCardProps = {
 export function ShortCard({
   item,
   isActive,
+  shouldPreload = false,
   isPlaybackAllowed = true,
   isMuted,
   cardHeight,
@@ -129,6 +132,8 @@ export function ShortCard({
   onLikeToggle,
 }: ShortCardProps) {
   const playerRef = useRef<NativeVideoPlayerRef>(null);
+
+  const shouldMountPlayer = isActive || shouldPreload;
 
   const [userPaused, setUserPaused] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
@@ -439,26 +444,38 @@ export function ShortCard({
 
   return (
     <View style={[styles.shortCard, cardHeight ? { height: cardHeight } : null]}>
-      {/* Video Player */}
-      <NativeVideoPlayer
-        ref={playerRef}
-        uri={item.streamUrl}
-        autoStart={isActive && isPlaybackAllowed && !userPaused}
-        controls={false}
-        loop={true}
-        muted={isMuted}
-        playbackRate={isSpeedingUp ? 2.0 : 1.0}
-        resizeMode="cover"
-        style={StyleSheet.flatten([styles.playerStyle, cardHeight ? { height: cardHeight } : null])}
-        onProgress={(cur, dur) => {
-          if (!isScrubbing && typeof cur === 'number' && !isNaN(cur)) {
-            setCurrentTime(cur);
-          }
-          if (typeof dur === 'number' && dur > 0) {
-            setDuration(dur);
-          }
-        }}
-      />
+      {/* Underlying Poster Thumbnail to prevent black flash during swipe/buffering */}
+      {item.thumbnailUrl ? (
+        <Image
+          source={{ uri: item.thumbnailUrl }}
+          style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
+          resizeMode="cover"
+        />
+      ) : null}
+
+      {/* Video Player: Mounted for active and preloaded adjacent items */}
+      {shouldMountPlayer ? (
+        <NativeVideoPlayer
+          ref={playerRef}
+          uri={item.streamUrl}
+          thumbnailUrl={item.thumbnailUrl || undefined}
+          autoStart={isActive && isPlaybackAllowed && !userPaused}
+          controls={false}
+          loop={true}
+          muted={isActive ? isMuted : true}
+          playbackRate={isSpeedingUp ? 2.0 : 1.0}
+          resizeMode="cover"
+          style={StyleSheet.flatten([styles.playerStyle, cardHeight ? { height: cardHeight } : null])}
+          onProgress={(cur, dur) => {
+            if (!isScrubbing && typeof cur === 'number' && !isNaN(cur)) {
+              setCurrentTime(cur);
+            }
+            if (typeof dur === 'number' && dur > 0) {
+              setDuration(dur);
+            }
+          }}
+        />
+      ) : null}
 
       {/* Tap Overlay (single tap = pause/play, double tap = like, hold = 2X speed) */}
       <Pressable

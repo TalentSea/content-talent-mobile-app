@@ -28,11 +28,11 @@ export function LibraryScreen({ route, navigation }: any) {
   const { theme } = useAppTheme();
 
   const type = route.params?.type ?? 'saved';
-  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists'>('videos');
+  const [activeMediaTab, setActiveMediaTab] = useState<'videos' | 'playlists' | 'shorts'>('videos');
   const [refreshing, setRefreshing] = useState(false);
 
   const { videos, loading: videosLoading, reload } = useVideos();
-  const { savedVideos, likedVideos, savedPlaylists } = useUserActivity(videos);
+  const { savedVideos, likedVideos, savedPlaylists, savedShorts } = useUserActivity(videos);
   const { downloadedVideos } = useDownloads(videos);
   const { history } = useWatchHistory(videos);
   const { playingVideo, playVideo, closePlayer } = useVideoPlayback(videos);
@@ -154,6 +154,24 @@ export function LibraryScreen({ route, navigation }: any) {
               Playlists ({savedPlaylists.length})
             </Text>
           </Pressable>
+
+          <Pressable
+            style={[
+              styles.tabButton,
+              { backgroundColor: theme.cardBackgroundColor },
+              activeMediaTab === 'shorts' && { backgroundColor: theme.primaryColor, borderColor: theme.primaryColor },
+            ]}
+            onPress={() => setActiveMediaTab('shorts')}
+          >
+            <Text
+              style={[
+                styles.tabButtonText,
+                { color: activeMediaTab === 'shorts' ? theme.buttonTextColor : theme.mutedTextColor },
+              ]}
+            >
+              Shorts ({savedShorts.length})
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -207,6 +225,73 @@ export function LibraryScreen({ route, navigation }: any) {
               onPress={() => navigation.navigate('HomeTab' as any)}
             >
               <Text style={[styles.exploreButtonText, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]}>Explore Playlists</Text>
+            </Pressable>
+          </View>
+        )
+      ) : isSavedSection && activeMediaTab === 'shorts' ? (
+        savedShorts.length > 0 ? (
+          <FlatList
+            data={savedShorts}
+            keyExtractor={item => `saved-short-${item.id}`}
+            numColumns={2}
+            contentContainerStyle={styles.shortsGrid}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primaryTextColor} />
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                style={[styles.shortCard, { backgroundColor: theme.cardBackgroundColor }]}
+                onPress={() => {
+                  navigation.navigate('ShortsTab', {
+                    initialShort: item,
+                    initialShortId: item.id,
+                  });
+                }}
+              >
+                <View style={styles.shortThumbnailWrapper}>
+                  {item.thumbnailUrl ? (
+                    <Image source={{ uri: item.thumbnailUrl }} style={styles.shortThumbnail} />
+                  ) : (
+                    <View style={[styles.shortThumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
+                      <Film color="#6B7280" size={32} />
+                    </View>
+                  )}
+                  <View style={styles.shortBadgeOverlay}>
+                    <Film size={11} color="#FFFFFF" />
+                    <Text style={styles.shortViewsText}>
+                      {item.viewsCount > 0 ? `${item.viewsCount} views` : 'Short'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.shortCopy}>
+                  <Text style={[styles.shortTitle, { color: theme.primaryTextColor }]} numberOfLines={2}>
+                    {item.title}
+                  </Text>
+                  <View style={styles.shortMetaRow}>
+                    <Text style={{ color: theme.mutedTextColor, fontSize: 11, flex: 1 }} numberOfLines={1}>
+                      {item.creatorName || 'Creator Short'}
+                    </Text>
+                    <Bookmark size={14} color="#6366F1" fill="#6366F1" />
+                  </View>
+                </View>
+              </Pressable>
+            )}
+          />
+        ) : (
+          <View style={styles.emptyState}>
+            <View style={styles.iconWrap}>
+              <Film color={colors.primary} size={30} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.primaryTextColor }]}>No saved shorts yet</Text>
+            <Text style={[styles.emptyDescription, { color: theme.mutedTextColor }]}>
+              Bookmark vertical shorts while swiping through the feed to watch them anytime.
+            </Text>
+            <Pressable
+              style={styles.exploreButton}
+              onPress={() => navigation.navigate('ShortsTab')}
+            >
+              <Text style={[styles.exploreButtonText, { color: '#FFFFFF' }]}>Explore Shorts</Text>
             </Pressable>
           </View>
         )

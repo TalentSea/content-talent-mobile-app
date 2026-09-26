@@ -224,58 +224,34 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* Feature Comparison Table Styles */
-  matrixCard: {
-    backgroundColor: '#0E0E16',
+  /* Current Plan & Features Styles */
+  currentPlanCard: {
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    padding: 18,
+    borderWidth: 1.5,
     marginBottom: 24,
-    overflow: 'hidden',
   },
-  matrixHeaderRow: {
+  currentPlanHeader: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  matrixHeaderCell: {
-    fontSize: 11,
+  currentPlanName: {
+    fontSize: 18,
     fontWeight: '800',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
-  matrixRow: {
-    flexDirection: 'row',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
-    alignItems: 'center',
+  currentPlanBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
   },
-  matrixRowAlt: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  currentPlanPrice: {
+    fontSize: 22,
+    fontWeight: '900',
   },
-  matrixFeatureName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#E5E7EB',
-  },
-  matrixCellText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: '#9CA3AF',
-    textAlign: 'center',
-  },
-  matrixCellTextHighlight: {
-    color: '#10B981',
-    fontWeight: '700',
-  },
-  matrixCellDash: {
-    color: '#4B5563',
-    textAlign: 'center',
+  currentPlanDivider: {
+    height: 1,
+    marginVertical: 14,
   },
 });
