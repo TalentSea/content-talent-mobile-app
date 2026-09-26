@@ -4,7 +4,6 @@ import {
   AppState,
   AppStateStatus,
   Dimensions,
-  Image,
   Pressable,
   RefreshControl,
   StatusBar,
@@ -80,10 +79,6 @@ export function ShortsScreen({ navigation, route }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-
   const [activeIndex, setActiveIndex] = useState(0);
   const [feedHeight, setFeedHeight] = useState(0);
   // Synchronized global mute state across all shorts in feed
@@ -100,22 +95,14 @@ export function ShortsScreen({ navigation, route }: any) {
 
   const isPlaybackAllowed = isFocused && appState === 'active';
 
-  const loadShorts = async (pageToLoad: number = 1) => {
+  const loadShorts = async (page: number = 1) => {
     try {
-      if (pageToLoad === 1) {
+      if (page === 1) {
         setLoading(true);
         setErrorMessage(null);
-        setHasMore(true);
-      } else {
-        if (loadingMore || !hasMore) return;
-        setLoadingMore(true);
       }
-      const data = await fetchShortsApi(pageToLoad, 15);
-      if (data.length < 15) {
-        setHasMore(false);
-      }
-      if (pageToLoad === 1) {
-        setCurrentPage(1);
+      const data = await fetchShortsApi(page, 15);
+      if (page === 1) {
         const initial = route?.params?.initialShort;
         if (initial) {
           const filtered = data.filter(s => s.id !== initial.id);
@@ -124,42 +111,22 @@ export function ShortsScreen({ navigation, route }: any) {
           setShortsList(data);
         }
       } else {
-        setCurrentPage(pageToLoad);
         setShortsList(prev => [...prev, ...data]);
       }
     } catch (err: any) {
       console.warn('[ShortsScreen] Error loading shorts:', err);
-      if (pageToLoad === 1) {
+      if (page === 1) {
         setErrorMessage('Check your connection');
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
-      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
     loadShorts(1);
   }, []);
-
-  const handleEndReached = () => {
-    if (!loading && !loadingMore && hasMore && shortsList.length >= 8) {
-      loadShorts(currentPage + 1);
-    }
-  };
-
-  // Preload upcoming poster thumbnails to eliminate black frames during vertical swipes
-  useEffect(() => {
-    if (shortsList && shortsList.length > 0) {
-      const candidates = shortsList.slice(Math.max(0, activeIndex - 1), activeIndex + 5);
-      candidates.forEach(short => {
-        if (short.thumbnailUrl) {
-          Image.prefetch(short.thumbnailUrl).catch(() => {});
-        }
-      });
-    }
-  }, [activeIndex, shortsList]);
 
   // Jump to or prepend initialShort when route params update
   useEffect(() => {
@@ -278,7 +245,6 @@ export function ShortsScreen({ navigation, route }: any) {
                 item={item}
                 cardHeight={feedHeight > 0 ? feedHeight : WINDOW_HEIGHT - 65}
                 isActive={index === activeIndex}
-                shouldPreload={Math.abs(index - activeIndex) === 1}
                 isPlaybackAllowed={isPlaybackAllowed}
                 isMuted={globalMuted}
                 onToggleMute={() => setGlobalMuted(prev => !prev)}
@@ -287,9 +253,6 @@ export function ShortsScreen({ navigation, route }: any) {
               />
             )}
             estimatedItemSize={feedHeight > 0 ? feedHeight : WINDOW_HEIGHT - 65}
-            drawDistance={feedHeight > 0 ? feedHeight * 2 : WINDOW_HEIGHT * 2}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={0.7}
             pagingEnabled
             decelerationRate="fast"
             showsVerticalScrollIndicator={false}
