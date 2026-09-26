@@ -77,7 +77,7 @@ export function VideoCard({
     return (
       <Pressable style={styles.rowCard} onPress={onPress}>
         <View style={styles.rowThumbnailWrap}>
-          <Image source={{ uri: thumb }} style={styles.thumbnail} />
+          <Image source={{ uri: thumb }} style={styles.thumbnail} resizeMode="cover" />
 
           {onDelete ? (
             <Pressable
@@ -133,7 +133,7 @@ export function VideoCard({
           fullWidth ? styles.thumbnailWrapFullWidth : null,
         ]}
       >
-        <Image source={{ uri: thumb }} style={styles.thumbnail} />
+        <Image source={{ uri: thumb }} style={styles.thumbnail} resizeMode="cover" />
 
         {onDelete ? (
           <Pressable

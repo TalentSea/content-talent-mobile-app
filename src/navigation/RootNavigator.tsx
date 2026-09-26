@@ -24,24 +24,25 @@ export function RootNavigator() {
         async function runUnifiedBootstrap() {
             try {
                 // Unified single-trip bootstrap:
-                // 1. Restore auth session from disk FIRST to inject the JWT token
-                const user = await restoreStoredSession();
+                // Fetch session and branding concurrently to optimize cold boot
+                const [user, brandingData] = await Promise.all([
+                    restoreStoredSession(),
+                    fetchMobileBrandingApi().catch(err => {
+                        console.warn('[RootNavigator] Branding fetch failed:', err);
+                        return null;
+                    })
+                ]);
+
+                if (brandingData && isMounted) {
+                    setBranding(brandingData);
+                    if (brandingData.colors) {
+                        setTheme(brandingData.colors);
+                    }
+                }
+
                 const loggedIn = isUserLoggedIn();
 
                 if (user && loggedIn && isMounted) {
-                    // 2. ONLY fetch branding AFTER session is restored, since it requires Authorization header
-                    try {
-                        const brandingData = await fetchMobileBrandingApi();
-                        if (brandingData && isMounted) {
-                            setBranding(brandingData);
-                            if (brandingData.colors) {
-                                setTheme(brandingData.colors);
-                            }
-                        }
-                    } catch (bErr) {
-                        console.warn('[RootNavigator] Branding fetch failed:', bErr);
-                    }
-
                     console.log('[RootNavigator] Initial session restored for logged-in user:', user.name);
                     setInitialRoute('MainTabs');
                 } else if (isMounted) {

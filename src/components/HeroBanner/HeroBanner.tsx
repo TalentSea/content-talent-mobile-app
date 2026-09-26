@@ -82,25 +82,17 @@ function HeroBannerSlideItem({
   }, [item.thumbnail_url, item.creatorAvatar]);
 
   return (
-    <View style={[styles.bannerSlide, { backgroundColor: theme.cardBackgroundColor }]}>
+    <View style={[styles.bannerSlide, { backgroundColor: theme.mainBackgroundColor, borderWidth: 0 }]}>
       {imgUri ? (
         <Image
           source={{ uri: imgUri }}
           style={styles.backgroundImage}
+          resizeMode={item.type === 'branding' ? 'contain' : 'cover'}
           onError={() => setImgUri('')}
         />
       ) : null}
       <View style={styles.gradientOverlay}>
-        {/* Top Badge Row: Category Pill on top right for featured videos */}
-        {item.category && item.type !== 'branding' ? (
-          <View style={styles.brandingBadgeRow}>
-            <View style={styles.categoryPillBadge}>
-              <Film size={11} color={theme.primaryTextColor} />
-              <Text style={[styles.categoryPillText, { color: theme.primaryTextColor }]}>{item.category}</Text>
-            </View>
-          </View>
-        ) : null}
-
+        {/* Top Badge Row: Category Pill (Removed as requested) */}
         {/* Slide Content */}
         {item.type === 'branding' ? (
           <View style={styles.brandingHeaderContent}>
@@ -124,29 +116,8 @@ function HeroBannerSlideItem({
           </View>
         ) : (
           <>
-            {/* Video Row: Thumbnail Circle (same 34x34 size) + Video Name beside it */}
-            <View style={styles.creatorRow}>
-              {imgUri ? (
-                <Image
-                  source={{ uri: imgUri }}
-                  style={[styles.creatorAvatar, { backgroundColor: theme.cardBackgroundColor }]}
-                />
-              ) : null}
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.title, { color: theme.primaryTextColor }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                {item.duration ? (
-                  <Text style={[styles.creatorBio, { color: theme.secondaryTextColor }]}>Duration • {item.duration}</Text>
-                ) : null}
-              </View>
-            </View>
-
-            {item.description ? (
-              <Text style={[styles.description, { color: theme.secondaryTextColor }]} numberOfLines={2}>
-                {item.description}
-              </Text>
-            ) : null}
+            {/* Video Row: (Removed avatar and title as requested) */}
+            {/* Description (Removed as requested) */}
           </>
         )}
 
@@ -178,25 +149,7 @@ export function HeroBanner({
 
   const items: HeroItem[] = [];
 
-  // 1. Add Studio Branding slide ONLY if branding API returns real creator data
-  if (activeBranding && (activeBranding.studio_name || activeBranding.creator_name || activeBranding.banner_url || activeBranding.logo_url)) {
-    const bannerUri = resolveImageUrl(activeBranding.banner_url, '');
-    const logoUri = resolveImageUrl(activeBranding.logo_url, '');
-    items.push({
-      id: 'hero_branding_0',
-      type: 'branding',
-      title: activeBranding.studio_name || activeBranding.creator_name || '',
-      tagline: activeBranding.tagline || '',
-      description: activeBranding.description || '',
-      thumbnail_url: bannerUri,
-      creatorAvatar: logoUri,
-      creatorName: activeBranding.studio_name || activeBranding.creator_name || '',
-      badgeLabel: 'STUDIO BRANDING',
-      category: 'OFFICIAL',
-    });
-  }
-
-  // 2. Add Featured Video slides strictly from live API banners
+  // Add Featured Video slides strictly from live API banners (or the fallback passed from HomeScreen)
   if (heroItems && heroItems.length > 0) {
     items.push(...heroItems);
   }

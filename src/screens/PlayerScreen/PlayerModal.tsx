@@ -43,8 +43,8 @@ import {
 import type { ApiVideo, PlayInfo } from '../../types/video';
 import type { PlaylistListItem } from '../../services/api/playlistApi';
 import { formatLikes, formatViews, getRelativeTimeString } from '../../utils/timeUtils';
-import { styles } from '../PlayerScreen/styles';
-
+import { useAppTheme } from '../../context/ThemeContext';
+import { createStyles } from '../PlayerScreen/styles';
 type PlayerModalProps = {
   playingVideo: PlayInfo | null;
   autoplay?: boolean;
@@ -83,6 +83,8 @@ export function PlayerModal({
   const hasRecordedAdCompleteRef = useRef(false);
   const [videoRatio, setVideoRatio] = useState<number | null>(null);
   const { width, height } = useWindowDimensions();
+  const { theme } = useAppTheme();
+  const styles = React.useMemo(() => createStyles(theme), [theme]);
   const [isSubscribed, setIsSubscribed] = useState(isUserSubscribed());
 
   useEffect(() => {
@@ -599,10 +601,10 @@ export function PlayerModal({
                 >
                   <Heart
                     size={18}
-                    color={liked ? '#EF4444' : '#FFFFFF'}
-                    fill={liked ? '#EF4444' : 'transparent'}
+                    color={liked ? theme.primaryColor : theme.primaryTextColor}
+                    fill={liked ? theme.primaryColor : 'transparent'}
                   />
-                  <Text style={[styles.actionText, liked ? { color: '#EF4444', fontWeight: '700' } : null]}>
+                  <Text style={[styles.actionText, liked ? { color: theme.primaryColor, fontWeight: '700' } : null]}>
                     {likesText}
                   </Text>
                 </Pressable>
@@ -613,8 +615,8 @@ export function PlayerModal({
                 >
                   <Bookmark
                     size={18}
-                    color={saved ? '#818CF8' : '#FFFFFF'}
-                    fill={saved ? '#818CF8' : 'transparent'}
+                    color={saved ? theme.primaryColor : theme.primaryTextColor}
+                    fill={saved ? theme.primaryColor : 'transparent'}
                   />
                   <Text style={styles.actionText}>{saved ? 'Saved' : 'Save'}</Text>
                 </Pressable>
@@ -625,7 +627,7 @@ export function PlayerModal({
                 >
                   <MessageSquare
                     size={18}
-                    color={showComments ? '#10B981' : '#FFFFFF'}
+                    color={showComments ? theme.primaryColor : theme.primaryTextColor}
                   />
                   <Text style={styles.actionText}>Comments</Text>
                 </Pressable>
@@ -634,7 +636,7 @@ export function PlayerModal({
                   style={styles.actionBtn}
                   onPress={() => setShowShareModal(true)}
                 >
-                  <Share2 size={18} color={showShareModal ? '#6366F1' : '#FFFFFF'} />
+                  <Share2 size={18} color={showShareModal ? theme.primaryColor : theme.primaryTextColor} />
                   <Text style={styles.actionText}>Share</Text>
                 </Pressable>
               </View>

@@ -1,10 +1,10 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../../constants/colors';
+import type { ThemeColors } from '../../context/ThemeContext';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: ThemeColors) => StyleSheet.create({
   playerScreen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: theme.mainBackgroundColor,
   },
   playerVideoArea: {
     width: '100%',
@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   playerTitle: {
-    color: colors.text,
+    color: theme.primaryTextColor,
     fontSize: 16,
     fontWeight: '800',
     lineHeight: 22,
@@ -42,27 +42,27 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   playerCategoryBadge: {
-    backgroundColor: '#3730A3',
+    backgroundColor: theme.activeStateColor ? `${theme.activeStateColor}33` : '#3730A3',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
   },
   playerCategoryBadgeText: {
-    color: '#818CF8',
+    color: theme.activeStateColor || theme.primaryColor,
     fontSize: 11,
     fontWeight: '700',
   },
   playerMetaDot: {
-    color: '#6B7280',
+    color: theme.mutedTextColor,
     fontSize: 10,
   },
   playerMetaText: {
-    color: '#9CA3AF',
+    color: theme.secondaryTextColor,
     fontSize: 12,
     fontWeight: '500',
   },
   playerDescription: {
-    color: '#D1D5DB',
+    color: theme.secondaryTextColor,
     fontSize: 12,
     fontWeight: '400',
     lineHeight: 18,
@@ -73,7 +73,7 @@ export const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   showMoreText: {
-    color: '#818CF8',
+    color: theme.primaryColor,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -83,17 +83,17 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginVertical: 10,
     paddingVertical: 8,
-    backgroundColor: '#12121C',
+    backgroundColor: theme.cardBackgroundColor,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1E1E2D',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   actionBtn: {
     alignItems: 'center',
     gap: 4,
   },
   actionText: {
-    color: '#D1D5DB',
+    color: theme.primaryTextColor,
     fontSize: 11,
     fontWeight: '600',
   },

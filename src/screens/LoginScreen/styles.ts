@@ -65,18 +65,10 @@ export const createStyles = (theme: any) => StyleSheet.create({
 
     // ── Card Container ──
     card: {
-        backgroundColor: '#12121E',
-        borderRadius: 20,
+        backgroundColor: 'transparent',
         paddingHorizontal: 22,
         paddingTop: 28,
         paddingBottom: 26,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.5,
-        shadowRadius: 24,
-        elevation: 8,
     },
 
     // ── Header Row ──

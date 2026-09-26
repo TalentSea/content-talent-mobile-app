@@ -120,7 +120,7 @@ export function HomeScreen({ navigation }: any) {
   const continueWatchingList = continueWatching.slice(0, 10);
 
   // Build Hero Banner Carousel items directly from the backend featured videos response
-  const heroItems: HeroItem[] = apiBanners.map((b, idx) => {
+  let heroItems: HeroItem[] = apiBanners.map((b, idx) => {
     const matchingVideo = videos.find(v => v.id === b.id);
 
     return {
@@ -136,6 +136,19 @@ export function HomeScreen({ navigation }: any) {
       rawVideo: matchingVideo,
     };
   });
+
+  // If we don't have any featured videos, show the branding banner
+  if (heroItems.length === 0 && branding?.banner_url) {
+    heroItems = [{
+      id: 'branding_banner_fallback',
+      type: 'branding',
+      title: branding.studio_name || branding.creator_name || 'Welcome',
+      description: 'Welcome to our platform',
+      thumbnail_url: branding.banner_url,
+      creatorName: branding.studio_name || branding.creator_name || undefined,
+      creatorAvatar: branding.logo_url || undefined,
+    }];
+  }
 
   function handleSelectPlaylist(playlistId: number, playlistTitle: string) {
     navigation.navigate('PlaylistDetail', {

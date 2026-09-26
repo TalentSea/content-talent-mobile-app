@@ -170,10 +170,10 @@ export function CategoriesScreen({ navigation }: any) {
               {/* Semi-transparent overlay with color tint (from teammate's branch) */}
               <View style={styles.cardOverlay}>
                 <View style={styles.cardHeaderContent}>
-                  <Text style={[styles.cardTitle, { color: theme.primaryTextColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
+                  <Text style={[styles.cardTitle]} numberOfLines={1}>
                     {item.name}
                   </Text>
-                  <Text style={[styles.cardMetaText, { color: item.accentColor }, { color: theme.primaryTextColor }]} numberOfLines={1}>
+                  <Text style={[styles.cardMetaText, { color: item.accentColor }]} numberOfLines={1}>
                     {item.count} {item.count === 1 ? 'video' : 'videos'}
                   </Text>
                   <View style={styles.skeletonBarLong} />

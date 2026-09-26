@@ -1045,6 +1045,15 @@ export async function uploadSubscriberProfilePhoto(
 
 
 /**
+ * POST /api/v1/mobile/auth/refresh — Refresh Token
+ */
+export async function refreshTokenApi(): Promise<string> {
+  if (!storedRefreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const endpoints = [`${API_BASE_PATH}/auth/refresh`];
+  let lastErr;
 
   for (const ep of endpoints) {
     try {

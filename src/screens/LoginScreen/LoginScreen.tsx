@@ -11,6 +11,7 @@ import {
     Text,
     TextInput,
     View,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Check, ChevronLeft, Play, X, KeyRound, Mail, ArrowLeft } from 'lucide-react-native';
@@ -48,7 +49,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 import { createStyles } from './styles';
 
 export function LoginScreen({ route, navigation, initialMode }: any) {
-    const { theme, setTheme, setBranding } = useAppTheme();
+    const { theme, setTheme, setBranding, branding } = useAppTheme();
     const styles = createStyles(theme);
     const defaultMode = initialMode || route?.params?.mode || 'login';
     const [mode, setMode] = useState<'login' | 'register'>(defaultMode);
@@ -657,6 +658,17 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
 
     return (
         <SafeAreaView style={styles.screen}>
+            {branding?.banner_url ? (
+                <>
+                    <Image
+                        source={{ uri: branding.banner_url }}
+                        style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.95 }]}
+                        resizeMode="cover"
+                    />
+                    {/* Dark gradient/overlay so text is readable */}
+                    <View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }]} />
+                </>
+            ) : null}
             <StatusBar barStyle="light-content" backgroundColor="#05050A" />
 
             <KeyboardAvoidingView
@@ -670,31 +682,41 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                 >
                     {/* ── Hero Brand Header ── */}
                     <View style={styles.heroSection}>
-                        <View style={styles.iconContainer}>
-                            <View style={styles.iconGradientLayer1} />
-                            <View style={styles.iconGradientLayer2} />
-                            <View style={styles.iconInner}>
-                                <Play
-                                    color="#FFFFFF"
-                                    size={24}
-                                    fill="#FFFFFF"
-                                    strokeWidth={0}
-                                />
+                        {branding?.logo_url ? (
+                            <Image 
+                                source={{ uri: branding.logo_url }}
+                                style={{ width: 80, height: 80, borderRadius: 16, marginBottom: 16, backgroundColor: theme.cardBackgroundColor }}
+                                resizeMode="contain"
+                            />
+                        ) : (
+                            <View style={styles.iconContainer}>
+                                <View style={styles.iconGradientLayer1} />
+                                <View style={styles.iconGradientLayer2} />
+                                <View style={styles.iconInner}>
+                                    <Play
+                                        color="#FFFFFF"
+                                        size={24}
+                                        fill="#FFFFFF"
+                                        strokeWidth={0}
+                                    />
+                                </View>
                             </View>
-                        </View>
-                        <Text style={styles.brandTitle}>Streamr</Text>
-                        <Text style={styles.brandSubtitle}>
+                        )}
+                        <Text style={[styles.brandTitle, { color: '#FFFFFF' }]}>
+                            {branding?.studio_name || branding?.creator_name || 'Streamr'}
+                        </Text>
+                        <Text style={[styles.brandSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
                             {mode === 'register'
                                 ? 'Create an account to join the community'
                                 : 'Sign in to your streaming account'}
                         </Text>
                     </View>
 
-                    {/* Main Dark Card Container */}
+                    {/* Main Transparent Container */}
                     <View style={styles.card}>
                         <View style={{ alignItems: 'center', marginBottom: 24 }}>
-                            <Text style={styles.socialCardTitle}>Sign In</Text>
-                            <Text style={styles.socialCardSubtitle}>
+                            <Text style={[styles.socialCardTitle, { color: '#FFFFFF' }]}>Sign In</Text>
+                            <Text style={[styles.socialCardSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
                                 Connect instantly to continue streaming
                             </Text>
                         </View>
@@ -703,6 +725,7 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                         <Pressable
                             style={({ pressed }) => [
                                 styles.fullSocialButtonGoogle,
+                                { backgroundColor: 'rgba(255, 255, 255, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.3)' },
                                 pressed && styles.fullSocialButtonPressed,
                                 loadingProvider !== null && { opacity: 0.7 },
                             ]}
@@ -710,13 +733,13 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                             disabled={loadingProvider !== null || submitting}
                         >
                             {loadingProvider === 'google' ? (
-                                <ActivityIndicator color="#1F2937" size="small" />
+                                <ActivityIndicator color="#FFFFFF" size="small" />
                             ) : (
                                 <View style={styles.fullSocialButtonContent}>
-                                    <View style={styles.googleIconCircle}>
+                                    <View style={[styles.googleIconCircle, { backgroundColor: 'transparent' }]}>
                                         <Text style={styles.googleIconLetter}>G</Text>
                                     </View>
-                                    <Text style={styles.fullSocialButtonGoogleText}>
+                                    <Text style={[styles.fullSocialButtonGoogleText, { color: '#FFFFFF' }]}>
                                         Continue with Google
                                     </Text>
                                 </View>
@@ -737,10 +760,10 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                                 <ActivityIndicator color="#FFFFFF" size="small" />
                             ) : (
                                 <View style={styles.fullSocialButtonContent}>
-                                    <View style={styles.facebookIconCircle}>
+                                    <View style={[styles.facebookIconCircle, { backgroundColor: 'transparent' }]}>
                                         <Text style={styles.facebookIconLetter}>f</Text>
                                     </View>
-                                    <Text style={styles.fullSocialButtonFacebookText}>
+                                    <Text style={[styles.fullSocialButtonFacebookText, { color: '#FFFFFF' }]}>
                                         Continue with Facebook
                                     </Text>
                                 </View>
@@ -748,17 +771,17 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                         </Pressable>
 
                         {/* Terms & Privacy Footnote */}
-                        <Text style={styles.socialTermsText}>
+                        <Text style={[styles.socialTermsText, { color: 'rgba(255, 255, 255, 0.7)' }]}>
                             By continuing, you agree to our{' '}
                             <Text
-                                style={styles.socialTermsLink}
+                                style={[styles.socialTermsLink, { color: '#FFFFFF' }]}
                                 onPress={() => Alert.alert('Terms of Service', 'By using Streamr, you agree to our Terms of Service.')}
                             >
                                 Terms
                             </Text>
                             {' '}and{' '}
                             <Text
-                                style={styles.socialTermsLink}
+                                style={[styles.socialTermsLink, { color: '#FFFFFF' }]}
                                 onPress={() => Alert.alert('Privacy Policy', 'Streamr respects and protects your private user data.')}
                             >
                                 Privacy Policy
@@ -774,9 +797,9 @@ export function LoginScreen({ route, navigation, initialMode }: any) {
                         disabled={loadingProvider !== null || submitting}
                     >
                         {loadingProvider === 'guest' ? (
-                            <ActivityIndicator color="#818CF8" size="small" />
+                            <ActivityIndicator color="#FFFFFF" size="small" />
                         ) : (
-                            <Text style={styles.guestSkipText}>
+                            <Text style={[styles.guestSkipText, { color: '#FFFFFF' }]}>
                                 Skip & Continue as Guest →
                             </Text>
                         )}

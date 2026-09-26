@@ -19,7 +19,7 @@ export type MobileBrandingResponse = {
 
 export async function fetchMobileBrandingApi(): Promise<MobileBrandingResponse> {
   try {
-    const rawRes = await apiGet<any>(`${API_BASE_PATH}/branding`);
+    const rawRes = await apiGet<any>(`${API_BASE_PATH}/branding`, { authenticated: false });
     
     if (rawRes) {
       const themeColors = rawRes.theme;

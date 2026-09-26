@@ -1,5 +1,5 @@
 import { API_BASE_URL, getCreatorId, setCreatorId, API_BASE_PATH } from '../../constants/config';
-import { loginAsGuest } from './authService';
+import { loginAsGuest, refreshTokenApi, clearSessionTokens, getCurrentUser } from './authService';
 import { Alert } from 'react-native';
 export class ApiError extends Error {
   status: number;
@@ -92,6 +92,7 @@ export async function apiRequest<T>(
   const creatorId = getCreatorId();
   if (creatorId) {
     requestHeaders.set('X-Creator-ID', String(creatorId));
+    requestHeaders.set('X-Tenant-Id', String(creatorId));
   }
 
   if (
@@ -141,10 +142,22 @@ export async function apiRequest<T>(
   if (response.status === 401 && !isRetry && !isRefreshing && !path.includes('/auth/')) {
     try {
       isRefreshing = true;
+      const currentUser = getCurrentUser();
+      
       try {
-        await loginAsGuest();
+        if (currentUser && currentUser.provider !== 'guest') {
+          // Real user: attempt token refresh
+          await refreshTokenApi();
+        } else {
+          // Guest or no user: fallback to new guest session
+          await loginAsGuest();
+        }
       } catch (e) {
-        console.warn('Guest fallback failed:', e);
+        console.warn('Token recovery failed:', e);
+        if (currentUser && currentUser.provider !== 'guest') {
+          // If a real user's refresh fails, log them out to clear the broken session
+          await clearSessionTokens();
+        }
       }
       isRefreshing = false;
 
@@ -154,7 +167,7 @@ export async function apiRequest<T>(
       });
     } catch (refreshErr) {
       isRefreshing = false;
-      console.warn('[client.ts] Silent token recovery failed:', refreshErr);
+      console.warn('[client.ts] Silent token recovery completely failed:', refreshErr);
     }
   }
 
@@ -199,6 +212,6 @@ export async function apiRequest<T>(
   return responseBody as T;
 }
 
-export function apiGet<T>(path: string) {
-  return apiRequest<T>(path, { method: 'GET' });
+export function apiGet<T>(path: string, options?: Omit<ApiRequestOptions, 'method'>) {
+  return apiRequest<T>(path, { method: 'GET', ...options });
 }
